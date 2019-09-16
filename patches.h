@@ -80,6 +80,29 @@
  */
 #define OPENCOPIED_PATCH 1
 
+/* Scroll back through terminal output using Shift+{PageUp, PageDown}.
+ * https://st.suckless.org/patches/scrollback/
+ */
+#define SCROLLBACK_PATCH 1
+
+/* Scroll back through terminal output using Shift+MouseWheel.
+ * This variant depends on SCROLLBACK_PATCH being enabled.
+ * https://st.suckless.org/patches/scrollback/
+ */
+#define SCROLLBACK_MOUSE_PATCH 0
+
+/* Scroll back through terminal output using mouse wheel (when not in MODE_ALTSCREEN).
+ * This variant depends on SCROLLBACK_PATCH being enabled.
+ * https://st.suckless.org/patches/scrollback/
+ */
+#define SCROLLBACK_MOUSE_ALTSCREEN_PATCH 1
+
+/*
+ * Vertically center lines in the space available if you have set a larger chscale in config.h
+ * https://st.suckless.org/patches/vertcenter/
+ */
+#define VERTCENTER_PATCH 1
+
 /* This patch adds the ability to configure st via Xresources. At startup, st will read and
  * apply the resources named in the resources[] array in config.h.
  * https://st.suckless.org/patches/xresources/

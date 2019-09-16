@@ -35,6 +35,9 @@
 #define ESC_ARG_SIZ   16
 #define STR_BUF_SIZ   ESC_BUF_SIZ
 #define STR_ARG_SIZ   ESC_ARG_SIZ
+#if SCROLLBACK_PATCH
+#define HISTSIZE      2000
+#endif // SCROLLBACK_PATCH
 
 /* macros */
 #define IS_SET(flag)		((term.mode & (flag)) != 0)
@@ -117,6 +120,11 @@ typedef struct {
 	int col;      /* nb col */
 	Line *line;   /* screen */
 	Line *alt;    /* alternate screen */
+	#if SCROLLBACK_PATCH
+	Line hist[HISTSIZE]; /* history buffer */
+	int histi;    /* history index */
+	int scr;      /* scroll back */
+	#endif // SCROLLBACK_PATCH
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
 	int ocx;      /* old cursor col */
@@ -184,8 +192,13 @@ static void tnewline(int);
 static void tputtab(int);
 static void tputc(Rune);
 static void treset(void);
+#if SCROLLBACK_PATCH
+static void tscrollup(int, int, int);
+static void tscrolldown(int, int, int);
+#else
 static void tscrollup(int, int);
 static void tscrolldown(int, int);
+#endif // SCROLLBACK_PATCH
 static void tsetattr(int *, int);
 static void tsetchar(Rune, Glyph *, int, int);
 static void tsetdirt(int, int);
@@ -429,11 +442,19 @@ tlinelen(int y)
 {
 	int i = term.col;
 
+	#if SCROLLBACK_PATCH
+	if (TLINE(y)[i - 1].mode & ATTR_WRAP)
+		return i;
+
+	while (i > 0 && TLINE(y)[i - 1].u == ' ')
+ 		--i;
+	#else
 	if (term.line[y][i - 1].mode & ATTR_WRAP)
 		return i;
 
 	while (i > 0 && term.line[y][i - 1].u == ' ')
 		--i;
+	#endif // SCROLLBACK_PATCH
 
 	return i;
 }
@@ -541,7 +562,11 @@ selsnap(int *x, int *y, int direction)
 		 * Snap around if the word wraps around at the end or
 		 * beginning of a line.
 		 */
+		#if SCROLLBACK_PATCH
+		prevgp = &TLINE(*y)[*x];
+		#else
 		prevgp = &term.line[*y][*x];
+		#endif // SCROLLBACK_PATCH
 		prevdelim = ISDELIM(prevgp->u);
 		for (;;) {
 			newx = *x + direction;
@@ -556,14 +581,22 @@ selsnap(int *x, int *y, int direction)
 					yt = *y, xt = *x;
 				else
 					yt = newy, xt = newx;
+				#if SCROLLBACK_PATCH
+				if (!(TLINE(yt)[xt].mode & ATTR_WRAP))
+				#else
 				if (!(term.line[yt][xt].mode & ATTR_WRAP))
+				#endif // SCROLLBACK_PATCH
 					break;
 			}
 
 			if (newx >= tlinelen(newy))
 				break;
 
+			#if SCROLLBACK_PATCH
+			gp = &TLINE(newy)[newx];
+			#else
 			gp = &term.line[newy][newx];
+			#endif // SCROLLBACK_PATCH
 			delim = ISDELIM(gp->u);
 			if (!(gp->mode & ATTR_WDUMMY) && (delim != prevdelim
 					|| (delim && gp->u != prevgp->u)))
@@ -584,14 +617,22 @@ selsnap(int *x, int *y, int direction)
 		*x = (direction < 0) ? 0 : term.col - 1;
 		if (direction < 0) {
 			for (; *y > 0; *y += direction) {
+				#if SCROLLBACK_PATCH
+				if (!(TLINE(*y-1)[term.col-1].mode
+				#else
 				if (!(term.line[*y-1][term.col-1].mode
+				#endif // SCROLLBACK_PATCH
 						& ATTR_WRAP)) {
 					break;
 				}
 			}
 		} else if (direction > 0) {
 			for (; *y < term.row-1; *y += direction) {
+				#if SCROLLBACK_PATCH
+				if (!(TLINE(*y)[term.col-1].mode
+				#else
 				if (!(term.line[*y][term.col-1].mode
+				#endif // SCROLLBACK_PATCH
 						& ATTR_WRAP)) {
 					break;
 				}
@@ -622,13 +663,25 @@ getsel(void)
 		}
 
 		if (sel.type == SEL_RECTANGULAR) {
+			#if SCROLLBACK_PATCH
+			gp = &TLINE(y)[sel.nb.x];
+			#else
 			gp = &term.line[y][sel.nb.x];
+			#endif // SCROLLBACK_PATCH
 			lastx = sel.ne.x;
 		} else {
+			#if SCROLLBACK_PATCH
+			gp = &TLINE(y)[sel.nb.y == y ? sel.nb.x : 0];
+			#else
 			gp = &term.line[y][sel.nb.y == y ? sel.nb.x : 0];
+			#endif // SCROLLBACK_PATCH
 			lastx = (sel.ne.y == y) ? sel.ne.x : term.col-1;
 		}
+		#if SCROLLBACK_PATCH
+		last = &TLINE(y)[MIN(lastx, linelen-1)];
+		#else
 		last = &term.line[y][MIN(lastx, linelen-1)];
+		#endif // SCROLLBACK_PATCH
 		while (last >= gp && last->u == ' ')
 			--last;
 
@@ -851,6 +904,11 @@ void
 ttywrite(const char *s, size_t n, int may_echo)
 {
 	const char *next;
+	#if SCROLLBACK_PATCH
+	Arg arg = (Arg) { .i = term.scr };
+
+	kscrolldown(&arg);
+	#endif // SCROLLBACK_PATCH
 
 	if (may_echo && IS_SET(MODE_ECHO))
 		twrite(s, n, 1);
@@ -1062,12 +1120,25 @@ tswapscreen(void)
 }
 
 void
+#if SCROLLBACK_PATCH
+tscrolldown(int orig, int n, int copyhist)
+#else
 tscrolldown(int orig, int n)
+#endif // SCROLLBACK_PATCH
 {
 	int i;
 	Line temp;
 
 	LIMIT(n, 0, term.bot-orig+1);
+
+	#if SCROLLBACK_PATCH
+	if (copyhist) {
+		term.histi = (term.histi - 1 + HISTSIZE) % HISTSIZE;
+		temp = term.hist[term.histi];
+		term.hist[term.histi] = term.line[term.bot];
+		term.line[term.bot] = temp;
+	}
+	#endif // SCROLLBACK_PATCH
 
 	tsetdirt(orig, term.bot-n);
 	tclearregion(0, term.bot-n+1, term.col-1, term.bot);
@@ -1082,12 +1153,28 @@ tscrolldown(int orig, int n)
 }
 
 void
+#if SCROLLBACK_PATCH
+tscrollup(int orig, int n, int copyhist)
+#else
 tscrollup(int orig, int n)
+#endif // SCROLLBACK_PATCH
 {
 	int i;
 	Line temp;
 
 	LIMIT(n, 0, term.bot-orig+1);
+
+	#if SCROLLBACK_PATCH
+	if (copyhist) {
+		term.histi = (term.histi + 1) % HISTSIZE;
+		temp = term.hist[term.histi];
+		term.hist[term.histi] = term.line[orig];
+		term.line[orig] = temp;
+	}
+
+	if (term.scr > 0 && term.scr < HISTSIZE)
+		term.scr = MIN(term.scr + n, HISTSIZE-1);
+	#endif // SCROLLBACK_PATCH
 
 	tclearregion(0, orig, term.col-1, orig+n-1);
 	tsetdirt(orig+n, term.bot);
@@ -1137,7 +1224,11 @@ tnewline(int first_col)
 	int y = term.c.y;
 
 	if (y == term.bot) {
+		#if SCROLLBACK_PATCH
+		tscrollup(term.top, 1, 1);
+		#else
 		tscrollup(term.top, 1);
+		#endif // SCROLLBACK_PATCH
 	} else {
 		y++;
 	}
@@ -1302,14 +1393,22 @@ void
 tinsertblankline(int n)
 {
 	if (BETWEEN(term.c.y, term.top, term.bot))
+		#if SCROLLBACK_PATCH
+		tscrolldown(term.c.y, n, 0);
+		#else
 		tscrolldown(term.c.y, n);
+		#endif // SCROLLBACK_PATCH
 }
 
 void
 tdeleteline(int n)
 {
 	if (BETWEEN(term.c.y, term.top, term.bot))
+		#if SCROLLBACK_PATCH
+		tscrollup(term.c.y, n, 0);
+		#else
 		tscrollup(term.c.y, n);
+		#endif // SCROLLBACK_PATCH
 }
 
 int32_t
@@ -1739,11 +1838,19 @@ csihandle(void)
 		break;
 	case 'S': /* SU -- Scroll <n> line up */
 		DEFAULT(csiescseq.arg[0], 1);
+		#if SCROLLBACK_PATCH
+		tscrollup(term.top, csiescseq.arg[0], 0);
+		#else
 		tscrollup(term.top, csiescseq.arg[0]);
+		#endif // SCROLLBACK_PATCH
 		break;
 	case 'T': /* SD -- Scroll <n> line down */
 		DEFAULT(csiescseq.arg[0], 1);
+		#if SCROLLBACK_PATCH
+		tscrolldown(term.top, csiescseq.arg[0], 0);
+		#else
 		tscrolldown(term.top, csiescseq.arg[0]);
+		#endif // SCROLLBACK_PATCH
 		break;
 	case 'L': /* IL -- Insert <n> blank lines */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -2245,7 +2352,11 @@ eschandle(uchar ascii)
 		return 0;
 	case 'D': /* IND -- Linefeed */
 		if (term.c.y == term.bot) {
+			#if SCROLLBACK_PATCH
+			tscrollup(term.top, 1, 1);
+			#else
 			tscrollup(term.top, 1);
+			#endif // SCROLLBACK_PATCH
 		} else {
 			tmoveto(term.c.x, term.c.y+1);
 		}
@@ -2258,7 +2369,11 @@ eschandle(uchar ascii)
 		break;
 	case 'M': /* RI -- Reverse index */
 		if (term.c.y == term.top) {
+			#if SCROLLBACK_PATCH
+			tscrolldown(term.top, 1, 1);
+			#else
 			tscrolldown(term.top, 1);
+			#endif // SCROLLBACK_PATCH
 		} else {
 			tmoveto(term.c.x, term.c.y-1);
 		}
@@ -2478,6 +2593,9 @@ void
 tresize(int col, int row)
 {
 	int i;
+	#if SCROLLBACK_PATCH
+	int j;
+	#endif // SCROLLBACK_PATCH
 	int minrow = MIN(row, term.row);
 	int mincol = MIN(col, term.col);
 	int *bp;
@@ -2513,6 +2631,16 @@ tresize(int col, int row)
 	term.alt  = xrealloc(term.alt,  row * sizeof(Line));
 	term.dirty = xrealloc(term.dirty, row * sizeof(*term.dirty));
 	term.tabs = xrealloc(term.tabs, col * sizeof(*term.tabs));
+
+	#if SCROLLBACK_PATCH
+	for (i = 0; i < HISTSIZE; i++) {
+		term.hist[i] = xrealloc(term.hist[i], col * sizeof(Glyph));
+		for (j = mincol; j < col; j++) {
+			term.hist[i][j] = term.c.attr;
+			term.hist[i][j].u = ' ';
+		}
+	}
+	#endif // SCROLLBACK_PATCH
 
 	/* resize each row to new width, zero-pad if needed */
 	for (i = 0; i < minrow; i++) {
@@ -2571,7 +2699,11 @@ drawregion(int x1, int y1, int x2, int y2)
 			continue;
 
 		term.dirty[y] = 0;
+		#if SCROLLBACK_PATCH
+		xdrawline(TLINE(y), x1, y, x2);
+		#else
 		xdrawline(term.line[y], x1, y, x2);
+		#endif // SCROLLBACK_PATCH
 	}
 }
 
@@ -2592,6 +2724,10 @@ draw(void)
 		cx--;
 
 	drawregion(0, 0, term.col, term.row);
+
+	#if SCROLLBACK_PATCH
+	if (term.scr == 0)
+	#endif // SCROLLBACK_PATCH
 	xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 			term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
 	term.ocx = cx, term.ocy = term.c.y;

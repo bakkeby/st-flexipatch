@@ -11,3 +11,7 @@ void xximspot(int, int);
 #if NEWTERM_PATCH
 #include "newterm.h"
 #endif
+
+#if SCROLLBACK_PATCH || SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+#include "scrollback.h"
+#endif

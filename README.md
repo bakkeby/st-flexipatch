@@ -11,7 +11,7 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
 ### Changelog:
 
-2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl, disable-fonts, fixime, hidecursor, newterm and open-copied-url patches
+2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl, disable-fonts, fixime, hidecursor, newterm, open-copied-url, vertcenter, scrollback and xresources patches
 
 ### Patches included:
 
@@ -48,3 +48,13 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
    - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
       - open contents of the clipboard in a user-defined browser
+
+   - [scrollback](https://st.suckless.org/patches/scrollback/)
+      - allows you scroll back through terminal output using keyboard shortcuts or mousewheel
+
+   - [vertcenter](https://st.suckless.org/patches/vertcenter/)
+      - vertically center lines in the space available if you have set a larger chscale in config.h
+
+   - [xresources](https://st.suckless.org/patches/xresources/)
+      - adds the ability to configure st via Xresources
+      - during startup, st will read and apply the resources named in the resources[] array in config.h

@@ -7,3 +7,7 @@
 #if NEWTERM_PATCH
 #include "newterm.c"
 #endif
+
+#if SCROLLBACK_PATCH || SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+#include "scrollback.c"
+#endif

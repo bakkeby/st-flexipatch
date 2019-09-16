@@ -86,6 +86,9 @@ typedef struct {
 	#endif // ANYSIZE_PATCH
 	int ch; /* char height */
 	int cw; /* char width  */
+	#if VERTCENTER_PATCH
+	int cyo; /* char y offset */
+	#endif // VERTCENTER_PATCH
 	int mode; /* window state/mode flags */
 	int cursor; /* cursor style */
 } TermWindow;
@@ -438,6 +441,9 @@ bpress(XEvent *e)
 {
 	struct timespec now;
 	MouseShortcut *ms;
+	#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	MouseKey *mk;
+	#endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	int snap;
 
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forceselmod)) {
@@ -445,6 +451,9 @@ bpress(XEvent *e)
 		return;
 	}
 
+	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	if (tisaltscr())
+	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
 		if (e->xbutton.button == ms->b
 				&& match(ms->mask, e->xbutton.state)) {
@@ -452,6 +461,16 @@ bpress(XEvent *e)
 			return;
 		}
 	}
+
+	#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	for (mk = mkeys; mk < mkeys + LEN(mkeys); mk++) {
+		if (e->xbutton.button == mk->b
+				&& match(mk->mask, e->xbutton.state)) {
+			mk->func(&mk->arg);
+			return;
+		}
+	}
+	#endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 
 	if (e->xbutton.button == Button1) {
 		/*
@@ -1029,6 +1048,9 @@ xloadfonts(char *fontstr, double fontsize)
 	/* Setting character width and height. */
 	win.cw = ceilf(dc.font.width * cwscale);
 	win.ch = ceilf(dc.font.height * chscale);
+	#if VERTCENTER_PATCH
+	win.cyo = ceilf(dc.font.height * (chscale - 1) / 2);
+	#endif // VERTCENTER_PATCH
 
 	FcPatternDel(pattern, FC_SLANT);
 	#if !DISABLE_ITALIC_FONTS_PATCH
@@ -1283,7 +1305,12 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	FcCharSet *fccharset;
 	int i, f, numspecs = 0;
 
-	for (i = 0, xp = winx, yp = winy + font->ascent; i < len; ++i) {
+	#if VERTCENTER_PATCH
+	for (i = 0, xp = winx, yp = winy + font->ascent + win.cyo; i < len; ++i)
+	#else
+	for (i = 0, xp = winx, yp = winy + font->ascent; i < len; ++i)
+	#endif // VERTCENTER_PATCH
+	{
 		/* Fetch rune and mode for current glyph. */
 		rune = glyphs[i].u;
 		mode = glyphs[i].mode;
@@ -1308,7 +1335,11 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 				font = &dc.bfont;
 				frcflags = FRC_BOLD;
 			}
+			#if VERTCENTER_PATCH
+			yp = winy + font->ascent + win.cyo;
+			#else
 			yp = winy + font->ascent;
+			#endif // VERTCENTER_PATCH
 		}
 
 		/* Lookup character index with default font. */
@@ -1546,13 +1577,23 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
+		#if VERTCENTER_PATCH
+		XftDrawRect(xw.draw, fg, winx, winy + win.cyo + dc.font.ascent + 1,
+				width, 1);
+		#else
 		XftDrawRect(xw.draw, fg, winx, winy + dc.font.ascent + 1,
 				width, 1);
+		#endif
 	}
 
 	if (base.mode & ATTR_STRUCK) {
+		#if VERTCENTER_PATCH
+		XftDrawRect(xw.draw, fg, winx, winy + win.cyo + 2 * dc.font.ascent / 3,
+				width, 1);
+		#else
 		XftDrawRect(xw.draw, fg, winx, winy + 2 * dc.font.ascent / 3,
 				width, 1);
+		#endif // VERTCENTER_PATCH
 	}
 
 	/* Reset clip to none. */
