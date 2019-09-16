@@ -11,7 +11,7 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
 ### Changelog:
 
-2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl and disable-fonts patches
+2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl, disable-fonts, fixime, hidecursor, newterm and open-copied-url patches
 
 ### Patches included:
 
@@ -35,3 +35,16 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
    - [disable-fonts](https://st.suckless.org/patches/disable_bold_italic_fonts/)
       - this patch adds the option of disabling bold/italic/roman fonts globally
+
+   - [fixime](https://st.suckless.org/patches/fix_ime/)
+      - adds better Input Method Editor (IME) support
+
+   - [hidecursor](https://st.suckless.org/patches/hidecursor/)
+      - hides the X cursor whenever a key is pressed and show it back when the mouse is moved in the terminal window
+
+   - [newterm](https://st.suckless.org/patches/newterm/)
+      - allows you to spawn a new st terminal using Ctrl-Shift-Return
+      - it will have the same CWD (current working directory) as the original st instance
+
+   - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
+      - open contents of the clipboard in a user-defined browser

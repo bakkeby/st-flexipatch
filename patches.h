@@ -46,14 +46,37 @@
 /* This patch adds the option of disabling bold fonts globally.
  * https://st.suckless.org/patches/disable_bold_italic_fonts/
  */
-#define DISABLE_BOLD_FONTS_PATCH 0
+#define DISABLE_BOLD_FONTS_PATCH 1
 
 /* This patch adds the option of disabling italic fonts globally.
  * https://st.suckless.org/patches/disable_bold_italic_fonts/
  */
-#define DISABLE_ITALIC_FONTS_PATCH 0
+#define DISABLE_ITALIC_FONTS_PATCH 1
 
 /* This patch adds the option of disabling roman fonts globally.
  * https://st.suckless.org/patches/disable_bold_italic_fonts/
  */
-#define DISABLE_ROMAN_FONTS_PATCH 0
+#define DISABLE_ROMAN_FONTS_PATCH 1
+
+/* This patch adds better Input Method Editor (IME) support.
+ * https://st.suckless.org/patches/fix_ime/
+ */
+#define FIXIME_PATCH 1
+
+/* Hide the X cursor whenever a key is pressed and show it back when the mouse is moved in
+ * the terminal window.
+ * https://st.suckless.org/patches/hidecursor/
+ */
+#define HIDECURSOR_PATCH 1
+
+/* This patch allows you to spawn a new st terminal using Ctrl-Shift-Return. It will have the
+ * same CWD (current working directory) as the original st instance.
+ * https://st.suckless.org/patches/newterm/
+ */
+#define NEWTERM_PATCH 1
+
+/* Open contents of the clipboard in a user-defined browser.
+ * https://st.suckless.org/patches/open_copied_url/
+ */
+#define OPENCOPIED_PATCH 1
+
