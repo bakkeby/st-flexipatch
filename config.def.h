@@ -187,8 +187,13 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Home,        zoomreset,      {.f =  0} },
 	{ TERMMOD,              XK_C,           clipcopy,       {.i =  0} },
 	{ TERMMOD,              XK_V,           clippaste,      {.i =  0} },
+	#if CLIPBOARD_PATCH
+	{ TERMMOD,              XK_Y,           clippaste,      {.i =  0} },
+	{ ShiftMask,            XK_Insert,      clippaste,      {.i =  0} },
+	#else
 	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
+	#endif // CLIPBOARD_PATCH
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
 };
 

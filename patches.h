@@ -24,3 +24,9 @@
  * https://st.suckless.org/patches/bold-is-not-bright/
  */
 #define BOLD_IS_NOT_BRIGHT_PATCH 1
+
+/* By default st only sets PRIMARY on selection.
+ * This patch makes st set CLIPBOARD on selection.
+ * https://st.suckless.org/patches/clipboard/
+ */
+#define CLIPBOARD_PATCH 1
