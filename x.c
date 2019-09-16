@@ -20,6 +20,10 @@ static char *argv0;
 #include "st.h"
 #include "win.h"
 
+#if THEMED_CURSOR_PATCH
+#include <X11/Xcursor/Xcursor.h>
+#endif // THEMED_CURSOR_PATCH
+
 /* types used in config.h */
 typedef struct {
 	uint mod;
@@ -1233,13 +1237,21 @@ xinit(int cols, int rows)
 	/* white cursor, black outline */
 	#if HIDECURSOR_PATCH
 	xw.pointerisvisible = 1;
+	#if THEMED_CURSOR_PATCH
+	xw.vpointer = XcursorLibraryLoadCursor(xw.dpy, mouseshape);
+	#else
 	xw.vpointer = XCreateFontCursor(xw.dpy, mouseshape);
+	#endif // THEMED_CURSOR_PATCH
 	XDefineCursor(xw.dpy, xw.win, xw.vpointer);
+	#elif THEMED_CURSOR_PATCH
+	cursor = XcursorLibraryLoadCursor(xw.dpy, mouseshape);
+	XDefineCursor(xw.dpy, xw.win, cursor);
 	#else
 	cursor = XCreateFontCursor(xw.dpy, mouseshape);
 	XDefineCursor(xw.dpy, xw.win, cursor);
 	#endif // HIDECURSOR_PATCH
 
+	#if !THEMED_CURSOR_PATCH
 	if (XParseColor(xw.dpy, xw.cmap, colorname[mousefg], &xmousefg) == 0) {
 		xmousefg.red   = 0xffff;
 		xmousefg.green = 0xffff;
@@ -1251,13 +1263,16 @@ xinit(int cols, int rows)
 		xmousebg.green = 0x0000;
 		xmousebg.blue  = 0x0000;
 	}
+	#endif // THEMED_CURSOR_PATCH
 
 	#if HIDECURSOR_PATCH
+	#if !THEMED_CURSOR_PATCH
 	XRecolorCursor(xw.dpy, xw.vpointer, &xmousefg, &xmousebg);
+	#endif // THEMED_CURSOR_PATCH
 	blankpm = XCreateBitmapFromData(xw.dpy, xw.win, &(char){0}, 1, 1);
 	xw.bpointer = XCreatePixmapCursor(xw.dpy, blankpm, blankpm,
 					  &xmousefg, &xmousebg, 0, 0);
-	#else
+	#elif !THEMED_CURSOR_PATCH
 	XRecolorCursor(xw.dpy, cursor, &xmousefg, &xmousebg);
 	#endif // HIDECURSOR_PATCH
 
@@ -1520,9 +1535,20 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 
 	if (base.mode & ATTR_REVERSE) {
+		#if SPOILER_PATCH
+		if (bg == fg) {
+			bg = &dc.col[defaultfg];
+			fg = &dc.col[defaultbg];
+		} else {
+			temp = fg;
+			fg = bg;
+			bg = temp;
+		}
+		#else
 		temp = fg;
 		fg = bg;
 		bg = temp;
+		#endif // SPOILER_PATCH
 	}
 
 	if (base.mode & ATTR_BLINK && win.mode & MODE_BLINK)

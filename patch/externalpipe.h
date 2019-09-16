@@ -1,0 +1,1 @@
+void externalpipe(const Arg *);

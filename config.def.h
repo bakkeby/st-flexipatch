@@ -149,12 +149,19 @@ static unsigned int cursorshape = 2;
 static unsigned int cols = 80;
 static unsigned int rows = 24;
 
+#if THEMED_CURSOR_PATCH
+/*
+ * Default shape of the mouse cursor
+ */
+static char* mouseshape = "xterm";
+#else
 /*
  * Default colour and shape of the mouse cursor
  */
 static unsigned int mouseshape = XC_xterm;
 static unsigned int mousefg = 7;
 static unsigned int mousebg = 0;
+#endif // THEMED_CURSOR_PATCH
 
 /*
  * Color used to display font attributes when fontconfig selected a font which
@@ -232,6 +239,12 @@ MouseKey mkeys[] = {
 #define MODKEY Mod1Mask
 #define TERMMOD (ControlMask|ShiftMask)
 
+#if EXTERNALPIPE_PATCH // example command
+static char *openurlcmd[] = { "/bin/sh", "-c",
+	"xurls | dmenu -l 10 -w $WINDOWID | xargs -r open",
+	"externalpipe", NULL };
+#endif // EXTERNALPIPE_PATCH
+
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
@@ -264,6 +277,9 @@ static Shortcut shortcuts[] = {
 	#if NEWTERM_PATCH
 	{ TERMMOD,              XK_Return,      newterm,        {.i =  0} },
 	#endif // NEWTERM_PATCH
+	#if EXTERNALPIPE_PATCH
+	{ TERMMOD,              XK_U,           externalpipe,   { .v = openurlcmd } },
+	#endif // EXTERNALPIPE_PATCH
 };
 
 /*

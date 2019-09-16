@@ -4,6 +4,10 @@
 #include "copyurl.c"
 #endif
 
+#if EXTERNALPIPE_PATCH
+#include "externalpipe.c"
+#endif
+
 #if NEWTERM_PATCH
 #include "newterm.c"
 #endif

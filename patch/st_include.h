@@ -4,6 +4,10 @@
 #include "copyurl.h"
 #endif
 
+#if EXTERNALPIPE_PATCH
+#include "externalpipe.h"
+#endif
+
 #if FIXIME_PATCH
 void xximspot(int, int);
 #endif

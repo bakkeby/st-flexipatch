@@ -11,7 +11,7 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
 ### Changelog:
 
-2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl, disable-fonts, fixime, hidecursor, newterm, open-copied-url, vertcenter, scrollback and xresources patches
+2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl, disable-fonts, externalpipe, fixime, hidecursor, newterm, open-copied-url, vertcenter, scrollback, spoiler, themed cursor and xresources patches
 
 ### Patches included:
 
@@ -36,6 +36,9 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
    - [disable-fonts](https://st.suckless.org/patches/disable_bold_italic_fonts/)
       - this patch adds the option of disabling bold/italic/roman fonts globally
 
+   - [externalpipe](https://st.suckless.org/patches/externalpipe/)
+      - this patch allows for eading and writing st's screen through a pipe, e.g. to pass info to dmenu
+
    - [fixime](https://st.suckless.org/patches/fix_ime/)
       - adds better Input Method Editor (IME) support
 
@@ -51,6 +54,12 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
    - [scrollback](https://st.suckless.org/patches/scrollback/)
       - allows you scroll back through terminal output using keyboard shortcuts or mousewheel
+
+   - [spoiler](https://st.suckless.org/patches/spoiler/)
+      - use inverted defaultbg/fg for selection when bg/fg are the same
+
+   - [themed-cursor](https://st.suckless.org/patches/themed_cursor/)
+      - instead of a default X cursor, use the xterm cursor from your cursor theme
 
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h

@@ -58,6 +58,11 @@
  */
 #define DISABLE_ROMAN_FONTS_PATCH 1
 
+/* Reading and writing st's screen through a pipe, e.g. pass info to dmenu.
+ * https://st.suckless.org/patches/externalpipe/
+ */
+#define EXTERNALPIPE_PATCH 1
+
 /* This patch adds better Input Method Editor (IME) support.
  * https://st.suckless.org/patches/fix_ime/
  */
@@ -96,6 +101,16 @@
  * https://st.suckless.org/patches/scrollback/
  */
 #define SCROLLBACK_MOUSE_ALTSCREEN_PATCH 1
+
+/* Use inverted defaultbg/fg for selection when bg/fg are the same.
+ * https://st.suckless.org/patches/spoiler/
+ */
+#define SPOILER_PATCH 1
+
+/* Instead of a default X cursor, use the xterm cursor from your cursor theme.
+ * https://st.suckless.org/patches/themed_cursor/
+ */
+#define THEMED_CURSOR_PATCH 1
 
 /*
  * Vertically center lines in the space available if you have set a larger chscale in config.h
