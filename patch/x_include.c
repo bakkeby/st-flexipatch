@@ -7,3 +7,7 @@
 #if FIXIME_PATCH
 #include "fixime.c"
 #endif
+
+#if XRESOURCES_PATCH
+#include "xresources.c"
+#endif

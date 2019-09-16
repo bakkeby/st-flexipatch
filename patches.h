@@ -80,3 +80,8 @@
  */
 #define OPENCOPIED_PATCH 1
 
+/* This patch adds the ability to configure st via Xresources. At startup, st will read and
+ * apply the resources named in the resources[] array in config.h.
+ * https://st.suckless.org/patches/xresources/
+ */
+#define XRESOURCES_PATCH 1
