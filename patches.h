@@ -30,3 +30,30 @@
  * https://st.suckless.org/patches/clipboard/
  */
 #define CLIPBOARD_PATCH 1
+
+/* Select and copy the last URL displayed with Mod+l. Multiple invocations cycle through the
+ * available URLs.
+ * https://st.suckless.org/patches/copyurl/
+ */
+#define COPYURL_PATCH 1
+
+/* Select and copy the last URL displayed with Mod+l. Multiple invocations cycle through the
+ * available URLs. This variant also highlights the selected URLs.
+ * https://st.suckless.org/patches/copyurl/
+ */
+#define COPYURL_HIGHLIGHT_SELECTED_URLS_PATCH 1
+
+/* This patch adds the option of disabling bold fonts globally.
+ * https://st.suckless.org/patches/disable_bold_italic_fonts/
+ */
+#define DISABLE_BOLD_FONTS_PATCH 0
+
+/* This patch adds the option of disabling italic fonts globally.
+ * https://st.suckless.org/patches/disable_bold_italic_fonts/
+ */
+#define DISABLE_ITALIC_FONTS_PATCH 0
+
+/* This patch adds the option of disabling roman fonts globally.
+ * https://st.suckless.org/patches/disable_bold_italic_fonts/
+ */
+#define DISABLE_ROMAN_FONTS_PATCH 0

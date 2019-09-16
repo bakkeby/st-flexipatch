@@ -57,8 +57,12 @@ static void zoom(const Arg *);
 static void zoomabs(const Arg *);
 static void zoomreset(const Arg *);
 
+#include "patch/include.h"
+
 /* config.h for applying patches and the configuration. */
 #include "config.h"
+
+//#include "patch/include.c"
 
 /* XEMBED messages */
 #define XEMBED_FOCUS_IN  4
@@ -1005,17 +1009,23 @@ xloadfonts(char *fontstr, double fontsize)
 	win.ch = ceilf(dc.font.height * chscale);
 
 	FcPatternDel(pattern, FC_SLANT);
+	#if !DISABLE_ITALIC_FONTS_PATCH
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
+	#endif // DISABLE_ITALIC_FONTS_PATCH
 	if (xloadfont(&dc.ifont, pattern))
 		die("can't open font %s\n", fontstr);
 
 	FcPatternDel(pattern, FC_WEIGHT);
+	#if !DISABLE_BOLD_FONTS_PATCH
 	FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
+	#endif // DISABLE_BOLD_FONTS_PATCH
 	if (xloadfont(&dc.ibfont, pattern))
 		die("can't open font %s\n", fontstr);
 
 	FcPatternDel(pattern, FC_SLANT);
+	#if !DISABLE_ROMAN_FONTS_PATCH
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
+	#endif // DISABLE_ROMAN_FONTS_PATCH
 	if (xloadfont(&dc.bfont, pattern))
 		die("can't open font %s\n", fontstr);
 

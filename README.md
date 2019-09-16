@@ -11,7 +11,7 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
 ### Changelog:
 
-2019-09-16 - Added alpha, anysize and bold-is-not-bright patches
+2019-09-16 - Added alpha, anysize, bold-is-not-bright, clipboard, copyurl and disable-fonts patches
 
 ### Patches included:
 
@@ -24,3 +24,14 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
    - [bold-is-not-bright](https://st.suckless.org/patches/bold-is-not-bright/)
       - by default bold text is rendered with a bold font in the bright variant of the current color
       - this patch makes bold text rendered simply as bold, leaving the color unaffected
+
+   - [clipboard](https://st.suckless.org/patches/clipboard/)
+      - by default st only sets PRIMARY on selection
+      - this patch makes st set CLIPBOARD on selection
+
+   - [copyurl](https://st.suckless.org/patches/copyurl/)
+      - this patch allows you to select and copy the last URL displayed with Mod+l
+      - multiple invocations cycle through the available URLs
+
+   - [disable-fonts](https://st.suckless.org/patches/disable_bold_italic_fonts/)
+      - this patch adds the option of disabling bold/italic/roman fonts globally

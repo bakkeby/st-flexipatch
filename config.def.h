@@ -195,6 +195,9 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	#endif // CLIPBOARD_PATCH
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
+	#if COPYURL_PATCH || COPYURL_HIGHLIGHT_SELECTED_URLS_PATCH
+	{ MODKEY,               XK_l,           copyurl,        {.i =  0} },
+	#endif // COPYURL_PATCH
 };
 
 /*
