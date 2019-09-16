@@ -18,3 +18,9 @@
  * https://st.suckless.org/patches/anysize/
  */
 #define ANYSIZE_PATCH 1
+
+/* By default bold text is rendered with a bold font in the bright variant of the current color.
+ * This patch makes bold text rendered simply as bold, leaving the color unaffected.
+ * https://st.suckless.org/patches/bold-is-not-bright/
+ */
+#define BOLD_IS_NOT_BRIGHT_PATCH 1

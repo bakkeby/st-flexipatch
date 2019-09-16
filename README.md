@@ -11,7 +11,7 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
 ### Changelog:
 
-2019-09-16 - Added alpha and anysize patches
+2019-09-16 - Added alpha, anysize and bold-is-not-bright patches
 
 ### Patches included:
 
@@ -20,3 +20,7 @@ Refer to [https://dwm.suckless.org/](https://st.suckless.org/) for details on th
 
    - [anysize](https://st.suckless.org/patches/anysize/)
       - allows st to reize to any pixel size rather than snapping to character width / height
+
+   - [bold-is-not-bright](https://st.suckless.org/patches/bold-is-not-bright/)
+      - by default bold text is rendered with a bold font in the bright variant of the current color
+      - this patch makes bold text rendered simply as bold, leaving the color unaffected
