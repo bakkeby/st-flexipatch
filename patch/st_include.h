@@ -12,6 +12,18 @@
 void xximspot(int, int);
 #endif
 
+#if ISO14755_PATCH
+#include "iso14755.h"
+#endif
+
+#if KEYBOARDSELECT_PATCH
+#include "keyboardselect.h"
+#endif
+
+#if RIGHTCLICKTOPLUMB_PATCH
+#include "rightclicktoplumb_st.h"
+#endif
+
 #if NEWTERM_PATCH
 #include "newterm.h"
 #endif

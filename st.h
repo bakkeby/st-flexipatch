@@ -34,6 +34,9 @@ enum glyph_attribute {
 	ATTR_WRAP       = 1 << 8,
 	ATTR_WIDE       = 1 << 9,
 	ATTR_WDUMMY     = 1 << 10,
+	#if BOXDRAW_PATCH
+	ATTR_BOXDRAW    = 1 << 11,
+	#endif // BOXDRAW_PATCH
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
 
@@ -90,6 +93,9 @@ int tattrset(int);
 void tnew(int, int);
 void tresize(int, int);
 void tsetdirtattr(int);
+#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+void tfulldirt();
+#endif // VISUALBELL_2_PATCH
 void ttyhangup(void);
 int ttynew(char *, char *, char *, char **);
 size_t ttyread(void);
@@ -110,6 +116,18 @@ size_t utf8encode(Rune, char *);
 void *xmalloc(size_t);
 void *xrealloc(void *, size_t);
 char *xstrdup(char *);
+#if BOXDRAW_PATCH
+int isboxdraw(Rune);
+ushort boxdrawindex(const Glyph *);
+#ifdef XFT_VERSION
+/* only exposed to x.c, otherwise we'll need Xft.h for the types */
+void boxdraw_xinit(Display *, Colormap, XftDraw *, Visual *);
+void drawboxes(int, int, int, int, XftColor *, XftColor *, const XftGlyphFontSpec *, int);
+#endif // XFT_VERSION
+#endif // BOXDRAW_PATCH
+#if RELATIVEBORDER_PATCH
+int borderpx;
+#endif // RELATIVEBORDER_PATCH
 
 /* config.h globals */
 extern char *utmp;
@@ -121,6 +139,9 @@ extern char *termname;
 extern unsigned int tabspaces;
 extern unsigned int defaultfg;
 extern unsigned int defaultbg;
+#if BOXDRAW_PATCH
+extern const int boxdraw, boxdraw_bold, boxdraw_braille;
+#endif // BOXDRAW_PATCH
 #if ALPHA_PATCH
 extern float alpha;
 #endif // ALPHA_PATCH

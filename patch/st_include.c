@@ -8,6 +8,18 @@
 #include "externalpipe.c"
 #endif
 
+#if ISO14755_PATCH
+#include "iso14755.c"
+#endif
+
+#if KEYBOARDSELECT_PATCH
+#include "keyboardselect.c"
+#endif
+
+#if RIGHTCLICKTOPLUMB_PATCH
+#include "rightclicktoplumb_st.c"
+#endif
+
 #if NEWTERM_PATCH
 #include "newterm.c"
 #endif

@@ -20,6 +20,11 @@
 #include "st.h"
 #include "win.h"
 
+#if KEYBOARDSELECT_PATCH
+#include <X11/keysym.h>
+#include <X11/X.h>
+#endif // KEYBOARDSELECT_PATCH
+
 #if   defined(__linux)
  #include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -206,7 +211,9 @@ static void tsetscroll(int, int);
 static void tswapscreen(void);
 static void tsetmode(int, int, int *, int);
 static int twrite(const char *, int, int);
+#if !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
 static void tfulldirt(void);
+#endif // VISUALBELL_2_PATCH
 static void tcontrolcode(uchar );
 static void tdectest(char );
 static void tdefutf8(char);
@@ -867,7 +874,11 @@ ttynew(char *line, char *cmd, char *out, char **args)
 		break;
 	default:
 #ifdef __OpenBSD__
+		#if RIGHTCLICKTOPLUMB_PATCH
+		if (pledge("stdio rpath tty proc ps exec", NULL) == -1)
+		#else
 		if (pledge("stdio rpath tty proc", NULL) == -1)
+		#endif // RIGHTCLICKTOPLUMB_PATCH
 			die("pledge\n");
 #endif
 		close(s);
@@ -1323,6 +1334,11 @@ tsetchar(Rune u, Glyph *attr, int x, int y)
 	term.dirty[y] = 1;
 	term.line[y][x] = *attr;
 	term.line[y][x].u = u;
+
+	#if BOXDRAW_PATCH
+	if (isboxdraw(u))
+		term.line[y][x].mode |= ATTR_BOXDRAW;
+	#endif // BOXDRAW_PATCH
 }
 
 void
@@ -2600,6 +2616,11 @@ tresize(int col, int row)
 	int mincol = MIN(col, term.col);
 	int *bp;
 	TCursor c;
+
+	#if KEYBOARDSELECT_PATCH
+	if ( row < term.row  || col < term.col )
+		toggle_winmode(trt_kbdselect(XK_Escape, NULL, 0));
+	#endif // KEYBOARDSELECT_PATCH
 
 	if (col < 1 || row < 1) {
 		fprintf(stderr,

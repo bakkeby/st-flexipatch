@@ -95,6 +95,10 @@ typedef struct {
 	#endif // VERTCENTER_PATCH
 	int mode; /* window state/mode flags */
 	int cursor; /* cursor style */
+	#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+	int vbellset; /* 1 during visual bell, 0 otherwise */
+	struct timespec lastvbell;
+	#endif // VISUALBELL_2_PATCH
 } TermWindow;
 
 typedef struct {
@@ -265,6 +269,9 @@ static char *opt_name  = NULL;
 static char *opt_title = NULL;
 
 static int oldbutton = 3; /* button event on startup: 3 = release */
+#if VISUALBELL_1_PATCH && !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
+static int bellon = 0;    /* visual bell status */
+#endif // VISUALBELL_1_PATCH
 
 #include "patch/x_include.c"
 
@@ -707,6 +714,10 @@ brelease(XEvent *e)
 		#endif // CLIPBOARD_PATCH
 	else if (e->xbutton.button == Button1)
 		mousesel(e, 1);
+	#if RIGHTCLICKTOPLUMB_PATCH
+	else if (e->xbutton.button == Button3)
+		plumb(xsel.primary);
+	#endif // RIGHTCLICKTOPLUMB_PATCH
 }
 
 void
@@ -1056,6 +1067,9 @@ xloadfonts(char *fontstr, double fontsize)
 	win.cyo = ceilf(dc.font.height * (chscale - 1) / 2);
 	#endif // VERTCENTER_PATCH
 
+	#if RELATIVEBORDER_PATCH
+	borderpx = (int) ceilf(((float)borderperc / 100) * win.cw);
+	#endif // RELATIVEBORDER_PATCH
 	FcPatternDel(pattern, FC_SLANT);
 	#if !DISABLE_ITALIC_FONTS_PATCH
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
@@ -1298,6 +1312,10 @@ xinit(int cols, int rows)
 	xsel.xtarget = XInternAtom(xw.dpy, "UTF8_STRING", 0);
 	if (xsel.xtarget == None)
 		xsel.xtarget = XA_STRING;
+
+	#if BOXDRAW_PATCH
+	boxdraw_xinit(xw.dpy, xw.cmap, xw.draw, xw.vis);
+	#endif // BOXDRAW_PATCH
 }
 
 int
@@ -1357,8 +1375,18 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 			#endif // VERTCENTER_PATCH
 		}
 
+		#if BOXDRAW_PATCH
+		if (mode & ATTR_BOXDRAW) {
+			/* minor shoehorning: boxdraw uses only this ushort */
+			glyphidx = boxdrawindex(&glyphs[i]);
+		} else {
+			/* Lookup character index with default font. */
+			glyphidx = XftCharIndex(xw.dpy, font->match, rune);
+		}
+		#else
 		/* Lookup character index with default font. */
 		glyphidx = XftCharIndex(xw.dpy, font->match, rune);
+		#endif // BOXDRAW_PATCH
 		if (glyphidx) {
 			specs[numspecs].font = font->match;
 			specs[numspecs].glyph = glyphidx;
@@ -1598,8 +1626,17 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	r.width = width;
 	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
 
+	#if BOXDRAW_PATCH
+	if (base.mode & ATTR_BOXDRAW) {
+		drawboxes(winx, winy, width / len, win.ch, fg, bg, specs, len);
+	} else {
+		/* Render the glyphs. */
+		XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
+	}
+	#else
 	/* Render the glyphs. */
 	XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
+	#endif // BOXDRAW_PATCH
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
@@ -1652,7 +1689,11 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	/*
 	 * Select the right color for the right mode.
 	 */
+	#if BOXDRAW_PATCH
+	g.mode &= ATTR_BOLD|ATTR_ITALIC|ATTR_UNDERLINE|ATTR_STRUCK|ATTR_WIDE|ATTR_BOXDRAW;
+	#else
 	g.mode &= ATTR_BOLD|ATTR_ITALIC|ATTR_UNDERLINE|ATTR_STRUCK|ATTR_WIDE;
+	#endif // BOXDRAW_PATCH
 
 	if (IS_SET(MODE_REVERSE)) {
 		g.mode |= ATTR_REVERSE;
@@ -1797,6 +1838,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 			continue;
 		if (selected(x, y1))
 			new.mode ^= ATTR_REVERSE;
+		#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+		if (win.vbellset && isvbellcell(x, y1))
+			new.mode ^= ATTR_REVERSE;
+		#endif // VISUALBELL_2_PATCH
 		if (i > 0 && ATTRCMP(base, new)) {
 			xdrawglyphfontspecs(specs, base, i, ox, y1);
 			specs += i;
@@ -1816,6 +1861,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 void
 xfinishdraw(void)
 {
+	#if VISUALBELL_3_PATCH
+	if (vbellmode == 3 && win.vbellset)
+		xdrawvbell();
+	#endif // VISUALBELL_3_PATCH
 	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w,
 			win.h, 0, 0);
 	XSetForeground(xw.dpy, dc.gc,
@@ -1890,6 +1939,20 @@ xbell(void)
 		xseturgency(1);
 	if (bellvolume)
 		XkbBell(xw.dpy, xw.win, bellvolume, (Atom)NULL);
+
+	#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+	if (vbelltimeout)
+		vbellbegin();
+	#elif VISUALBELL_1_PATCH
+	/* visual bell*/
+	if (!bellon) {
+		bellon = 1;
+		MODBIT(win.mode, !IS_SET(MODE_REVERSE), MODE_REVERSE);
+		redraw();
+		XFlush(xw.dpy);
+		MODBIT(win.mode, !IS_SET(MODE_REVERSE), MODE_REVERSE);
+	}
+	#endif // VISUALBELL_1_PATCH / VISUALBELL_2_PATCH
 }
 
 void
@@ -1980,6 +2043,15 @@ kpress(XEvent *ev)
 		return;
 
 	len = XmbLookupString(xw.xic, e, buf, sizeof buf, &ksym, &status);
+	#if KEYBOARDSELECT_PATCH
+	if ( IS_SET(MODE_KBDSELECT) ) {
+		if ( match(XK_NO_MOD, e->state) ||
+			(XK_Shift_L | XK_Shift_R) & e->state )
+			win.mode ^= trt_kbdselect(ksym, buf, len);
+		return;
+	}
+	#endif // KEYBOARDSELECT_PATCH
+
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
 		if (ksym == bp->keysym && match(bp->mod, e->state)) {
@@ -2052,6 +2124,9 @@ run(void)
 	int ttyfd;
 	struct timespec drawtimeout, *tv = NULL, now, last, lastblink;
 	long deltatime;
+	#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+	long to_ms, remain;
+	#endif // VISUALBELL_2_PATCH
 
 	/* Waiting for window mapping */
 	do {
@@ -2103,12 +2178,39 @@ run(void)
 		tv = &drawtimeout;
 
 		dodraw = 0;
+		#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+		to_ms = -1; /* timeout in ms, indefinite if negative */
+		if (blinkset) {
+			remain = blinktimeout - TIMEDIFF(now, lastblink);
+			if (remain <= 0) {
+				dodraw = 1;
+				remain = 1; /* draw, wait 1ms, and re-calc */
+				tsetdirtattr(ATTR_BLINK);
+				win.mode ^= MODE_BLINK;
+				lastblink = now;
+			}
+			to_ms = remain;
+		}
+		if (win.vbellset) {
+			remain = vbelltimeout - TIMEDIFF(now, win.lastvbell);
+			if (remain <= 0) {
+				dodraw = 1;
+				remain = -1; /* draw (clear), and that's it */
+				tfulldirt();
+				win.vbellset = 0;
+			}
+			if (remain >= 0 && (to_ms < 0 || remain < to_ms))
+				to_ms = remain;
+		}
+
+		#else
 		if (blinktimeout && TIMEDIFF(now, lastblink) > blinktimeout) {
 			tsetdirtattr(ATTR_BLINK);
 			win.mode ^= MODE_BLINK;
 			lastblink = now;
 			dodraw = 1;
 		}
+		#endif // VISUALBELL_2_PATCH
 		deltatime = TIMEDIFF(now, last);
 		if (deltatime > 1000 / (xev ? xfps : actionfps)) {
 			dodraw = 1;
@@ -2124,12 +2226,30 @@ run(void)
 					(handler[ev.type])(&ev);
 			}
 
+			#if VISUALBELL_1_PATCH && !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
+			if (bellon) {
+				bellon = 0;
+				redraw();
+			}
+			else draw();
+ 			XFlush(xw.dpy);
+			#else
 			draw();
+			#endif // VISUALBELL_1_PATCH
 			XFlush(xw.dpy);
 
 			if (xev && !FD_ISSET(xfd, &rfd))
 				xev--;
 			if (!FD_ISSET(ttyfd, &rfd) && !FD_ISSET(xfd, &rfd)) {
+				#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+				if (to_ms >= 0) {
+					static const long k = 1E3, m = 1E6;
+					drawtimeout.tv_sec = to_ms / k;
+					drawtimeout.tv_nsec = (to_ms % k) * m;
+				} else {
+					tv = NULL;
+				}
+				#else
 				if (blinkset) {
 					if (TIMEDIFF(now, lastblink) \
 							> blinktimeout) {
@@ -2146,6 +2266,7 @@ run(void)
 				} else {
 					tv = NULL;
 				}
+				#endif // VISUALBELL_2_PATCH
 			}
 		}
 	}

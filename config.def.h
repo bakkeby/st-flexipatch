@@ -6,7 +6,13 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
+#if RELATIVEBORDER_PATCH
+/* borderperc: percentage of cell width to use as a border
+ *             0 = no border, 100 = border width is same as cell width */
+int borderperc = 20;
+#else
 static int borderpx = 2;
+#endif // RELATIVEBORDER_PATCH
 
 /*
  * What program is execed by st depends of these precedence rules:
@@ -56,11 +62,52 @@ static unsigned int blinktimeout = 800;
  */
 static unsigned int cursorthickness = 2;
 
+#if BOXDRAW_PATCH
+/*
+ * 1: render most of the lines/blocks characters without using the font for
+ *    perfect alignment between cells (U2500 - U259F except dashes/diagonals).
+ *    Bold affects lines thickness if boxdraw_bold is not 0. Italic is ignored.
+ * 0: disable (render all U25XX glyphs normally from the font).
+ */
+const int boxdraw = 0;
+const int boxdraw_bold = 0;
+
+/* braille (U28XX):  1: render as adjacent "pixels",  0: use font */
+const int boxdraw_braille = 0;
+#endif // BOXDRAW_PATCH
+
 /*
  * bell volume. It must be a value between -100 and 100. Use 0 for disabling
  * it
  */
 static int bellvolume = 0;
+
+#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
+/*
+ * visual-bell timeout (set to 0 to disable visual-bell).
+ */
+static int vbelltimeout = 0;
+/*
+ * visual bell mode when enabled:
+ *   1: Inverse whole screen
+ *   2: Inverse outer (border) cells
+ *   3: Draw a filled circle (VISUALBELL_3_PATCH only)
+ */
+static int vbellmode = 1;
+#if VISUALBELL_3_PATCH
+/*
+ * for vbellmode == 3 (circle) the following parameters apply:
+ * - base and outline colors (colorname index - see below).
+ * - radius: relative to window width, or if negative: relative to cell-width.
+ * - position: relative to window width/height (0 and 1 are at the edges).
+ */
+static int vbellcolor = 3;
+static int vbellcolor_outline = 1;
+static float vbellradius = 0.03;
+static float vbellx = 0.5;
+static float vbelly = 0.5;
+#endif // VISUALBELL_3_PATCH
+#endif // VISUALBELL_2_PATCH
 
 /* default TERM value */
 char *termname = "st-256color";
@@ -246,40 +293,46 @@ static char *openurlcmd[] = { "/bin/sh", "-c",
 #endif // EXTERNALPIPE_PATCH
 
 static Shortcut shortcuts[] = {
-	/* mask                 keysym          function        argument */
-	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
-	{ ControlMask,          XK_Print,       toggleprinter,  {.i =  0} },
-	{ ShiftMask,            XK_Print,       printscreen,    {.i =  0} },
-	{ XK_ANY_MOD,           XK_Print,       printsel,       {.i =  0} },
-	{ TERMMOD,              XK_Prior,       zoom,           {.f = +1} },
-	{ TERMMOD,              XK_Next,        zoom,           {.f = -1} },
-	{ TERMMOD,              XK_Home,        zoomreset,      {.f =  0} },
-	{ TERMMOD,              XK_C,           clipcopy,       {.i =  0} },
-	{ TERMMOD,              XK_V,           clippaste,      {.i =  0} },
+	/* mask                 keysym          function         argument */
+	{ XK_ANY_MOD,           XK_Break,       sendbreak,       {.i =  0} },
+	{ ControlMask,          XK_Print,       toggleprinter,   {.i =  0} },
+	{ ShiftMask,            XK_Print,       printscreen,     {.i =  0} },
+	{ XK_ANY_MOD,           XK_Print,       printsel,        {.i =  0} },
+	{ TERMMOD,              XK_Prior,       zoom,            {.f = +1} },
+	{ TERMMOD,              XK_Next,        zoom,            {.f = -1} },
+	{ TERMMOD,              XK_Home,        zoomreset,       {.f =  0} },
+	{ TERMMOD,              XK_C,           clipcopy,        {.i =  0} },
+	{ TERMMOD,              XK_V,           clippaste,       {.i =  0} },
 	#if SCROLLBACK_PATCH
-	{ ShiftMask,            XK_Page_Up,     kscrollup,      {.i = -1} },
-	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
+	{ ShiftMask,            XK_Page_Up,     kscrollup,       {.i = -1} },
+	{ ShiftMask,            XK_Page_Down,   kscrolldown,     {.i = -1} },
 	#endif // SCROLLBACK_PATCH
 	#if CLIPBOARD_PATCH
-	{ TERMMOD,              XK_Y,           clippaste,      {.i =  0} },
-	{ ShiftMask,            XK_Insert,      clippaste,      {.i =  0} },
+	{ TERMMOD,              XK_Y,           clippaste,       {.i =  0} },
+	{ ShiftMask,            XK_Insert,      clippaste,       {.i =  0} },
 	#else
-	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
-	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
+	{ TERMMOD,              XK_Y,           selpaste,        {.i =  0} },
+	{ ShiftMask,            XK_Insert,      selpaste,        {.i =  0} },
 	#endif // CLIPBOARD_PATCH
-	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
+	{ TERMMOD,              XK_Num_Lock,    numlock,         {.i =  0} },
 	#if COPYURL_PATCH || COPYURL_HIGHLIGHT_SELECTED_URLS_PATCH
-	{ MODKEY,               XK_l,           copyurl,        {.i =  0} },
+	{ MODKEY,               XK_l,           copyurl,         {.i =  0} },
 	#endif // COPYURL_PATCH
 	#if OPENCOPIED_PATCH
-	{ MODKEY,               XK_o,           opencopied,     {.v = "xdg-open"} },
+	{ MODKEY,               XK_o,           opencopied,      {.v = "xdg-open"} },
 	#endif // OPENCOPIED_PATCH
 	#if NEWTERM_PATCH
-	{ TERMMOD,              XK_Return,      newterm,        {.i =  0} },
+	{ TERMMOD,              XK_Return,      newterm,         {.i =  0} },
 	#endif // NEWTERM_PATCH
 	#if EXTERNALPIPE_PATCH
-	{ TERMMOD,              XK_U,           externalpipe,   { .v = openurlcmd } },
+	{ TERMMOD,              XK_U,           externalpipe,    { .v = openurlcmd } },
 	#endif // EXTERNALPIPE_PATCH
+	#if KEYBOARDSELECT_PATCH
+	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
+	#endif // KEYBOARDSELECT_PATCH
+	#if ISO14755_PATCH
+	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },
+	#endif // ISO14755_PATCH
 };
 
 /*
@@ -307,11 +360,13 @@ static Shortcut shortcuts[] = {
  * position for a key.
  */
 
+#if !FIXKEYBOARDINPUT_PATCH
 /*
  * If you want keys other than the X11 function keys (0xFD00 - 0xFFFF)
  * to be mapped below, add them to this array.
  */
 static KeySym mappedkeys[] = { -1 };
+#endif // FIXKEYBOARDINPUT_PATCH
 
 /*
  * State bits to ignore when matching key or button events.  By default,
@@ -326,6 +381,7 @@ static uint ignoremod = Mod2Mask|XK_SWITCH_MOD;
  */
 static uint forceselmod = ShiftMask;
 
+#if !FIXKEYBOARDINPUT_PATCH
 /*
  * This is the huge key array which defines all compatibility to the Linux
  * world. Please decide about changes wisely.
@@ -542,6 +598,7 @@ static Key key[] = {
 	{ XK_F34,           XK_NO_MOD,      "\033[21;5~",    0,    0},
 	{ XK_F35,           XK_NO_MOD,      "\033[23;5~",    0,    0},
 };
+#endif // FIXKEYBOARDINPUT_PATCH
 
 /*
  * Selection types' masks.
@@ -562,3 +619,11 @@ static char ascii_printable[] =
 	" !\"#$%&'()*+,-./0123456789:;<=>?"
 	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	"`abcdefghijklmnopqrstuvwxyz{|}~";
+
+#if RIGHTCLICKTOPLUMB_PATCH
+/*
+ * plumb_cmd is run on mouse button 3 click, with argument set to
+ * current selection and with cwd set to the cwd of the active shell
+ */
+static char *plumb_cmd = "plumb";
+#endif // RIGHTCLICKTOPLUMB_PATCH
