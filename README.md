@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2020-01-07 - Added st embedder patch
+
 2019-10-16 - Introduced [flexipatch-finalizer](https://github.com/bakkeby/flexipatch-finalizer)
 
 2019-09-17 - Added relativeborder, fix-keyboard-input, iso14755, visualbell, right-click-to-plumb, boxdraw and keyboard-select patches
@@ -80,6 +82,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [scrollback](https://st.suckless.org/patches/scrollback/)
       - allows you scroll back through terminal output using keyboard shortcuts or mousewheel
+
+   - st-embedder
+      - this patch allows clients to embed into the st window and can be useful if you tend to start X applications from the terminal
+      - the behavior is similar to Plan 9 where applications can take over windows
 
    - [spoiler](https://st.suckless.org/patches/spoiler/)
       - use inverted defaultbg/fg for selection when bg/fg are the same

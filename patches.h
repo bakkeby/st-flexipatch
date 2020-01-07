@@ -136,6 +136,16 @@
  */
 #define SCROLLBACK_MOUSE_ALTSCREEN_PATCH 0
 
+/* This patch allows clients to embed into the st window and is useful if you tend to
+ * start X applications from the terminal. For example:
+ *
+ *   $ surf -e $WINDOWID
+ *
+ * The behavior is similar to Plan 9 where applications can take over windows.
+ * URL TBC
+ */
+#define ST_EMBEDDER_PATCH 0
+
 /* Use inverted defaultbg/fg for selection when bg/fg are the same.
  * https://st.suckless.org/patches/spoiler/
  */

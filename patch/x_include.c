@@ -17,6 +17,9 @@
 #if RIGHTCLICKTOPLUMB_PATCH
 #include "rightclicktoplumb_x.c"
 #endif
+#if ST_EMBEDDER_PATCH
+#include "st_embedder_x.c"
+#endif
 #if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
 #include "visualbell.c"
 #endif
