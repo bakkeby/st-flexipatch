@@ -8,6 +8,9 @@
 #if FIXIME_PATCH
 #include "fixime_x.h"
 #endif
+#if FONT2_PATCH
+#include "font2.h"
+#endif
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.h"
 #endif

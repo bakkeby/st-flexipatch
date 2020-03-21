@@ -79,6 +79,14 @@
  */
 #define FIXKEYBOARDINPUT_PATCH 0
 
+/* This patch allows you to add spare font besides the default. Some glyphs can be not present in
+ * the default font. For this glyphs st uses font-config and try to find them in font cache first.
+ * This patch append fonts defined in font2 variable to the beginning of the font cache.
+ * So they will be used first for glyphs that are absent in the default font.
+ * https://st.suckless.org/patches/font2/
+ */
+#define FONT2_PATCH 0
+
 /* Hide the X cursor whenever a key is pressed and show it back when the mouse is moved in
  * the terminal window.
  * https://st.suckless.org/patches/hidecursor/

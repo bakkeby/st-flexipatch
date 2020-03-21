@@ -11,6 +11,9 @@
 #if FIXKEYBOARDINPUT_PATCH
 #include "fixkeyboardinput.c"
 #endif
+#if FONT2_PATCH
+#include "font2.c"
+#endif
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.c"
 #endif
