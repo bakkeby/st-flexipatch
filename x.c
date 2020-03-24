@@ -111,8 +111,10 @@ typedef struct {
 	Drawable buf;
 	GlyphFontSpec *specbuf; /* font spec buffer used for rendering */
 	Atom xembed, wmdeletewin, netwmname, netwmpid;
-	XIM xim;
-	XIC xic;
+	struct {
+		XIM xim;
+		XIC xic;
+	} ime;
 	Draw draw;
 	Visual *vis;
 	XSetWindowAttributes attrs;
@@ -973,22 +975,19 @@ ximopen(Display *dpy)
 {
 	XIMCallback destroy = { .client_data = NULL, .callback = ximdestroy };
 
-	if ((xw.xim = XOpenIM(xw.dpy, NULL, NULL, NULL)) == NULL) {
+	if ((xw.ime.xim = XOpenIM(xw.dpy, NULL, NULL, NULL)) == NULL) {
 		XSetLocaleModifiers("@im=local");
-		if ((xw.xim =  XOpenIM(xw.dpy, NULL, NULL, NULL)) == NULL) {
+		if ((xw.ime.xim = XOpenIM(xw.dpy, NULL, NULL, NULL)) == NULL) {
 			XSetLocaleModifiers("@im=");
-			if ((xw.xim = XOpenIM(xw.dpy,
-					NULL, NULL, NULL)) == NULL) {
-				die("XOpenIM failed. Could not open input"
-					" device.\n");
-			}
+			if ((xw.ime.xim = XOpenIM(xw.dpy, NULL, NULL, NULL)) == NULL)
+				die("XOpenIM failed. Could not open input device.\n");
 		}
 	}
-	if (XSetIMValues(xw.xim, XNDestroyCallback, &destroy, NULL) != NULL)
+	if (XSetIMValues(xw.ime.xim, XNDestroyCallback, &destroy, NULL) != NULL)
 		die("XSetIMValues failed. Could not set input method value.\n");
-	xw.xic = XCreateIC(xw.xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-				XNClientWindow, xw.win, XNFocusWindow, xw.win, NULL);
-	if (xw.xic == NULL)
+	xw.ime.xic = XCreateIC(xw.ime.xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+	                   XNClientWindow, xw.win, XNFocusWindow, xw.win, NULL);
+	if (xw.ime.xic == NULL)
 		die("XCreateIC failed. Could not obtain input method.\n");
 }
 
@@ -1003,7 +1002,7 @@ ximinstantiate(Display *dpy, XPointer client, XPointer call)
 void
 ximdestroy(XIM xim, XPointer client, XPointer call)
 {
-	xw.xim = NULL;
+	xw.ime.xim = NULL;
 	XRegisterIMInstantiateCallback(xw.dpy, NULL, NULL, NULL,
 					ximinstantiate, NULL);
 }
@@ -1931,7 +1930,7 @@ xximspot(int x, int y)
 	XPoint spot = { borderpx + x * win.cw, borderpx + (y + 1) * win.ch };
 	XVaNestedList attr = XVaCreateNestedList(0, XNSpotLocation, &spot, NULL);
 
-	XSetICValues(xw.xic, XNPreeditAttributes, attr, NULL);
+	XSetICValues(xw.ime.xic, XNPreeditAttributes, attr, NULL);
 	XFree(attr);
 }
 
@@ -2043,13 +2042,13 @@ focus(XEvent *ev)
 		return;
 
 	if (ev->type == FocusIn) {
-		XSetICFocus(xw.xic);
+		XSetICFocus(xw.ime.xic);
 		win.mode |= MODE_FOCUSED;
 		xseturgency(0);
 		if (IS_SET(MODE_FOCUS))
 			ttywrite("\033[I", 3, 0);
 	} else {
-		XUnsetICFocus(xw.xic);
+		XUnsetICFocus(xw.ime.xic);
 		win.mode &= ~MODE_FOCUSED;
 		if (IS_SET(MODE_FOCUS))
 			ttywrite("\033[O", 3, 0);
@@ -2121,7 +2120,7 @@ kpress(XEvent *ev)
 	if (IS_SET(MODE_KBDLOCK))
 		return;
 
-	len = XmbLookupString(xw.xic, e, buf, sizeof buf, &ksym, &status);
+	len = XmbLookupString(xw.ime.xic, e, buf, sizeof buf, &ksym, &status);
 	#if KEYBOARDSELECT_PATCH
 	if ( IS_SET(MODE_KBDSELECT) ) {
 		if ( match(XK_NO_MOD, e->state) ||
