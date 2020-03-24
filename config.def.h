@@ -280,22 +280,32 @@ static MouseShortcut mshortcuts[] = {
 	#else
 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
 	#endif // CLIPBOARD_PATCH
+	#if SCROLLBACK_MOUSE_PATCH
+	{ ShiftMask,            Button4, kscrollup,      {.i = 1} },
+	{ ShiftMask,            Button5, kscrolldown,    {.i = 1} },
+	#endif // SCROLLBACK_MOUSE_PATCH
+	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1} },
+	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1} },
+	#else
+	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
+	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
+	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+
+};
+
+#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+static MouseShortcut maltshortcuts[] = {
+	/* mask                 button   function        argument       release */
+	#if CLIPBOARD_PATCH
+	{ XK_ANY_MOD,           Button2, clippaste,      {.i = 0},      1 },
+	#else
+	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
+	#endif // CLIPBOARD_PATCH
 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
 	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
 };
-
-#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-MouseKey mkeys[] = {
-	/* button               mask            function        argument */
-	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	{ Button4,              XK_NO_MOD,      kscrollup,      {.i =  1} },
-	{ Button5,              XK_NO_MOD,      kscrolldown,    {.i =  1} },
-	#else
-	{ Button4,              ShiftMask,      kscrollup,      {.i =  1} },
-	{ Button5,              ShiftMask,      kscrolldown,    {.i =  1} },
-	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-};
-#endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 
 /* Internal keyboard shortcuts. */
 #define MODKEY Mod1Mask

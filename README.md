@@ -1,4 +1,4 @@
-Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.2 (ed68fe7dce2b21b4e0e595b99d47790e76812cb7) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
+Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.2 (51e19ea11dd42eefed1ca136ee3f6be975f618b1, 2020-02-18) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
 
 For example to include the `alpha` patch then you would only need to flip this setting from 0 to 1 in [patches.h](https://github.com/bakkeby/st-flexipatch/blob/master/patches.h):
 ```c
@@ -14,6 +14,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 ---
 
 ### Changelog:
+
+2020-03-24 - Upgraded to latest (master) of st (commit 51e19ea11dd42eefed1ca136ee3f6be975f618b1 at the time of writing). Custom changes to make the altscreen mouse scollback patch working.
 
 2020-03-21 - Added font2 patch
 

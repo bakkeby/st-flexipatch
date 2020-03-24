@@ -399,6 +399,19 @@ mouseaction(XEvent *e, uint release)
 {
 	MouseShortcut *ms;
 
+	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	if (tisaltscr())
+		for (ms = maltshortcuts; ms < maltshortcuts + LEN(maltshortcuts); ms++) {
+			if (ms->release == release &&
+					ms->button == e->xbutton.button &&
+					(match(ms->mod, e->xbutton.state) ||  /* exact or forced */
+					match(ms->mod, e->xbutton.state & ~forcemousemod))) {
+				ms->func(&(ms->arg));
+				return 1;
+			}
+		}
+	else
+	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
 		if (ms->release == release &&
 				ms->button == e->xbutton.button &&
@@ -496,9 +509,6 @@ void
 bpress(XEvent *e)
 {
 	struct timespec now;
-	#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	MouseKey *mk;
-	#endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	int snap;
 
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forcemousemod)) {
@@ -506,21 +516,8 @@ bpress(XEvent *e)
 		return;
 	}
 
-	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	if (tisaltscr())
-	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	if (mouseaction(e, 0))
 		return;
-
-	#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	for (mk = mkeys; mk < mkeys + LEN(mkeys); mk++) {
-		if (e->xbutton.button == mk->b
-				&& match(mk->mask, e->xbutton.state)) {
-			mk->func(&mk->arg);
-			return;
-		}
-	}
-	#endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 
 	if (e->xbutton.button == Button1) {
 		/*
