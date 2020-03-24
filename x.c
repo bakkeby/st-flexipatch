@@ -37,6 +37,7 @@ typedef struct {
 	uint button;
 	void (*func)(const Arg *);
 	const Arg arg;
+	uint  release;
 } MouseShortcut;
 
 typedef struct {
@@ -200,6 +201,7 @@ static void selnotify(XEvent *);
 static void selclear_(XEvent *);
 static void selrequest(XEvent *);
 static void setsel(char *, Time);
+static int mouseaction(XEvent *, uint);
 static void mousesel(XEvent *, int);
 static void mousereport(XEvent *);
 static char *kmap(KeySym, uint);
@@ -386,6 +388,24 @@ evrow(XEvent *e)
 	return y / win.ch;
 }
 
+
+int
+mouseaction(XEvent *e, uint release)
+{
+	MouseShortcut *ms;
+
+	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
+		if (ms->release == release &&
+		    ms->button == e->xbutton.button &&
+		    match(ms->mod, e->xbutton.state & ~forcemousemod)) {
+			ms->func(&(ms->arg));
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 void
 mousesel(XEvent *e, int done)
 {
@@ -470,7 +490,6 @@ void
 bpress(XEvent *e)
 {
 	struct timespec now;
-	MouseShortcut *ms;
 	#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	MouseKey *mk;
 	#endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
@@ -484,13 +503,8 @@ bpress(XEvent *e)
 	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	if (tisaltscr())
 	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
-		if (e->xbutton.button == ms->button &&
-				match(ms->mod, e->xbutton.state & ~forcemousemod)) {
-			ms->func(&(ms->arg));
-			return;
-		}
-	}
+	if (mouseaction(e, 0))
+		return;
 
 	#if SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	for (mk = mkeys; mk < mkeys + LEN(mkeys); mk++) {
@@ -725,13 +739,9 @@ brelease(XEvent *e)
 		return;
 	}
 
-	if (e->xbutton.button == Button2)
-		#if CLIPBOARD_PATCH
-		clippaste(NULL);
-		#else
-		selpaste(NULL);
-		#endif // CLIPBOARD_PATCH
-	else if (e->xbutton.button == Button1)
+	if (mouseaction(e, 1))
+		return;
+	if (e->xbutton.button == Button1)
 		mousesel(e, 1);
 	#if RIGHTCLICKTOPLUMB_PATCH
 	else if (e->xbutton.button == Button3)
