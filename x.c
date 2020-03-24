@@ -33,9 +33,10 @@ typedef struct {
 } Shortcut;
 
 typedef struct {
-	uint b;
-	uint mask;
-	char *s;
+	uint mod;
+	uint button;
+	void (*func)(const Arg *);
+	const Arg arg;
 } MouseShortcut;
 
 typedef struct {
@@ -57,6 +58,7 @@ static void clipcopy(const Arg *);
 static void clippaste(const Arg *);
 static void numlock(const Arg *);
 static void selpaste(const Arg *);
+static void ttysend(const Arg *);
 static void zoom(const Arg *);
 static void zoomabs(const Arg *);
 static void zoomreset(const Arg *);
@@ -309,6 +311,12 @@ clippaste(const Arg *dummy)
 }
 
 void
+numlock(const Arg *dummy)
+{
+	win.mode ^= MODE_NUMLOCK;
+}
+
+void
 selpaste(const Arg *dummy)
 {
 	XConvertSelection(xw.dpy, XA_PRIMARY, xsel.xtarget, XA_PRIMARY,
@@ -316,9 +324,9 @@ selpaste(const Arg *dummy)
 }
 
 void
-numlock(const Arg *dummy)
+ttysend(const Arg *arg)
 {
-	win.mode ^= MODE_NUMLOCK;
+	ttywrite(arg->s, strlen(arg->s), 1);
 }
 
 void
@@ -477,9 +485,9 @@ bpress(XEvent *e)
 	if (tisaltscr())
 	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
-		if (e->xbutton.button == ms->b
-				&& match(ms->mask, e->xbutton.state)) {
-			ttywrite(ms->s, strlen(ms->s), 1);
+		if (e->xbutton.button == ms->button
+				&& match(ms->mod, e->xbutton.state)) {
+			ms->func(&(ms->arg));
 			return;
 		}
 	}
