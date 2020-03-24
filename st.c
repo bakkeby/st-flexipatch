@@ -2752,9 +2752,7 @@ draw(void)
 			term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
 	term.ocx = cx, term.ocy = term.c.y;
 	xfinishdraw();
-	#if FIXIME_PATCH
 	xximspot(term.ocx, term.ocy);
-	#endif // FIXIME_PATCH
 }
 
 void

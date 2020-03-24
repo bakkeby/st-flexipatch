@@ -56,6 +56,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [fixime](https://st.suckless.org/patches/fix_ime/)
       - adds better Input Method Editor (IME) support
+      - (included in the base as per [35f7db](https://git.suckless.org/st/commit/e85b6b64660214121164ea97fb098eaa4935f7db.html))
 
    - [fix-keyboard-input](https://st.suckless.org/patches/fix_keyboard_input/)
       - allows cli applications to use all the fancy key combinations that are available to GUI applications

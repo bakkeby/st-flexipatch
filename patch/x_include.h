@@ -5,9 +5,6 @@
 #if OPENCOPIED_PATCH
 #include "opencopied.h"
 #endif
-#if FIXIME_PATCH
-#include "fixime_x.h"
-#endif
 #if FONT2_PATCH
 #include "font2.h"
 #endif

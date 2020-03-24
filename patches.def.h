@@ -68,11 +68,6 @@
  */
 #define EXTERNALPIPE_PATCH 0
 
-/* This patch adds better Input Method Editor (IME) support.
- * https://st.suckless.org/patches/fix_ime/
- */
-#define FIXIME_PATCH 0
-
 /* This patch allows command line applications to use all the fancy key combinations
  * that are available to GUI applications.
  * https://st.suckless.org/patches/fix_keyboard_input/

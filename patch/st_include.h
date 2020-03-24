@@ -5,9 +5,6 @@
 #if EXTERNALPIPE_PATCH
 #include "externalpipe.h"
 #endif
-#if FIXIME_PATCH
-#include "fixime_st.h"
-#endif
 #if ISO14755_PATCH
 #include "iso14755.h"
 #endif

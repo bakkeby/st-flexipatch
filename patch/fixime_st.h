@@ -1,1 +1,0 @@
-void xximspot(int, int);
