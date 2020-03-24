@@ -1955,7 +1955,7 @@ csireset(void)
 void
 strhandle(void)
 {
-	char *p = NULL;
+	char *p = NULL, *dec;
 	int j, narg, par;
 
 	term.esc &= ~(ESC_STR_END|ESC_STR);
@@ -1973,8 +1973,6 @@ strhandle(void)
 			return;
 		case 52:
 			if (narg > 2) {
-				char *dec;
-
 				dec = base64dec(strescseq.args[2]);
 				if (dec) {
 					xsetsel(dec);
