@@ -133,7 +133,7 @@ int borderpx;
 extern char *utmp;
 extern char *stty_args;
 extern char *vtiden;
-extern wchar_t *worddelimiters;
+extern wchar_t *extrawordchars;
 extern int allowaltscreen;
 extern char *termname;
 extern unsigned int tabspaces;
