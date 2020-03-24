@@ -45,11 +45,11 @@
 #endif // SCROLLBACK_PATCH
 
 /* macros */
-#define IS_SET(flag)		((term.mode & (flag)) != 0)
-#define ISCONTROLC0(c)		(BETWEEN(c, 0, 0x1f) || (c) == '\177')
-#define ISCONTROLC1(c)		(BETWEEN(c, 0x80, 0x9f))
-#define ISCONTROL(c)		(ISCONTROLC0(c) || ISCONTROLC1(c))
-#define ISDELIM(u)		(utf8strchr(worddelimiters, u) != NULL)
+#define IS_SET(flag)    ((term.mode & (flag)) != 0)
+#define ISCONTROLC0(c)  (BETWEEN(c, 0, 0x1f) || (c) == '\177')
+#define ISCONTROLC1(c)  (BETWEEN(c, 0x80, 0x9f))
+#define ISCONTROL(c)    (ISCONTROLC0(c) || ISCONTROLC1(c))
+#define ISDELIM(u)      (u != 0 && wcschr(worddelimiters, u) != NULL)
 
 enum term_mode {
 	MODE_WRAP        = 1 << 0,
@@ -230,7 +230,6 @@ static void selsnap(int *, int *, int);
 static size_t utf8decode(const char *, Rune *, size_t);
 static Rune utf8decodebyte(char, size_t *);
 static char utf8encodebyte(Rune, size_t);
-static char *utf8strchr(char *, Rune);
 static size_t utf8validate(Rune *, size_t);
 
 static char *base64dec(const char *);
@@ -357,23 +356,6 @@ char
 utf8encodebyte(Rune u, size_t i)
 {
 	return utfbyte[i] | (u & ~utfmask[i]);
-}
-
-char *
-utf8strchr(char *s, Rune u)
-{
-	Rune r;
-	size_t i, j, len;
-
-	len = strlen(s);
-	for (i = 0, j = 0; i < len; i += j) {
-		if (!(j = utf8decode(&s[i], &r, len - i)))
-			break;
-		if (r == u)
-			return &(s[i]);
-	}
-
-	return NULL;
 }
 
 size_t
