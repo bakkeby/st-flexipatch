@@ -904,9 +904,18 @@ xsetcolorname(int x, const char *name)
 void
 xclear(int x1, int y1, int x2, int y2)
 {
+	#if INVERT_PATCH
+	Color c;
+	c = dc.col[IS_SET(MODE_REVERSE)? defaultfg : defaultbg];
+	if (invertcolors) {
+		c = invertedcolor(&c);
+	}
+	XftDrawRect(xw.draw, &c, x1, y1, x2-x1, y2-y1);
+	#else
 	XftDrawRect(xw.draw,
 			&dc.col[IS_SET(MODE_REVERSE)? defaultfg : defaultbg],
 			x1, y1, x2-x1, y2-y1);
+	#endif // INVERT_PATCH
 }
 
 void
@@ -1656,6 +1665,15 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 
 	if (base.mode & ATTR_INVISIBLE)
 		fg = bg;
+
+	#if INVERT_PATCH
+	if (invertcolors) {
+		revfg = invertedcolor(fg);
+		revbg = invertedcolor(bg);
+		fg = &revfg;
+		bg = &revbg;
+	}
+	#endif // INVERT_PATCH
 
 	/* Intelligent cleaning up of the borders. */
 	#if ANYSIZE_PATCH

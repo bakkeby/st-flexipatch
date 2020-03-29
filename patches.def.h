@@ -88,6 +88,13 @@
  */
 #define HIDECURSOR_PATCH 0
 
+/* This patch adds a keybinding that lets you invert the current colorscheme of st.
+ * This provides a simple way to temporarily switch to a light colorscheme if you use a dark
+ * colorscheme or visa-versa.
+ * https://st.suckless.org/patches/invert/
+ */
+#define INVERT_PATCH 0
+
 /* Pressing the default binding Ctrl+Shift-i will popup dmenu, asking you to enter a unicode
  * codepoint that will be converted to a glyph and then pushed to st.
  * https://st.suckless.org/patches/iso14755/

@@ -358,6 +358,9 @@ static Shortcut shortcuts[] = {
 	#if ISO14755_PATCH
 	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },
 	#endif // ISO14755_PATCH
+	#if INVERT_PATCH
+	{ TERMMOD,              XK_X,           invert,          { 0 } },
+	#endif // INVERT_PATCH
 };
 
 /*

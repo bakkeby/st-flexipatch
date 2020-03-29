@@ -8,6 +8,9 @@
 #if FONT2_PATCH
 #include "font2.h"
 #endif
+#if INVERT_PATCH
+#include "invert.h"
+#endif
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.h"
 #endif

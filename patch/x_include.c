@@ -11,6 +11,9 @@
 #if FONT2_PATCH
 #include "font2.c"
 #endif
+#if INVERT_PATCH
+#include "invert.c"
+#endif
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.c"
 #endif
