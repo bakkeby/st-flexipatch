@@ -284,6 +284,9 @@ static char *opt_io    = NULL;
 static char *opt_line  = NULL;
 static char *opt_name  = NULL;
 static char *opt_title = NULL;
+#if WORKINGDIR_PATCH
+static char *opt_dir   = NULL;
+#endif // WORKINGDIR_PATCH
 
 static int oldbutton = 3; /* button event on startup: 3 = release */
 #if VISUALBELL_1_PATCH && !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
@@ -2410,11 +2413,19 @@ run(void)
 void
 usage(void)
 {
-	die("usage: %s [-aiv] [-c class] [-f font] [-g geometry]"
+	die("usage: %s [-aiv] [-c class]"
+		#if WORKINGDIR_PATCH
+		" [-d path]"
+		#endif // WORKINGDIR_PATCH
+		" [-f font] [-g geometry]"
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid]"
 	    " [[-e] command [args ...]]\n"
-	    "       %s [-aiv] [-c class] [-f font] [-g geometry]"
+	    "       %s [-aiv] [-c class]"
+		#if WORKINGDIR_PATCH
+		" [-d path]"
+		#endif // WORKINGDIR_PATCH
+		" [-f font] [-g geometry]"
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid] -l line"
 	    " [stty_args ...]\n", argv0, argv0);
@@ -2439,6 +2450,11 @@ main(int argc, char *argv[])
 	case 'c':
 		opt_class = EARGF(usage());
 		break;
+	#if WORKINGDIR_PATCH
+	case 'd':
+		opt_dir = EARGF(usage());
+		break;
+	#endif // WORKINGDIR_PATCH
 	case 'e':
 		if (argc > 0)
 			--argc, ++argv;
@@ -2497,6 +2513,10 @@ run:
 	xinit(cols, rows);
 	xsetenv();
 	selinit();
+	#if WORKINGDIR_PATCH
+	if (opt_dir && chdir(opt_dir))
+		die("Can't change to working directory %s\n", opt_dir);
+	#endif // WORKINGDIR_PATCH
 	run();
 
 	return 0;

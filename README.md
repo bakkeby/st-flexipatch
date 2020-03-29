@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2020-03-29 - Added invert patch
+2020-03-29 - Added invert and workingdir patches
 
 2020-03-24 - Upgraded to latest (master) of st (commit 51e19ea11dd42eefed1ca136ee3f6be975f618b1 at the time of writing). Custom changes to make the altscreen mouse scollback patch working.
 
@@ -112,6 +112,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [visualbell](https://st.suckless.org/patches/visualbell/)
       - adds visual indicators for the terminal bell event
+
+   - [workingdir](https://st.suckless.org/patches/workingdir/)
+      - allows user to specify the initial path st should use as the working directory
 
    - [xresources](https://st.suckless.org/patches/xresources/)
       - adds the ability to configure st via Xresources

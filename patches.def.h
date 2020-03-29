@@ -196,6 +196,11 @@
  */
 #define VISUALBELL_3_PATCH 0
 
+/* This patch allows user to specify the initial path st should use as the working directory.
+ * https://st.suckless.org/patches/workingdir/
+ */
+#define WORKINGDIR_PATCH 0
+
 /* This patch adds the ability to configure st via Xresources. At startup, st will read and
  * apply the resources named in the resources[] array in config.h.
  * https://st.suckless.org/patches/xresources/
