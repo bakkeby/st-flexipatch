@@ -1147,7 +1147,12 @@ tscrolldown(int orig, int n)
 		term.line[i-n] = temp;
 	}
 
+	#if SCROLLBACK_PATCH
+	if (term.scr == 0)
+		selscroll(orig, n);
+	#else
 	selscroll(orig, n);
+	#endif // SCROLLBACK_PATCH
 }
 
 void
@@ -1183,7 +1188,12 @@ tscrollup(int orig, int n)
 		term.line[i+n] = temp;
 	}
 
+	#if SCROLLBACK_PATCH
+	if (term.scr == 0)
+		selscroll(orig, -n);
+	#else
 	selscroll(orig, -n);
+	#endif // SCROLLBACK_PATCH
 }
 
 void
