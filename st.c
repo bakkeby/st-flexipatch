@@ -782,7 +782,11 @@ sigchld(int a)
 	int stat;
 	pid_t p;
 
+	#if EXTERNALPIPE_SIGACTION_PATCH && EXTERNALPIPE_PATCH
+	if ((p = waitpid(-1, &stat, WNOHANG)) < 0)
+	#else
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
+	#endif // EXTERNALPIPE_SIGACTION_PATCH
 		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
 
 	if (pid != p)
@@ -823,6 +827,9 @@ int
 ttynew(char *line, char *cmd, char *out, char **args)
 {
 	int m, s;
+	#if EXTERNALPIPE_SIGACTION_PATCH && EXTERNALPIPE_PATCH
+	struct sigaction sa;
+	#endif // EXTERNALPIPE_SIGACTION_PATCH
 
 	if (out) {
 		term.mode |= MODE_PRINT;
@@ -878,7 +885,14 @@ ttynew(char *line, char *cmd, char *out, char **args)
 #endif
 		close(s);
 		cmdfd = m;
+		#if EXTERNALPIPE_SIGACTION_PATCH && EXTERNALPIPE_PATCH
+		memset(&sa, 0, sizeof(sa));
+		sigemptyset(&sa.sa_mask);
+		sa.sa_handler = sigchld;
+		sigaction(SIGCHLD, &sa, NULL);
+		#else
 		signal(SIGCHLD, sigchld);
+		#endif // EXTERNALPIPE_SIGACTION_PATCH
 		break;
 	}
 	return cmdfd;

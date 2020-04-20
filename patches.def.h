@@ -68,6 +68,13 @@
  */
 #define EXTERNALPIPE_PATCH 0
 
+/* This patch prevents the reset of the signal handler set on SIGCHILD, when
+ * the forked process that executes the external process exits.
+ * This patch depends on EXTERNALPIPE_PATCH being enabled.
+ * https://lists.suckless.org/hackers/2004/17216.html
+ */
+#define EXTERNALPIPE_SIGACTION_PATCH 0
+
 /* This patch allows command line applications to use all the fancy key combinations
  * that are available to GUI applications.
  * https://st.suckless.org/patches/fix_keyboard_input/
