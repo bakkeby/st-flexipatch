@@ -68,12 +68,23 @@
  */
 #define EXTERNALPIPE_PATCH 0
 
-/* This patch prevents the reset of the signal handler set on SIGCHILD, when
- * the forked process that executes the external process exits.
+/* This patch improves and extends the externalpipe patch in two ways:
+ *    - it prevents the reset of the signal handler set on SIGCHILD, when
+ *      the forked process that executes the external process exits and
+ *    - it adds the externalpipein function to redirect the standard output
+ *      of the external command to the slave size of the pty, that is, as if
+ *      the external program had been manually executed on the terminal
+ *
+ * It can be used to send desired escape sequences to the terminal with a
+ * keyboard shortcut. The patch was created to make use of the dynamic-colors
+ * tool that uses the OSC escape sequences to change the colors of the terminal.
+ *
  * This patch depends on EXTERNALPIPE_PATCH being enabled.
- * https://lists.suckless.org/hackers/2004/17216.html
+ *
+ * https://github.com/sos4nt/dynamic-colors
+ * https://lists.suckless.org/hackers/2004/17218.html
  */
-#define EXTERNALPIPE_SIGACTION_PATCH 0
+#define EXTERNALPIPEIN_PATCH 0
 
 /* This patch allows command line applications to use all the fancy key combinations
  * that are available to GUI applications.

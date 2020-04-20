@@ -245,6 +245,9 @@ static CSIEscape csiescseq;
 static STREscape strescseq;
 static int iofd = 1;
 static int cmdfd;
+#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
+static int csdfd;
+#endif // EXTERNALPIPEIN_PATCH
 static pid_t pid;
 
 static uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
@@ -782,15 +785,19 @@ sigchld(int a)
 	int stat;
 	pid_t p;
 
-	#if EXTERNALPIPE_SIGACTION_PATCH && EXTERNALPIPE_PATCH
+	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
 	if ((p = waitpid(-1, &stat, WNOHANG)) < 0)
 	#else
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
-	#endif // EXTERNALPIPE_SIGACTION_PATCH
+	#endif // EXTERNALPIPEIN_PATCH
 		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
 
 	if (pid != p)
 		return;
+
+	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
+	close(csdfd);
+	#endif // EXTERNALPIPEIN_PATCH
 
 	if (WIFEXITED(stat) && WEXITSTATUS(stat))
 		die("child exited with status %d\n", WEXITSTATUS(stat));
@@ -827,9 +834,9 @@ int
 ttynew(char *line, char *cmd, char *out, char **args)
 {
 	int m, s;
-	#if EXTERNALPIPE_SIGACTION_PATCH && EXTERNALPIPE_PATCH
+	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
 	struct sigaction sa;
-	#endif // EXTERNALPIPE_SIGACTION_PATCH
+	#endif // EXTERNALPIPEIN_PATCH
 
 	if (out) {
 		term.mode |= MODE_PRINT;
@@ -885,14 +892,15 @@ ttynew(char *line, char *cmd, char *out, char **args)
 #endif
 		close(s);
 		cmdfd = m;
-		#if EXTERNALPIPE_SIGACTION_PATCH && EXTERNALPIPE_PATCH
+		#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
+		csdfd = s;
 		memset(&sa, 0, sizeof(sa));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_handler = sigchld;
 		sigaction(SIGCHLD, &sa, NULL);
 		#else
 		signal(SIGCHLD, sigchld);
-		#endif // EXTERNALPIPE_SIGACTION_PATCH
+		#endif // EXTERNALPIPEIN_PATCH
 		break;
 	}
 	return cmdfd;

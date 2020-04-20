@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2020-04-20 - Added the force redraw on pselect after key is pressed patch and the externalpipe sigaction patch
+2020-04-20 - Upgrade to c279f5, 2020-04-19, and added the force redraw on pselect after key is pressed patch and the externalpipein patch
 
 2020-03-29 - Added invert and workingdir patches
 
@@ -60,8 +60,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [externalpipe](https://st.suckless.org/patches/externalpipe/)
       - this patch allows for eading and writing st's screen through a pipe, e.g. to pass info to dmenu
 
-   - [externalpipe-sigaction](https://lists.suckless.org/hackers/2004/17216.html)
+   - [externalpipein](https://lists.suckless.org/hackers/2004/17218.html)
       - this patch prevents the reset of the signal handler set on SIGCHILD, when the forked process that executes the external process exits
+      - it adds the externalpipein function to redirect the standard output of the external command to the slave size of the pty, that is, as if the external program had been manually executed on the terminal
+      - this can be used to send desired escape sequences to the terminal with a shortcut (e.g. to change colors)
 
    - [~fixime~](https://st.suckless.org/patches/fix_ime/)
       - adds better Input Method Editor (IME) support
