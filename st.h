@@ -141,6 +141,7 @@ extern char *termname;
 extern unsigned int tabspaces;
 extern unsigned int defaultfg;
 extern unsigned int defaultbg;
+extern unsigned int defaultcs;
 #if BOXDRAW_PATCH
 extern const int boxdraw, boxdraw_bold, boxdraw_braille;
 #endif // BOXDRAW_PATCH

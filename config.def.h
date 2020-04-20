@@ -187,8 +187,8 @@ unsigned int defaultbg = 258;
 #else
 unsigned int defaultbg = 0;
 #endif // ALPHA_PATCH
-static unsigned int defaultcs = 256;
-static unsigned int defaultrcs = 257;
+unsigned int defaultcs = 256;
+unsigned int defaultrcs = 257;
 
 /*
  * Default shape of cursor
