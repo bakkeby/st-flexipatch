@@ -2731,6 +2731,7 @@ void
 drawregion(int x1, int y1, int x2, int y2)
 {
 	int y;
+
 	for (y = y1; y < y2; y++) {
 		if (!term.dirty[y])
 			continue;
@@ -2767,7 +2768,8 @@ draw(void)
 	#endif // SCROLLBACK_PATCH
 	xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 			term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
-	term.ocx = cx, term.ocy = term.c.y;
+	term.ocx = cx;
+	term.ocy = term.c.y;
 	xfinishdraw();
 	if (ocx != term.ocx || ocy != term.ocy)
 		xximspot(term.ocx, term.ocy);
