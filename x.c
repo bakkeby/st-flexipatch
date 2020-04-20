@@ -251,6 +251,9 @@ static DC dc;
 static XWindow xw;
 static XSelection xsel;
 static TermWindow win;
+#if FORCE_REDRAW_AFTER_KEYPRESS
+static int pendingkpress = 0;
+#endif // FORCE_REDRAW_AFTER_KEYPRESS
 
 /* Font Ring Cache */
 enum {
@@ -933,6 +936,12 @@ xclear(int x1, int y1, int x2, int y2)
 			&dc.col[IS_SET(MODE_REVERSE)? defaultfg : defaultbg],
 			x1, y1, x2-x1, y2-y1);
 	#endif // INVERT_PATCH
+}
+
+void
+xclearwin(void)
+{
+	xclear(0, 0, win.w, win.h);
 }
 
 void
@@ -1937,6 +1946,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 	Glyph base, new;
 	XftGlyphFontSpec *specs = xw.specbuf;
 
+	#if FORCE_REDRAW_AFTER_KEYPRESS
+	pendingkpress = 0;
+	#endif // FORCE_REDRAW_AFTER_KEYPRESS
+
 	numspecs = xmakeglyphfontspecs(specs, &line[x1], x2 - x1, x1, y1);
 	i = ox = 0;
 	for (x = x1; x < x2 && i < numspecs; x++) {
@@ -2168,6 +2181,10 @@ kpress(XEvent *ev)
 	Status status;
 	Shortcut *bp;
 
+	#if FORCE_REDRAW_AFTER_KEYPRESS
+	pendingkpress = 1;
+	#endif // FORCE_REDRAW_AFTER_KEYPRESS
+
 	#if HIDECURSOR_PATCH
 	if (xw.pointerisvisible) {
 		XDefineCursor(xw.dpy, xw.win, xw.bpointer);
@@ -2330,6 +2347,10 @@ run(void)
 		tv = &drawtimeout;
 
 		dodraw = 0;
+		#if FORCE_REDRAW_AFTER_KEYPRESS
+		if (pendingkpress)
+			dodraw = 1;
+		#endif // FORCE_REDRAW_AFTER_KEYPRESS
 		#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
 		to_ms = -1; /* timeout in ms, indefinite if negative */
 		if (blinkset) {

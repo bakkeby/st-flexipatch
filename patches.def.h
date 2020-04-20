@@ -82,6 +82,15 @@
  */
 #define FONT2_PATCH 0
 
+/* This patch creates a global flag which is set when a keypress is sent
+ * from X which forces the terminal to check for new data on the tty fd on
+ * every return from pselect(). When new data read from the tty results in
+ * a line being redrawn, the flag is reset. This results in a less input lag
+ * when typing on the terminal.
+ * https://lists.suckless.org/hackers/2004/17221.html
+ */
+#define FORCE_REDRAW_AFTER_KEYPRESS 0
+
 /* Hide the X cursor whenever a key is pressed and show it back when the mouse is moved in
  * the terminal window.
  * https://st.suckless.org/patches/hidecursor/

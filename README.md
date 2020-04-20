@@ -1,4 +1,4 @@
-Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.2 (51e19ea11dd42eefed1ca136ee3f6be975f618b1, 2020-02-18) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
+Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.2 (c279f5, 2020-04-19) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
 
 For example to include the `alpha` patch then you would only need to flip this setting from 0 to 1 in [patches.h](https://github.com/bakkeby/st-flexipatch/blob/master/patches.def.h):
 ```c
@@ -14,6 +14,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 ---
 
 ### Changelog:
+
+2020-04-20 - Added the force redraw on pselect after key is pressed patch
 
 2020-03-29 - Added invert and workingdir patches
 
@@ -67,6 +69,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [font2](https://st.suckless.org/patches/font2/)
       - allows you to add a spare font besides the default
+
+   - [force-redraw-after-keypress](https://lists.suckless.org/hackers/2004/17221.html)
+      - this patch forces the terminal to check for new data on the tty on keypress with the aim of reducing input latency
 
    - [hidecursor](https://st.suckless.org/patches/hidecursor/)
       - hides the X cursor whenever a key is pressed and show it back when the mouse is moved in the terminal window
