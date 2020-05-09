@@ -15,6 +15,8 @@
 #define ALPHA_PATCH 0
 
 /* This patch allows st to reize to any pixel size rather than snapping to character width/height.
+ * You need to uncomment the corresponding line in config.mk to use the -lXrender library
+ * when including this patch.
  * https://st.suckless.org/patches/anysize/
  */
 #define ANYSIZE_PATCH 0
@@ -189,6 +191,8 @@
 #define SPOILER_PATCH 0
 
 /* Instead of a default X cursor, use the xterm cursor from your cursor theme.
+ * You need to uncomment the corresponding line in config.mk to use the -lXcursor library
+ * when including this patch.
  * https://st.suckless.org/patches/themed_cursor/
  */
 #define THEMED_CURSOR_PATCH 0

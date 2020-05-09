@@ -12,11 +12,17 @@ X11LIB = /usr/X11R6/lib
 
 PKG_CONFIG = pkg-config
 
+# Uncomment this for the alpha patch / ALPHA_PATCH
+#XRENDER = -lXrender
+
+# Uncomment this for the themed cursor patch / THEMED_CURSOR_PATCH
+#XCURSOR = -lXcursor
+
 # includes and libs
 INCS = -I$(X11INC) \
        `$(PKG_CONFIG) --cflags fontconfig` \
        `$(PKG_CONFIG) --cflags freetype2`
-LIBS = -L$(X11LIB) -lm -lrt -lX11 -lutil -lXft -lXrender -lXcursor\
+LIBS = -L$(X11LIB) -lm -lrt -lX11 -lutil -lXft ${XRENDER} ${XCURSOR}\
        `$(PKG_CONFIG) --libs fontconfig` \
        `$(PKG_CONFIG) --libs freetype2`
 
