@@ -23,9 +23,6 @@
 #if ST_EMBEDDER_PATCH
 #include "st_embedder_x.c"
 #endif
-#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-#include "visualbell.c"
-#endif
 #if XRESOURCES_PATCH
 #include "xresources.c"
 #endif

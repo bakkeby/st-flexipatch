@@ -102,15 +102,6 @@
  */
 #define FONT2_PATCH 0
 
-/* This patch creates a global flag which is set when a keypress is sent
- * from X which forces the terminal to check for new data on the tty fd on
- * every return from pselect(). When new data read from the tty results in
- * a line being redrawn, the flag is reset. This results in a less input lag
- * when typing on the terminal.
- * https://lists.suckless.org/hackers/2004/17221.html
- */
-#define FORCE_REDRAW_AFTER_KEYPRESS 0
-
 /* Hide the X cursor whenever a key is pressed and show it back when the mouse is moved in
  * the terminal window.
  * https://st.suckless.org/patches/hidecursor/
@@ -202,30 +193,6 @@
  * https://st.suckless.org/patches/vertcenter/
  */
 #define VERTCENTER_PATCH 0
-
-/* On receiving a terminal bell event this patch briefly inverts the window content colors.
- * You may need to reduce the xfps value in config.h to less or equal to that of the refresh
- * rate of your monitor for this to be noticeble.
- * The visualbell 2 and 3 patches takes precedence over this patch.
- * https://st.suckless.org/patches/visualbell/
- */
-#define VISUALBELL_1_PATCH 0
-
-/* On receiving a terminal bell event this patch either:
- *    - briefly inverts the window content colors across the whole terminal or
- *    - briefly inverts the window content colors across the window border
- * The visualbell 3 patch takes precedence over this patch.
- * https://st.suckless.org/patches/visualbell/
- */
-#define VISUALBELL_2_PATCH 0
-
-/* On receiving a terminal bell event this patch either:
- *    - briefly inverts the window content colors across the whole terminal or
- *    - briefly inverts the window content colors across the window border or
- *    - draws a (configurable) circle as a visual bell indicator
- * https://st.suckless.org/patches/visualbell/
- */
-#define VISUALBELL_3_PATCH 0
 
 /* This patch allows user to specify the initial path st should use as the working directory.
  * https://st.suckless.org/patches/workingdir/

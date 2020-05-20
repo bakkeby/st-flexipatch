@@ -94,9 +94,6 @@ int tattrset(int);
 void tnew(int, int);
 void tresize(int, int);
 void tsetdirtattr(int);
-#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-void tfulldirt();
-#endif // VISUALBELL_2_PATCH
 void ttyhangup(void);
 int ttynew(char *, char *, char *, char **);
 size_t ttyread(void);

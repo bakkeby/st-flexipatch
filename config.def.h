@@ -57,9 +57,14 @@ static unsigned int tripleclicktimeout = 600;
 /* alt screens */
 int allowaltscreen = 1;
 
-/* frames per second st should at maximum draw to the screen */
-static unsigned int xfps = 120;
-static unsigned int actionfps = 30;
+/*
+ * draw latency range in ms - from new content/keypress/etc until drawing.
+ * within this range, st draws when content stops arriving (idle). mostly it's
+ * near minlatency, but it waits longer for slow updates to avoid partial draw.
+ * low minlatency will tear/flicker more, as it can "detect" idle too early.
+ */
+static double minlatency = 8;
+static double maxlatency = 33;
 
 /*
  * blinking timeout (set to 0 to disable blinking) for the terminal blinking
@@ -91,33 +96,6 @@ const int boxdraw_braille = 0;
  * it
  */
 static int bellvolume = 0;
-
-#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-/*
- * visual-bell timeout (set to 0 to disable visual-bell).
- */
-static int vbelltimeout = 0;
-/*
- * visual bell mode when enabled:
- *   1: Inverse whole screen
- *   2: Inverse outer (border) cells
- *   3: Draw a filled circle (VISUALBELL_3_PATCH only)
- */
-static int vbellmode = 1;
-#if VISUALBELL_3_PATCH
-/*
- * for vbellmode == 3 (circle) the following parameters apply:
- * - base and outline colors (colorname index - see below).
- * - radius: relative to window width, or if negative: relative to cell-width.
- * - position: relative to window width/height (0 and 1 are at the edges).
- */
-static int vbellcolor = 3;
-static int vbellcolor_outline = 1;
-static float vbellradius = 0.03;
-static float vbellx = 0.5;
-static float vbelly = 0.5;
-#endif // VISUALBELL_3_PATCH
-#endif // VISUALBELL_2_PATCH
 
 /* default TERM value */
 char *termname = "st-256color";
@@ -253,8 +231,8 @@ ResourcePref resources[] = {
 		{ "cursorColor",  STRING,  &colorname[258] },
 		{ "termname",     STRING,  &termname },
 		{ "shell",        STRING,  &shell },
-		{ "xfps",         INTEGER, &xfps },
-		{ "actionfps",    INTEGER, &actionfps },
+		{ "minlatency",   INTEGER, &minlatency },
+		{ "maxlatency",   INTEGER, &minlatency },
 		{ "blinktimeout", INTEGER, &blinktimeout },
 		{ "bellvolume",   INTEGER, &bellvolume },
 		{ "tabspaces",    INTEGER, &tabspaces },

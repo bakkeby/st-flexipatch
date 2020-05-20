@@ -212,9 +212,6 @@ static void tsetscroll(int, int);
 static void tswapscreen(void);
 static void tsetmode(int, int, int *, int);
 static int twrite(const char *, int, int);
-#if !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
-static void tfulldirt(void);
-#endif // VISUALBELL_2_PATCH
 static void tcontrolcode(uchar );
 static void tdectest(char );
 static void tdefutf8(char);

@@ -1,4 +1,4 @@
-Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.3 (371878, 2020-04-30) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
+Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.3 (4e90c0, 2020-05-09) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
 
 For example to include the `alpha` patch then you would only need to flip this setting from 0 to 1 in [patches.h](https://github.com/bakkeby/st-flexipatch/blob/master/patches.def.h):
 ```c
@@ -14,6 +14,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 ---
 
 ### Changelog:
+
+2020-05-20 - Upgrade to 4e90c0, 2020-05-09, removed visualbell 1, 2, 3 patches and force redraw after keypress due to incompatibility
 
 2020-04-20 - Upgrade to c279f5, 2020-04-19, and added the force redraw on pselect after key is pressed patch and the externalpipein patch
 
@@ -75,8 +77,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [font2](https://st.suckless.org/patches/font2/)
       - allows you to add a spare font besides the default
 
-   - [force-redraw-after-keypress](https://lists.suckless.org/hackers/2004/17221.html)
-      - this patch forces the terminal to check for new data on the tty on keypress with the aim of reducing input latency
+   - [~force-redraw-after-keypress~](https://lists.suckless.org/hackers/2004/17221.html)
+      - ~this patch forces the terminal to check for new data on the tty on keypress with the aim of reducing input latency~
 
    - [hidecursor](https://st.suckless.org/patches/hidecursor/)
       - hides the X cursor whenever a key is pressed and show it back when the mouse is moved in the terminal window
@@ -120,8 +122,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h
 
-   - [visualbell](https://st.suckless.org/patches/visualbell/)
-      - adds visual indicators for the terminal bell event
+   - [~visualbell~](https://st.suckless.org/patches/visualbell/)
+      - ~adds visual indicators for the terminal bell event~
 
    - [workingdir](https://st.suckless.org/patches/workingdir/)
       - allows user to specify the initial path st should use as the working directory

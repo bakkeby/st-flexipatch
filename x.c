@@ -98,10 +98,6 @@ typedef struct {
 	#endif // VERTCENTER_PATCH
 	int mode; /* window state/mode flags */
 	int cursor; /* cursor style */
-	#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-	int vbellset; /* 1 during visual bell, 0 otherwise */
-	struct timespec lastvbell;
-	#endif // VISUALBELL_2_PATCH
 } TermWindow;
 
 typedef struct {
@@ -251,9 +247,6 @@ static DC dc;
 static XWindow xw;
 static XSelection xsel;
 static TermWindow win;
-#if FORCE_REDRAW_AFTER_KEYPRESS
-static int pendingkpress = 0;
-#endif // FORCE_REDRAW_AFTER_KEYPRESS
 
 /* Font Ring Cache */
 enum {
@@ -293,9 +286,6 @@ static char *opt_dir   = NULL;
 #endif // WORKINGDIR_PATCH
 
 static int oldbutton = 3; /* button event on startup: 3 = release */
-#if VISUALBELL_1_PATCH && !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
-static int bellon = 0;    /* visual bell status */
-#endif // VISUALBELL_1_PATCH
 
 #include "patch/x_include.c"
 
@@ -1946,10 +1936,6 @@ xdrawline(Line line, int x1, int y1, int x2)
 	Glyph base, new;
 	XftGlyphFontSpec *specs = xw.specbuf;
 
-	#if FORCE_REDRAW_AFTER_KEYPRESS
-	pendingkpress = 0;
-	#endif // FORCE_REDRAW_AFTER_KEYPRESS
-
 	numspecs = xmakeglyphfontspecs(specs, &line[x1], x2 - x1, x1, y1);
 	i = ox = 0;
 	for (x = x1; x < x2 && i < numspecs; x++) {
@@ -1958,10 +1944,6 @@ xdrawline(Line line, int x1, int y1, int x2)
 			continue;
 		if (selected(x, y1))
 			new.mode ^= ATTR_REVERSE;
-		#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-		if (win.vbellset && isvbellcell(x, y1))
-			new.mode ^= ATTR_REVERSE;
-		#endif // VISUALBELL_2_PATCH
 		if (i > 0 && ATTRCMP(base, new)) {
 			xdrawglyphfontspecs(specs, base, i, ox, y1);
 			specs += i;
@@ -2078,20 +2060,6 @@ xbell(void)
 		xseturgency(1);
 	if (bellvolume)
 		XkbBell(xw.dpy, xw.win, bellvolume, (Atom)NULL);
-
-	#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-	if (vbelltimeout)
-		vbellbegin();
-	#elif VISUALBELL_1_PATCH
-	/* visual bell*/
-	if (!bellon) {
-		bellon = 1;
-		MODBIT(win.mode, !IS_SET(MODE_REVERSE), MODE_REVERSE);
-		redraw();
-		XFlush(xw.dpy);
-		MODBIT(win.mode, !IS_SET(MODE_REVERSE), MODE_REVERSE);
-	}
-	#endif // VISUALBELL_1_PATCH / VISUALBELL_2_PATCH
 }
 
 void
@@ -2180,10 +2148,6 @@ kpress(XEvent *ev)
 	Rune c;
 	Status status;
 	Shortcut *bp;
-
-	#if FORCE_REDRAW_AFTER_KEYPRESS
-	pendingkpress = 1;
-	#endif // FORCE_REDRAW_AFTER_KEYPRESS
 
 	#if HIDECURSOR_PATCH
 	if (xw.pointerisvisible) {
@@ -2289,13 +2253,9 @@ run(void)
 	XEvent ev;
 	int w = win.w, h = win.h;
 	fd_set rfd;
-	int xfd = XConnectionNumber(xw.dpy), xev, blinkset = 0, dodraw = 0;
-	int ttyfd;
-	struct timespec drawtimeout, *tv = NULL, now, last, lastblink;
-	long deltatime;
-	#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-	long to_ms, remain;
-	#endif // VISUALBELL_2_PATCH
+	int xfd = XConnectionNumber(xw.dpy), ttyfd, xev, drawing;
+	struct timespec seltv, *tv, now, lastblink, trigger;
+	double timeout;
 
 	/* Waiting for window mapping */
 	do {
@@ -2316,132 +2276,77 @@ run(void)
 	ttyfd = ttynew(opt_line, shell, opt_io, opt_cmd);
 	cresize(w, h);
 
-	clock_gettime(CLOCK_MONOTONIC, &last);
-	lastblink = last;
-
-	for (xev = actionfps;;) {
+	for (timeout = -1, drawing = 0, lastblink = (struct timespec){0};;) {
 		FD_ZERO(&rfd);
 		FD_SET(ttyfd, &rfd);
 		FD_SET(xfd, &rfd);
+
+		if (XPending(xw.dpy))
+			timeout = 0;  /* existing events might not set xfd */
+
+		seltv.tv_sec = timeout / 1E3;
+		seltv.tv_nsec = 1E6 * (timeout - 1E3 * seltv.tv_sec);
+		tv = timeout >= 0 ? &seltv : NULL;
 
 		if (pselect(MAX(xfd, ttyfd)+1, &rfd, NULL, NULL, tv, NULL) < 0) {
 			if (errno == EINTR)
 				continue;
 			die("select failed: %s\n", strerror(errno));
 		}
-		if (FD_ISSET(ttyfd, &rfd)) {
-			ttyread();
-			if (blinktimeout) {
-				blinkset = tattrset(ATTR_BLINK);
-				if (!blinkset)
-					MODBIT(win.mode, 0, MODE_BLINK);
-			}
-		}
-
-		if (FD_ISSET(xfd, &rfd))
-			xev = actionfps;
-
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		drawtimeout.tv_sec = 0;
-		drawtimeout.tv_nsec =  (1000 * 1E6)/ xfps;
-		tv = &drawtimeout;
 
-		dodraw = 0;
-		#if FORCE_REDRAW_AFTER_KEYPRESS
-		if (pendingkpress)
-			dodraw = 1;
-		#endif // FORCE_REDRAW_AFTER_KEYPRESS
-		#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-		to_ms = -1; /* timeout in ms, indefinite if negative */
-		if (blinkset) {
-			remain = blinktimeout - TIMEDIFF(now, lastblink);
-			if (remain <= 0) {
-				dodraw = 1;
-				remain = 1; /* draw, wait 1ms, and re-calc */
-				tsetdirtattr(ATTR_BLINK);
+		if (FD_ISSET(ttyfd, &rfd))
+			ttyread();
+
+		xev = 0;
+		while (XPending(xw.dpy)) {
+			xev = 1;
+			XNextEvent(xw.dpy, &ev);
+			if (XFilterEvent(&ev, None))
+				continue;
+			if (handler[ev.type])
+				(handler[ev.type])(&ev);
+		}
+
+		/*
+		 * To reduce flicker and tearing, when new content or event
+		 * triggers drawing, we first wait a bit to ensure we got
+		 * everything, and if nothing new arrives - we draw.
+		 * We start with trying to wait minlatency ms. If more content
+		 * arrives sooner, we retry with shorter and shorter preiods,
+		 * and eventually draw even without idle after maxlatency ms.
+		 * Typically this results in low latency while interacting,
+		 * maximum latency intervals during `cat huge.txt`, and perfect
+		 * sync with periodic updates from animations/key-repeats/etc.
+		 */
+		if (FD_ISSET(ttyfd, &rfd) || xev) {
+			if (!drawing) {
+				trigger = now;
+				drawing = 1;
+			}
+			timeout = (maxlatency - TIMEDIFF(now, trigger)) \
+			          / maxlatency * minlatency;
+			if (timeout > 0)
+				continue;  /* we have time, try to find idle */
+		}
+
+		/* idle detected or maxlatency exhausted -> draw */
+		timeout = -1;
+		if (blinktimeout && tattrset(ATTR_BLINK)) {
+			timeout = blinktimeout - TIMEDIFF(now, lastblink);
+			if (timeout <= 0) {
+				if (-timeout > blinktimeout) /* start visible */
+					win.mode |= MODE_BLINK;
 				win.mode ^= MODE_BLINK;
+				tsetdirtattr(ATTR_BLINK);
 				lastblink = now;
+				timeout = blinktimeout;
 			}
-			to_ms = remain;
-		}
-		if (win.vbellset) {
-			remain = vbelltimeout - TIMEDIFF(now, win.lastvbell);
-			if (remain <= 0) {
-				dodraw = 1;
-				remain = -1; /* draw (clear), and that's it */
-				tfulldirt();
-				win.vbellset = 0;
-			}
-			if (remain >= 0 && (to_ms < 0 || remain < to_ms))
-				to_ms = remain;
 		}
 
-		#else
-		if (blinktimeout && TIMEDIFF(now, lastblink) > blinktimeout) {
-			tsetdirtattr(ATTR_BLINK);
-			win.mode ^= MODE_BLINK;
-			lastblink = now;
-			dodraw = 1;
-		}
-		#endif // VISUALBELL_2_PATCH
-		deltatime = TIMEDIFF(now, last);
-		if (deltatime > 1000 / (xev ? xfps : actionfps)) {
-			dodraw = 1;
-			last = now;
-		}
-
-		if (dodraw) {
-			while (XPending(xw.dpy)) {
-				XNextEvent(xw.dpy, &ev);
-				if (XFilterEvent(&ev, None))
-					continue;
-				if (handler[ev.type])
-					(handler[ev.type])(&ev);
-			}
-
-			#if VISUALBELL_1_PATCH && !VISUALBELL_2_PATCH && !VISUALBELL_3_PATCH
-			if (bellon) {
-				bellon = 0;
-				redraw();
-			}
-			else draw();
- 			XFlush(xw.dpy);
-			#else
-			draw();
-			#endif // VISUALBELL_1_PATCH
-			XFlush(xw.dpy);
-
-			if (xev && !FD_ISSET(xfd, &rfd))
-				xev--;
-			if (!FD_ISSET(ttyfd, &rfd) && !FD_ISSET(xfd, &rfd)) {
-				#if VISUALBELL_2_PATCH || VISUALBELL_3_PATCH
-				if (to_ms >= 0) {
-					static const long k = 1E3, m = 1E6;
-					drawtimeout.tv_sec = to_ms / k;
-					drawtimeout.tv_nsec = (to_ms % k) * m;
-				} else {
-					tv = NULL;
-				}
-				#else
-				if (blinkset) {
-					if (TIMEDIFF(now, lastblink) \
-							> blinktimeout) {
-						drawtimeout.tv_nsec = 1000;
-					} else {
-						drawtimeout.tv_nsec = (1E6 * \
-							(blinktimeout - \
-							TIMEDIFF(now,
-								lastblink)));
-					}
-					drawtimeout.tv_sec = \
-					    drawtimeout.tv_nsec / 1E9;
-					drawtimeout.tv_nsec %= (long)1E9;
-				} else {
-					tv = NULL;
-				}
-				#endif // VISUALBELL_2_PATCH
-			}
-		}
+		draw();
+		XFlush(xw.dpy);
+		drawing = 0;
 	}
 }
 
