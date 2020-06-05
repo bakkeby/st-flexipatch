@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2020-06-05 - Added the ligatures patch
+
 2020-05-20 - Upgrade to 222876, 2020-05-09, and removed visualbell 1, 2, 3 patches and force redraw after keypress due to incompatibility. Refer to tag [371878](https://github.com/bakkeby/st-flexipatch/tree/371878) if you want to try these out.
 
 2020-04-20 - Upgrade to c279f5, 2020-04-19, and added the force redraw on pselect after key is pressed patch and the externalpipein patch
@@ -92,6 +94,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [keyboard-select](https://st.suckless.org/patches/keyboard_select/)
       - allows you to select text on the terminal using keyboard shortcuts
+
+   - [ligatures](https://st.suckless.org/patches/ligatures/)
+      - adds support for drawing ligatures using the Harfbuzz library to transform original text of a single line to a list of glyphs with ligatures included
 
    - [newterm](https://st.suckless.org/patches/newterm/)
       - allows you to spawn a new st terminal using Ctrl-Shift-Return

@@ -12,8 +12,14 @@
 #define DIVCEIL(n, d)		(((n) + ((d) - 1)) / (d))
 #define DEFAULT(a, b)		(a) = (a) ? (a) : (b)
 #define LIMIT(x, a, b)		(x) = (x) < (a) ? (a) : (x) > (b) ? (b) : (x)
+#if LIGATURES_PATCH
+#define ATTRCMP(a, b)		(((a).mode & (~ATTR_WRAP) & (~ATTR_LIGA)) != ((b).mode & (~ATTR_WRAP) & (~ATTR_LIGA)) || \
+				(a).fg != (b).fg || \
+				(a).bg != (b).bg)
+#else
 #define ATTRCMP(a, b)		((a).mode != (b).mode || (a).fg != (b).fg || \
 				(a).bg != (b).bg)
+#endif // LIGATURES_PATCH
 #define TIMEDIFF(t1, t2)	((t1.tv_sec-t2.tv_sec)*1000 + \
 				(t1.tv_nsec-t2.tv_nsec)/1E6)
 #define MODBIT(x, set, bit)	((set) ? ((x) |= (bit)) : ((x) &= ~(bit)))
@@ -36,6 +42,11 @@ enum glyph_attribute {
 	ATTR_WDUMMY     = 1 << 10,
 	#if BOXDRAW_PATCH
 	ATTR_BOXDRAW    = 1 << 11,
+	#if LIGATURES_PATCH
+	ATTR_LIGA       = 1 << 12,
+	#endif // LIGATURES_PATCH
+	#elif LIGATURES_PATCH
+	ATTR_LIGA       = 1 << 11,
 	#endif // BOXDRAW_PATCH
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };

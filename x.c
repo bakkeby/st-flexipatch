@@ -19,6 +19,9 @@ char *argv0;
 #include "arg.h"
 #include "st.h"
 #include "win.h"
+#if LIGATURES_PATCH
+#include "hb.h"
+#endif // LIGATURES_PATCH
 
 #if THEMED_CURSOR_PATCH
 #include <X11/Xcursor/Xcursor.h>
@@ -1216,6 +1219,11 @@ xunloadfont(Font *f)
 void
 xunloadfonts(void)
 {
+	#if LIGATURES_PATCH
+	/* Clear Harfbuzz font cache. */
+	hbunloadfonts();
+	#endif // LIGATURES_PATCH
+
 	/* Free the loaded fonts in the font cache.  */
 	while (frclen > 0)
 		XftFontClose(xw.dpy, frc[--frclen].font);
@@ -1449,7 +1457,11 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 		mode = glyphs[i].mode;
 
 		/* Skip dummy wide-character spacing. */
+		#if LIGATURES_PATCH
+		if (mode & ATTR_WDUMMY)
+		#else
 		if (mode == ATTR_WDUMMY)
+		#endif // LIGATURES_PATCH
 			continue;
 
 		/* Determine font for glyph if different from previous glyph. */
@@ -1569,6 +1581,11 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 		xp += runewidth;
 		numspecs++;
 	}
+
+	#if LIGATURES_PATCH
+	/* Harfbuzz transformation for ligatures. */
+	hbtransform(specs, glyphs, len, x, y);
+	#endif // LIGATURES_PATCH
 
 	return numspecs;
 }
@@ -1780,14 +1797,24 @@ xdrawglyph(Glyph g, int x, int y)
 }
 
 void
+#if LIGATURES_PATCH
+xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og, Line line, int len)
+#else
 xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
+#endif // LIGATURES_PATCH
 {
 	Color drawcol;
 
 	/* remove the old cursor */
 	if (selected(ox, oy))
 		og.mode ^= ATTR_REVERSE;
+	#if LIGATURES_PATCH
+	/* Redraw the line where cursor was previously.
+	 * It will restore the ligatures broken by the cursor. */
+	xdrawline(line, 0, oy, len);
+	#else
 	xdrawglyph(og, ox, oy);
+	#endif // LIGATURES_PATCH
 
 	if (IS_SET(MODE_HIDE))
 		return;

@@ -10,13 +10,13 @@
 /* Patches */
 
 /* The alpha patch adds transparency for the terminal.
+ * You need to uncomment the corresponding line in config.mk to use the -lXrender library
+ * when including this patch.
  * https://st.suckless.org/patches/alpha/
  */
 #define ALPHA_PATCH 0
 
 /* This patch allows st to reize to any pixel size rather than snapping to character width/height.
- * You need to uncomment the corresponding line in config.mk to use the -lXrender library
- * when including this patch.
  * https://st.suckless.org/patches/anysize/
  */
 #define ANYSIZE_PATCH 0
@@ -125,6 +125,17 @@
  * https://st.suckless.org/patches/keyboard_select/
  */
 #define KEYBOARDSELECT_PATCH 0
+
+/* This patch adds support for drawing ligatures using the Harfbuzz library to transform
+ * original text of a single line to a list of glyphs with ligatures included.
+ * This patch depends on the Harfbuzz library and headers to compile.
+ * You need to uncomment the corresponding line in config.mk to use the harfbuzz library
+ * when including this patch.
+ * You need to uncomment the corresponding lines in Makefile when including this patch.
+ * https://github.com/cog1to/st-ligatures
+ * https://st.suckless.org/patches/ligatures/
+ */
+#define LIGATURES_PATCH 0
 
 /* This patch allows you to spawn a new st terminal using Ctrl-Shift-Return. It will have the
  * same CWD (current working directory) as the original st instance.
