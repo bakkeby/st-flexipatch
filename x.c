@@ -1954,6 +1954,10 @@ xsettitle(char *p)
 int
 xstartdraw(void)
 {
+	#if W3M_PATCH
+	if (IS_SET(MODE_VISIBLE))
+		XCopyArea(xw.dpy, xw.win, xw.buf, dc.gc, 0, 0, win.w, win.h, 0, 0);
+	#endif // W3M_PATCH
 	return IS_SET(MODE_VISIBLE);
 }
 

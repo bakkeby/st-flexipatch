@@ -199,11 +199,15 @@
  */
 #define THEMED_CURSOR_PATCH 0
 
-/*
- * Vertically center lines in the space available if you have set a larger chscale in config.h
+/* Vertically center lines in the space available if you have set a larger chscale in config.h
  * https://st.suckless.org/patches/vertcenter/
  */
 #define VERTCENTER_PATCH 0
+
+/* Adds support for w3m images.
+ * https://st.suckless.org/patches/w3m/
+ */
+#define W3M_PATCH 0
 
 /* This patch allows user to specify the initial path st should use as the working directory.
  * https://st.suckless.org/patches/workingdir/

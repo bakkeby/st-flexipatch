@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2020-06-14 - Added w3m patch
+
 2020-06-10 - Upgrade to 249ef9, 2020-06-01
 
 2020-06-05 - Added the ligatures patch
@@ -131,6 +133,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [~visualbell~](https://st.suckless.org/patches/visualbell/)
       - ~adds visual indicators for the terminal bell event~
+
+   - [w3m](https://st.suckless.org/patches/w3m/)
+      - adds support for w3m images
 
    - [workingdir](https://st.suckless.org/patches/workingdir/)
       - allows user to specify the initial path st should use as the working directory
