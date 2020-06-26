@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2020-06-26 - Added the single drawable buffer patch as per the FAQ in order to get w3m images to display
+
 2020-06-25 - Upgrade to 0.8.4 (367803, 2020-06-19)
 
 2020-06-14 - Added w3m patch

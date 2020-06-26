@@ -177,6 +177,12 @@
  */
 #define SCROLLBACK_MOUSE_ALTSCREEN_PATCH 0
 
+/* This is the single drawable buffer patch as outlined in the FAQ to get images
+ * in w3m to display. While this patch does not break the alpha patch it images
+ * are not shown in w3m if the alpha patch is applied.
+ */
+#define SINGLE_DRAWABLE_BUFFER_PATCH 0
+
 /* This patch allows clients to embed into the st window and is useful if you tend to
  * start X applications from the terminal. For example:
  *

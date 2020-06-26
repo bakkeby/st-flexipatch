@@ -816,6 +816,7 @@ xresize(int col, int row)
 	win.tw = col * win.cw;
 	win.th = row * win.ch;
 
+	#if !SINGLE_DRAWABLE_BUFFER_PATCH
 	XFreePixmap(xw.dpy, xw.buf);
 	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h,
 			#if ALPHA_PATCH
@@ -825,6 +826,7 @@ xresize(int col, int row)
 			#endif // ALPHA_PATCH
 	);
 	XftDrawChange(xw.draw, xw.buf);
+	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
 	xclear(0, 0, win.w, win.h);
 
 	/* resize to new width */
@@ -1333,13 +1335,21 @@ xinit(int cols, int rows)
 	gcvalues.graphics_exposures = False;
 
 	#if ALPHA_PATCH
+	#if SINGLE_DRAWABLE_BUFFER_PATCH
+	xw.buf = xw.win;
+	#else
 	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h, xw.depth);
+	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
 	dc.gc = XCreateGC(xw.dpy, xw.buf, GCGraphicsExposures, &gcvalues);
 	#else
 	dc.gc = XCreateGC(xw.dpy, parent, GCGraphicsExposures,
 			&gcvalues);
+	#if SINGLE_DRAWABLE_BUFFER_PATCH
+	xw.buf = xw.win;
+	#else
 	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h,
 			DefaultDepth(xw.dpy, xw.scr));
+	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
 	#endif // ALPHA_PATCH
 	XSetForeground(xw.dpy, dc.gc, dc.col[defaultbg].pixel);
 	XFillRectangle(xw.dpy, xw.buf, dc.gc, 0, 0, win.w, win.h);
@@ -1999,8 +2009,10 @@ xfinishdraw(void)
 	if (vbellmode == 3 && win.vbellset)
 		xdrawvbell();
 	#endif // VISUALBELL_3_PATCH
+	#if !SINGLE_DRAWABLE_BUFFER_PATCH
 	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w,
 			win.h, 0, 0);
+	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
 	XSetForeground(xw.dpy, dc.gc,
 			dc.col[IS_SET(MODE_REVERSE)?
 				defaultfg : defaultbg].pixel);
