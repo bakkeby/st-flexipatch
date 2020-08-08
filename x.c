@@ -289,6 +289,9 @@ static char *opt_dir   = NULL;
 #endif // WORKINGDIR_PATCH
 
 static int oldbutton = 3; /* button event on startup: 3 = release */
+#if VISUALBELL_1_PATCH
+static int bellon = 0;    /* visual bell status */
+#endif // VISUALBELL_1_PATCH
 
 #include "patch/x_include.c"
 
@@ -2103,6 +2106,10 @@ xbell(void)
 		xseturgency(1);
 	if (bellvolume)
 		XkbBell(xw.dpy, xw.win, bellvolume, (Atom)NULL);
+	#if VISUALBELL_1_PATCH
+	if (!bellon) /* turn visual bell on */
+		bellon = 1;
+	#endif // VISUALBELL_1_PATCH
 }
 
 void
@@ -2387,7 +2394,18 @@ run(void)
 			}
 		}
 
+		#if VISUALBELL_1_PATCH
+		if (bellon) {
+			bellon++;
+			bellon %= 3;
+			MODBIT(win.mode, !IS_SET(MODE_REVERSE), MODE_REVERSE);
+			redraw();
+		}
+		else
+			draw();
+		#else
 		draw();
+		#endif // VISUALBELL_1_PATCH
 		XFlush(xw.dpy);
 		drawing = 0;
 	}

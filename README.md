@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2020-08-08 - Re-added the visualbell patch
+
 2020-06-26 - Added the single drawable buffer patch as per the FAQ in order to get w3m images to display
 
 2020-06-25 - Upgrade to 0.8.4 (367803, 2020-06-19)
@@ -135,8 +137,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h
 
-   - [~visualbell~](https://st.suckless.org/patches/visualbell/)
-      - ~adds visual indicators for the terminal bell event~
+   - [visualbell](https://st.suckless.org/patches/visualbell/)
+      - adds visual indicators for the terminal bell event
 
    - [w3m](https://st.suckless.org/patches/w3m/)
       - adds support for w3m images
