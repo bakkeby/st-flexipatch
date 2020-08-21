@@ -789,8 +789,19 @@ sigchld(int a)
 	#endif // EXTERNALPIPEIN_PATCH
 		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
 
+	#if EXTERNALPIPE_PATCH
+	if (pid != p) {
+		if (p == 0 && wait(&stat) < 0)
+			die("wait: %s\n", strerror(errno));
+
+		/* reinstall sigchld handler */
+		signal(SIGCHLD, sigchld);
+		return;
+	}
+	#else
 	if (pid != p)
 		return;
+	#endif // EXTERNALPIPE_PATCH
 
 	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
 	close(csdfd);
