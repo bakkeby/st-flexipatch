@@ -1752,7 +1752,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 		xclear(winx, winy + win.ch, winx + width, win.h);
 	#endif // ANYSIZE_PATCH
 
-	/* Clean up the region we want to draw to. */
+	// /* Clean up the region we want to draw to. */
 	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
 
 	/* Set the clip region because Xft is sometimes dirty. */
@@ -2393,6 +2393,13 @@ run(void)
 				timeout = blinktimeout;
 			}
 		}
+
+		#if ANYSIZE_NOBAR_PATCH
+		/* Refresh before drawing */
+		cresize(0, 0);
+		redraw();
+		xhints();
+		#endif // ANYSIZE_NOBAR_PATCH
 
 		#if VISUALBELL_1_PATCH
 		if (bellon) {

@@ -21,6 +21,15 @@
  */
 #define ANYSIZE_PATCH 0
 
+/* This patch aims to prevent black bars being drawn on the edges of st terminals using the anysize
+ * patch. This generally only occurs when the terminal background color doesn't match the colors
+ * set in st's config.h file, for example when using terminal theming scripts such as base16.
+ * (I have not found this to be working, but adding for reference. May reduce flickering on
+ * terminal resizes.)
+ * https://github.com/connor-brooks/st-anysize-nobar
+ */
+#define ANYSIZE_NOBAR_PATCH 0
+
 /* By default bold text is rendered with a bold font in the bright variant of the current color.
  * This patch makes bold text rendered simply as bold, leaving the color unaffected.
  * https://st.suckless.org/patches/bold-is-not-bright/
@@ -136,6 +145,12 @@
  * https://st.suckless.org/patches/ligatures/
  */
 #define LIGATURES_PATCH 0
+
+/* This patch makes st ignore terminal color attributes by forcing display of the default
+ * foreground and background colors only - making for a monochrome look. Idea ref.
+ * https://www.reddit.com/r/suckless/comments/ixbx6z/how_to_use_black_and_white_only_for_st/
+ */
+#define MONOCHROME_PATCH 0
 
 /* This patch allows you to spawn a new st terminal using Ctrl-Shift-Return. It will have the
  * same CWD (current working directory) as the original st instance.
