@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2020-11-14 - Added the wide glyphs patch
+
 2020-10-23 - Added the monochrome patch
 
 2020-08-08 - Re-added the visualbell patch
@@ -150,6 +152,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [w3m](https://st.suckless.org/patches/w3m/)
       - adds support for w3m images
+
+   - [wide-glyphs](https://www.reddit.com/r/suckless/comments/jt90ai/update_support_for_proper_glyph_rendering_in_st/)
+      - adds proper support for wide glyphs, as opposed to rendering smaller or cut glyphs
 
    - [workingdir](https://st.suckless.org/patches/workingdir/)
       - allows user to specify the initial path st should use as the working directory

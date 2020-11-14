@@ -235,6 +235,13 @@
  */
 #define W3M_PATCH 0
 
+/* Adds proper glyphs rendering in st allowing wide glyphs to be drawn as-is as opposed to
+ * smaller or cut glyphs being rendered.
+ * https://github.com/Dreomite/st/commit/e3b821dcb3511d60341dec35ee05a4a0abfef7f2
+ * https://www.reddit.com/r/suckless/comments/jt90ai/update_support_for_proper_glyph_rendering_in_st/
+ */
+#define WIDE_GLYPHS_PATCH 0
+
 /* This patch allows user to specify the initial path st should use as the working directory.
  * https://st.suckless.org/patches/workingdir/
  */
