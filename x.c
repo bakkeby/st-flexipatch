@@ -1729,6 +1729,13 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 	#endif // INVERT_PATCH
 
+	#if ALPHA_PATCH && ALPHA_GRADIENT_PATCH
+	// gradient
+	bg->color.alpha = grad_alpha * 0xffff * (win.h - y*win.ch) / win.h + stat_alpha * 0xffff;
+	// uncomment to invert the gradient
+	// bg->color.alpha = grad_alpha * 0xffff * (y*win.ch) / win.h + stat_alpha * 0xffff;
+	#endif // ALPHA_PATCH | ALPHA_GRADIENT_PATCH
+
 	#if WIDE_GLYPHS_PATCH
 	if (dmode & DRAW_BG) {
 	#endif // WIDE_GLYPHS_PATCH

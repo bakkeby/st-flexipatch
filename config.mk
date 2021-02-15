@@ -13,7 +13,7 @@ X11LIB = /usr/X11R6/lib
 PKG_CONFIG = pkg-config
 
 # Uncomment this for the alpha patch / ALPHA_PATCH
-#XRENDER = -lXrender
+XRENDER = -lXrender
 
 # Uncomment this for the themed cursor patch / THEMED_CURSOR_PATCH
 #XCURSOR = -lXcursor
@@ -36,8 +36,8 @@ STLDFLAGS = $(LIBS) $(LDFLAGS)
 # OpenBSD:
 #CPPFLAGS = -DVERSION=\"$(VERSION)\" -D_XOPEN_SOURCE=600 -D_BSD_SOURCE
 #LIBS = -L$(X11LIB) -lm -lX11 -lutil -lXft \
-#       `$(PKG_CONFIG) --libs fontconfig` \
-#       `$(PKG_CONFIG) --libs freetype2`
+#       `pkg-config --libs fontconfig` \
+#       `pkg-config --libs freetype2`
 
 # compiler and linker
 # CC = c99

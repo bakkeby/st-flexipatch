@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-02-15 - Added the alpha gradient patch
+
 2020-11-14 - Added the wide glyphs patch
 
 2020-10-23 - Added the monochrome patch
@@ -98,6 +100,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [~force-redraw-after-keypress~](https://lists.suckless.org/hackers/2004/17221.html)
       - ~this patch forces the terminal to check for new data on the tty on keypress with the aim of reducing input latency~
+
+   - [gradient](https://st.suckless.org/patches/gradient/)
+      - adds gradient transparency to st
+      - depends on the alpha patch
 
    - [hidecursor](https://st.suckless.org/patches/hidecursor/)
       - hides the X cursor whenever a key is pressed and show it back when the mouse is moved in the terminal window
