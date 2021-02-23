@@ -42,8 +42,14 @@ void select_or_drawcursor(int selectsearch_mode, int type) {
         xsetsel(getsel());
     }
     else
-        xdrawcursor(term.c.x, term.c.y, term.line[term.c.y][term.c.x],
-                    term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
+        #if LIGATURES_PATCH
+            xdrawcursor(term.c.x, term.c.y, term.line[term.c.y][term.c.x],
+                        term.ocx, term.ocy, term.line[term.ocy][term.ocx],
+                        term.line[term.ocy], term.col);
+        #else
+            xdrawcursor(term.c.x, term.c.y, term.line[term.c.y][term.c.x],
+                        term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
+        #endif
 }
 
 void search(int selectsearch_mode, Rune *target, int ptarget, int incr, int type, TCursor *cu) {
