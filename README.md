@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-02-26 - Added the dynamic cursor color patch
+
 2021-02-15 - Added the alpha gradient patch
 
 2020-11-14 - Added the wide glyphs patch
@@ -79,6 +81,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [disable-fonts](https://st.suckless.org/patches/disable_bold_italic_fonts/)
       - this patch adds the option of disabling bold/italic/roman fonts globally
+
+   - [dynamic-cursor-color](https://st.suckless.org/patches/dynamic-cursor-color/)
+      - this patch makes the cursor color the inverse of the current cell color
 
    - [externalpipe](https://st.suckless.org/patches/externalpipe/)
       - this patch allows for eading and writing st's screen through a pipe, e.g. to pass info to dmenu

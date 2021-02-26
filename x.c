@@ -1848,6 +1848,9 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 #endif // LIGATURES_PATCH
 {
 	Color drawcol;
+	#if DYNAMIC_CURSOR_COLOR_PATCH
+	XRenderColor colbg;
+	#endif // DYNAMIC_CURSOR_COLOR_PATCH
 
 	/* remove the old cursor */
 	if (selected(ox, oy))
@@ -1887,10 +1890,27 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			g.fg = defaultfg;
 			g.bg = defaultrcs;
 		} else {
+			#if DYNAMIC_CURSOR_COLOR_PATCH
+			g.bg = g.fg;
+			g.fg = defaultbg;
+			#else
 			g.fg = defaultbg;
 			g.bg = defaultcs;
+			#endif // DYNAMIC_CURSOR_COLOR_PATCH
 		}
+
+		#if DYNAMIC_CURSOR_COLOR_PATCH
+		if (IS_TRUECOL(g.bg)) {
+			colbg.alpha = 0xffff;
+			colbg.red = TRUERED(g.bg);
+			colbg.green = TRUEGREEN(g.bg);
+			colbg.blue = TRUEBLUE(g.bg);
+			XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colbg, &drawcol);
+		} else
+			drawcol = dc.col[g.bg];
+		#else
 		drawcol = dc.col[g.bg];
+		#endif // DYNAMIC_CURSOR_COLOR_PATCH
 	}
 
 	/* draw the new one */
