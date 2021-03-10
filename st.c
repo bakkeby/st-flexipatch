@@ -25,6 +25,10 @@
 #include <X11/X.h>
 #endif // KEYBOARDSELECT_PATCH
 
+#if SIXEL_PATCH
+#include "sixel.h"
+#endif // SIXEL_PATCH
+
 #if   defined(__linux)
  #include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -59,6 +63,9 @@ enum term_mode {
 	MODE_ECHO        = 1 << 4,
 	MODE_PRINT       = 1 << 5,
 	MODE_UTF8        = 1 << 6,
+	#if SIXEL_PATCH
+	MODE_SIXEL       = 1 << 7,
+	#endif // SIXEL_PATCH
 };
 
 enum cursor_movement {
@@ -90,14 +97,10 @@ enum escape_state {
 	ESC_STR_END    = 16, /* a final string was encountered */
 	ESC_TEST       = 32, /* Enter in test mode */
 	ESC_UTF8       = 64,
+	#if SIXEL_PATCH
+	ESC_DCS        =128,
+	#endif // SIXEL_PATCH
 };
-
-typedef struct {
-	Glyph attr; /* current char attributes */
-	int x;
-	int y;
-	char state;
-} TCursor;
 
 typedef struct {
 	int mode;
@@ -116,32 +119,6 @@ typedef struct {
 
 	int alt;
 } Selection;
-
-/* Internal representation of the screen */
-typedef struct {
-	int row;      /* nb row */
-	int col;      /* nb col */
-	Line *line;   /* screen */
-	Line *alt;    /* alternate screen */
-	#if SCROLLBACK_PATCH
-	Line hist[HISTSIZE]; /* history buffer */
-	int histi;    /* history index */
-	int scr;      /* scroll back */
-	#endif // SCROLLBACK_PATCH
-	int *dirty;   /* dirtyness of lines */
-	TCursor c;    /* cursor */
-	int ocx;      /* old cursor col */
-	int ocy;      /* old cursor row */
-	int top;      /* top    scroll limit */
-	int bot;      /* bottom scroll limit */
-	int mode;     /* terminal mode flags */
-	int esc;      /* escape state flags */
-	char trantbl[4]; /* charset table translation */
-	int charset;  /* current charset */
-	int icharset; /* selected charset for sequence */
-	int *tabs;
-	Rune lastc;   /* last printed char outside of sequence, 0 if control */
-} Term;
 
 /* CSI Escape sequence structs */
 /* ESC '[' [[ [<priv>] <arg> [;]] <mode> [<mode>]] */
@@ -217,9 +194,6 @@ static void tdefutf8(char);
 static int32_t tdefcolor(int *, int *, int);
 static void tdeftran(char);
 static void tstrsequence(uchar);
-
-static void drawregion(int, int, int, int);
-
 static void selnormalize(void);
 static void selscroll(int, int);
 static void selsnap(int *, int *, int);
@@ -235,7 +209,6 @@ static char base64dec_getc(const char **);
 static ssize_t xwrite(int, const char *, size_t);
 
 /* Globals */
-static Term term;
 static Selection sel;
 static CSIEscape csiescseq;
 static STREscape strescseq;
@@ -245,6 +218,9 @@ static int cmdfd;
 static int csdfd;
 #endif // EXTERNALPIPEIN_PATCH
 static pid_t pid;
+#if SIXEL_PATCH
+sixel_state_t sixel_st;
+#endif // SIXEL_PATCH
 
 static uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
 static uchar utfmask[UTF_SIZ + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
@@ -1116,6 +1092,9 @@ void
 treset(void)
 {
 	uint i;
+	#if SIXEL_PATCH
+	ImageList *im;
+	#endif // SIXEL_PATCH
 
 	term.c = (TCursor){{
 		.mode = ATTR_NULL,
@@ -1138,6 +1117,10 @@ treset(void)
 		tclearregion(0, 0, term.col-1, term.row-1);
 		tswapscreen();
 	}
+	#if SIXEL_PATCH
+	for (im = term.images; im; im = im->next)
+		im->should_delete = 1;
+	#endif // SIXEL_PATCH
 }
 
 void
@@ -1152,9 +1135,16 @@ void
 tswapscreen(void)
 {
 	Line *tmp = term.line;
+	#if SIXEL_PATCH
+	ImageList *im = term.images;
+	#endif // SIXEL_PATCH
 
 	term.line = term.alt;
 	term.alt = tmp;
+	#if SIXEL_PATCH
+	term.images = term.images_alt;
+	term.images_alt = im;
+	#endif // SIXEL_PATCH
 	term.mode ^= MODE_ALTSCREEN;
 	tfulldirt();
 }
@@ -1168,6 +1158,9 @@ tscrolldown(int orig, int n)
 {
 	int i;
 	Line temp;
+	#if SIXEL_PATCH
+	ImageList *im;
+	#endif // SIXEL_PATCH
 
 	LIMIT(n, 0, term.bot-orig+1);
 
@@ -1189,6 +1182,15 @@ tscrolldown(int orig, int n)
 		term.line[i-n] = temp;
 	}
 
+	#if SIXEL_PATCH
+	for (im = term.images; im; im = im->next) {
+		if (im->y < term.bot)
+			im->y += n;
+		if (im->y > term.bot)
+			im->should_delete = 1;
+	}
+	#endif // SIXEL_PATCH
+
 	#if SCROLLBACK_PATCH
 	if (term.scr == 0)
 		selscroll(orig, n);
@@ -1206,6 +1208,9 @@ tscrollup(int orig, int n)
 {
 	int i;
 	Line temp;
+	#if SIXEL_PATCH
+	ImageList *im;
+	#endif // SIXEL_PATCH
 
 	LIMIT(n, 0, term.bot-orig+1);
 
@@ -1229,6 +1234,15 @@ tscrollup(int orig, int n)
 		term.line[i] = term.line[i+n];
 		term.line[i+n] = temp;
 	}
+
+	#if SIXEL_PATCH
+	for (im = term.images; im; im = im->next) {
+		if (im->y+im->height/win.ch > term.top)
+			im->y -= n;
+		if (im->y+im->height/win.ch < term.top)
+			im->should_delete = 1;
+	}
+	#endif // SIXEL_PATCH
 
 	#if SCROLLBACK_PATCH
 	if (term.scr == 0)
@@ -2033,6 +2047,10 @@ strhandle(void)
 {
 	char *p = NULL, *dec;
 	int j, narg, par;
+	#if SIXEL_PATCH
+	ImageList *new_image;
+	int i;
+	#endif // SIXEL_PATCH
 
 	term.esc &= ~(ESC_STR_END|ESC_STR);
 	strparse();
@@ -2093,6 +2111,41 @@ strhandle(void)
 		xsettitle(strescseq.args[0]);
 		return;
 	case 'P': /* DCS -- Device Control String */
+		#if SIXEL_PATCH
+		if (IS_SET(MODE_SIXEL)) {
+			term.mode &= ~MODE_SIXEL;
+			new_image = malloc(sizeof(ImageList));
+			memset(new_image, 0, sizeof(ImageList));
+			new_image->x = term.c.x;
+			new_image->y = term.c.y;
+			new_image->width = sixel_st.image.width;
+			new_image->height = sixel_st.image.height;
+			new_image->pixels = malloc(new_image->width * new_image->height * 4);
+			if (sixel_parser_finalize(&sixel_st, new_image->pixels) != 0) {
+				perror("sixel_parser_finalize() failed");
+				sixel_parser_deinit(&sixel_st);
+				return;
+			}
+			sixel_parser_deinit(&sixel_st);
+			if (term.images) {
+				ImageList *im;
+				for (im = term.images; im->next;)
+					im = im->next;
+				im->next = new_image;
+				new_image->prev = im;
+			} else {
+				term.images = new_image;
+			}
+			for (i = 0; i < (sixel_st.image.height + win.ch-1)/win.ch; ++i) {
+				int x;
+				tclearregion(term.c.x, term.c.y, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw, term.c.y);
+				for (x = term.c.x; x < MIN(term.col, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw); x++)
+					term.line[term.c.y][x].mode |= ATTR_SIXEL;
+				tnewline(1);
+			}
+		}
+		return;
+		#endif // SIXEL_PATCH
 	case '_': /* APC -- Application Program Command */
 	case '^': /* PM -- Privacy Message */
 		return;
@@ -2286,9 +2339,16 @@ tdectest(char c)
 void
 tstrsequence(uchar c)
 {
+	#if SIXEL_PATCH
+	strreset();
+	#endif // SIXEL_PATCH
+
 	switch (c) {
 	case 0x90:   /* DCS -- Device Control String */
 		c = 'P';
+		#if SIXEL_PATCH
+		term.esc |= ESC_DCS;
+		#endif // SIXEL_PATCH
 		break;
 	case 0x9f:   /* APC -- Application Program Command */
 		c = '_';
@@ -2300,7 +2360,9 @@ tstrsequence(uchar c)
 		c = ']';
 		break;
 	}
+	#if !SIXEL_PATCH
 	strreset();
+	#endif // SIXEL_PATCH
 	strescseq.type = c;
 	term.esc |= ESC_STR;
 }
@@ -2420,6 +2482,9 @@ eschandle(uchar ascii)
 		term.esc |= ESC_UTF8;
 		return 0;
 	case 'P': /* DCS -- Device Control String */
+		#if SIXEL_PATCH
+		term.esc |= ESC_DCS;
+		#endif // SIXEL_PATCH
 	case '_': /* APC -- Application Program Command */
 	case '^': /* PM -- Privacy Message */
 	case ']': /* OSC -- Operating System Command */
@@ -2506,7 +2571,12 @@ tputc(Rune u)
 	Glyph *gp;
 
 	control = ISCONTROL(u);
-	if (u < 127 || !IS_SET(MODE_UTF8)) {
+	#if SIXEL_PATCH
+	if (u < 127 || !IS_SET(MODE_UTF8 | MODE_SIXEL))
+	#else
+	if (u < 127 || !IS_SET(MODE_UTF8))
+	#endif // SIXEL_PATCH
+	{
 		c[0] = u;
 		width = len = 1;
 	} else {
@@ -2527,10 +2597,24 @@ tputc(Rune u)
 	if (term.esc & ESC_STR) {
 		if (u == '\a' || u == 030 || u == 032 || u == 033 ||
 		   ISCONTROLC1(u)) {
+			#if SIXEL_PATCH
+			term.esc &= ~(ESC_START|ESC_STR|ESC_DCS);
+			#else
 			term.esc &= ~(ESC_START|ESC_STR);
+			#endif // SIXEL_PATCH
 			term.esc |= ESC_STR_END;
 			goto check_control_code;
 		}
+
+		#if SIXEL_PATCH
+		if (IS_SET(MODE_SIXEL)) {
+			if (sixel_parser_parse(&sixel_st, (unsigned char *)&u, 1) != 0)
+				perror("sixel_parser_parse() failed");
+			return;
+		}
+		if (term.esc & ESC_DCS)
+			goto check_control_code;
+		#endif // SIXEL_PATCH
 
 		if (strescseq.len+len >= strescseq.siz) {
 			/*
@@ -2582,6 +2666,17 @@ check_control_code:
 				csihandle();
 			}
 			return;
+		#if SIXEL_PATCH
+		} else if (term.esc & ESC_DCS) {
+			csiescseq.buf[csiescseq.len++] = u;
+			if (BETWEEN(u, 0x40, 0x7E)
+					|| csiescseq.len >= \
+					sizeof(csiescseq.buf)-1) {
+				csiparse();
+				dcshandle();
+			}
+			return;
+		#endif // SIXEL_PATCH
 		} else if (term.esc & ESC_UTF8) {
 			tdefutf8(u);
 		} else if (term.esc & ESC_ALTCHARSET) {
@@ -2643,7 +2738,12 @@ twrite(const char *buf, int buflen, int show_ctrl)
 	int n;
 
 	for (n = 0; n < buflen; n += charsize) {
-		if (IS_SET(MODE_UTF8)) {
+		#if SIXEL_PATCH
+		if (IS_SET(MODE_UTF8) && !IS_SET(MODE_SIXEL))
+		#else
+		if (IS_SET(MODE_UTF8))
+		#endif // SIXEL_PATCH
+		{
 			/* process a complete utf8 char */
 			charsize = utf8decode(buf + n, &u, buflen - n);
 			if (charsize == 0)

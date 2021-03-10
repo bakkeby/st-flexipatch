@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-03-10 - Added sixel support
+
 2021-02-26 - Added the dynamic cursor color patch
 
 2021-02-15 - Added the alpha gradient patch
@@ -144,6 +146,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [scrollback](https://st.suckless.org/patches/scrollback/)
       - allows you scroll back through terminal output using keyboard shortcuts or mousewheel
+
+   - sixel
+      - this patch adds SIXEL graphics support
 
    - st-embedder
       - this patch allows clients to embed into the st window and can be useful if you tend to start X applications from the terminal
