@@ -2,6 +2,12 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/cursorfont.h>
+#include <X11/keysym.h>
+#include <X11/Xft/Xft.h>
+#include <X11/XKBlib.h>
 #include "patches.h"
 
 /* macros */
@@ -42,14 +48,28 @@ enum glyph_attribute {
 	ATTR_WDUMMY     = 1 << 10,
 	#if BOXDRAW_PATCH
 	ATTR_BOXDRAW    = 1 << 11,
+	#endif // BOXDRAW_PATCH
 	#if LIGATURES_PATCH
 	ATTR_LIGA       = 1 << 12,
 	#endif // LIGATURES_PATCH
-	#elif LIGATURES_PATCH
-	ATTR_LIGA       = 1 << 11,
-	#endif // BOXDRAW_PATCH
+	#if SIXEL_PATCH
+	ATTR_SIXEL      = 1 << 13,
+	#endif // SIXEL_PATCH
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 };
+
+#if SIXEL_PATCH
+typedef struct _ImageList {
+	struct _ImageList *next, *prev;
+	unsigned char *pixels;
+	void *pixmap;
+	int width;
+	int height;
+	int x;
+	int y;
+	int should_delete;
+} ImageList;
+#endif // SIXEL_PATCH
 
 #if WIDE_GLYPHS_PATCH
 enum drawing_mode {
@@ -82,6 +102,10 @@ typedef unsigned short ushort;
 
 typedef uint_least32_t Rune;
 
+typedef XftDraw *Draw;
+typedef XftColor Color;
+typedef XftGlyphFontSpec GlyphFontSpec;
+
 #define Glyph Glyph_
 typedef struct {
 	Rune u;           /* character code */
@@ -92,6 +116,43 @@ typedef struct {
 
 typedef Glyph *Line;
 
+typedef struct {
+	Glyph attr; /* current char attributes */
+	int x;
+	int y;
+	char state;
+} TCursor;
+
+/* Internal representation of the screen */
+typedef struct {
+	int row;      /* nb row */
+	int col;      /* nb col */
+	Line *line;   /* screen */
+	Line *alt;    /* alternate screen */
+	#if SCROLLBACK_PATCH
+	Line hist[HISTSIZE]; /* history buffer */
+	int histi;    /* history index */
+	int scr;      /* scroll back */
+	#endif // SCROLLBACK_PATCH
+	int *dirty;   /* dirtyness of lines */
+	TCursor c;    /* cursor */
+	int ocx;      /* old cursor col */
+	int ocy;      /* old cursor row */
+	int top;      /* top    scroll limit */
+	int bot;      /* bottom scroll limit */
+	int mode;     /* terminal mode flags */
+	int esc;      /* escape state flags */
+	char trantbl[4]; /* charset table translation */
+	int charset;  /* current charset */
+	int icharset; /* selected charset for sequence */
+	int *tabs;
+	#if SIXEL_PATCH
+	ImageList *images;     /* sixel images */
+	ImageList *images_alt; /* sixel images for alternate screen */
+	#endif // SIXEL_PATCH
+	Rune lastc;   /* last printed char outside of sequence, 0 if control */
+} Term;
+
 typedef union {
 	int i;
 	uint ui;
@@ -100,9 +161,114 @@ typedef union {
 	const char *s;
 } Arg;
 
+/* Purely graphic info */
+typedef struct {
+	int tw, th; /* tty width and height */
+	int w, h; /* window width and height */
+	#if ANYSIZE_PATCH
+	int hborderpx, vborderpx;
+	#endif // ANYSIZE_PATCH
+	int ch; /* char height */
+	int cw; /* char width  */
+	#if VERTCENTER_PATCH
+	int cyo; /* char y offset */
+	#endif // VERTCENTER_PATCH
+	int mode; /* window state/mode flags */
+	int cursor; /* cursor style */
+} TermWindow;
+
+typedef struct {
+	Display *dpy;
+	Colormap cmap;
+	Window win;
+	Drawable buf;
+	GlyphFontSpec *specbuf; /* font spec buffer used for rendering */
+	Atom xembed, wmdeletewin, netwmname, netwmpid;
+	struct {
+		XIM xim;
+		XIC xic;
+		XPoint spot;
+		XVaNestedList spotlist;
+	} ime;
+	Draw draw;
+	Visual *vis;
+	XSetWindowAttributes attrs;
+	#if HIDECURSOR_PATCH
+	/* Here, we use the term *pointer* to differentiate the cursor
+	 * one sees when hovering the mouse over the terminal from, e.g.,
+	 * a green rectangle where text would be entered. */
+	Cursor vpointer, bpointer; /* visible and hidden pointers */
+	int pointerisvisible;
+	#endif // HIDECURSOR_PATCH
+	int scr;
+	int isfixed; /* is fixed geometry? */
+	#if ALPHA_PATCH
+	int depth; /* bit depth */
+	#endif // ALPHA_PATCH
+	int l, t; /* left and top offset */
+	int gm; /* geometry mask */
+} XWindow;
+
+typedef struct {
+	Atom xtarget;
+	char *primary, *clipboard;
+	struct timespec tclick1;
+	struct timespec tclick2;
+} XSelection;
+
+/* types used in config.h */
+typedef struct {
+	uint mod;
+	KeySym keysym;
+	void (*func)(const Arg *);
+	const Arg arg;
+} Shortcut;
+
+typedef struct {
+	uint mod;
+	uint button;
+	void (*func)(const Arg *);
+	const Arg arg;
+	uint  release;
+} MouseShortcut;
+
+typedef struct {
+	KeySym k;
+	uint mask;
+	char *s;
+	/* three-valued logic variables: 0 indifferent, 1 on, -1 off */
+	signed char appkey;    /* application keypad */
+	signed char appcursor; /* application cursor */
+} Key;
+
+/* Font structure */
+#define Font Font_
+typedef struct {
+	int height;
+	int width;
+	int ascent;
+	int descent;
+	int badslant;
+	int badweight;
+	short lbearing;
+	short rbearing;
+	XftFont *match;
+	FcFontSet *set;
+	FcPattern *pattern;
+} Font;
+
+/* Drawing Context */
+typedef struct {
+	Color *col;
+	size_t collen;
+	Font font, bfont, ifont, ibfont;
+	GC gc;
+} DC;
+
 void die(const char *, ...);
 void redraw(void);
 void draw(void);
+void drawregion(int, int, int, int);
 
 void printscreen(const Arg *);
 void printsel(const Arg *);
@@ -165,3 +331,9 @@ extern const int boxdraw, boxdraw_bold, boxdraw_braille;
 #if ALPHA_PATCH
 extern float alpha;
 #endif // ALPHA_PATCH
+
+extern DC dc;
+extern XWindow xw;
+extern XSelection xsel;
+extern TermWindow win;
+extern Term term;

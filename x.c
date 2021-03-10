@@ -27,31 +27,6 @@ char *argv0;
 #include <X11/Xcursor/Xcursor.h>
 #endif // THEMED_CURSOR_PATCH
 
-/* types used in config.h */
-typedef struct {
-	uint mod;
-	KeySym keysym;
-	void (*func)(const Arg *);
-	const Arg arg;
-} Shortcut;
-
-typedef struct {
-	uint mod;
-	uint button;
-	void (*func)(const Arg *);
-	const Arg arg;
-	uint  release;
-} MouseShortcut;
-
-typedef struct {
-	KeySym k;
-	uint mask;
-	char *s;
-	/* three-valued logic variables: 0 indifferent, 1 on, -1 off */
-	signed char appkey;    /* application keypad */
-	signed char appcursor; /* application cursor */
-} Key;
-
 /* X modifiers */
 #define XK_ANY_MOD    UINT_MAX
 #define XK_NO_MOD     0
@@ -82,89 +57,6 @@ static void zoomreset(const Arg *);
 #define TRUERED(x)		(((x) & 0xff0000) >> 8)
 #define TRUEGREEN(x)		(((x) & 0xff00))
 #define TRUEBLUE(x)		(((x) & 0xff) << 8)
-
-typedef XftDraw *Draw;
-typedef XftColor Color;
-typedef XftGlyphFontSpec GlyphFontSpec;
-
-/* Purely graphic info */
-typedef struct {
-	int tw, th; /* tty width and height */
-	int w, h; /* window width and height */
-	#if ANYSIZE_PATCH
-	int hborderpx, vborderpx;
-	#endif // ANYSIZE_PATCH
-	int ch; /* char height */
-	int cw; /* char width  */
-	#if VERTCENTER_PATCH
-	int cyo; /* char y offset */
-	#endif // VERTCENTER_PATCH
-	int mode; /* window state/mode flags */
-	int cursor; /* cursor style */
-} TermWindow;
-
-typedef struct {
-	Display *dpy;
-	Colormap cmap;
-	Window win;
-	Drawable buf;
-	GlyphFontSpec *specbuf; /* font spec buffer used for rendering */
-	Atom xembed, wmdeletewin, netwmname, netwmpid;
-	struct {
-		XIM xim;
-		XIC xic;
-		XPoint spot;
-		XVaNestedList spotlist;
-	} ime;
-	Draw draw;
-	Visual *vis;
-	XSetWindowAttributes attrs;
-	#if HIDECURSOR_PATCH
-	/* Here, we use the term *pointer* to differentiate the cursor
-	 * one sees when hovering the mouse over the terminal from, e.g.,
-	 * a green rectangle where text would be entered. */
-	Cursor vpointer, bpointer; /* visible and hidden pointers */
-	int pointerisvisible;
-	#endif // HIDECURSOR_PATCH
-	int scr;
-	int isfixed; /* is fixed geometry? */
-	#if ALPHA_PATCH
-	int depth; /* bit depth */
-	#endif // ALPHA_PATCH
-	int l, t; /* left and top offset */
-	int gm; /* geometry mask */
-} XWindow;
-
-typedef struct {
-	Atom xtarget;
-	char *primary, *clipboard;
-	struct timespec tclick1;
-	struct timespec tclick2;
-} XSelection;
-
-/* Font structure */
-#define Font Font_
-typedef struct {
-	int height;
-	int width;
-	int ascent;
-	int descent;
-	int badslant;
-	int badweight;
-	short lbearing;
-	short rbearing;
-	XftFont *match;
-	FcFontSet *set;
-	FcPattern *pattern;
-} Font;
-
-/* Drawing Context */
-typedef struct {
-	Color *col;
-	size_t collen;
-	Font font, bfont, ifont, ibfont;
-	GC gc;
-} DC;
 
 static inline ushort sixd_to_16bit(int);
 static int xmakeglyphfontspecs(XftGlyphFontSpec *, const Glyph *, int, int, int);
@@ -250,10 +142,11 @@ static void (*handler[LASTEvent])(XEvent *) = {
 };
 
 /* Globals */
-static DC dc;
-static XWindow xw;
-static XSelection xsel;
-static TermWindow win;
+Term term;
+DC dc;
+XWindow xw;
+XSelection xsel;
+TermWindow win;
 
 /* Font Ring Cache */
 enum {
@@ -2096,6 +1989,16 @@ xdrawline(Line line, int x1, int y1, int x2)
 void
 xfinishdraw(void)
 {
+	#if SIXEL_PATCH
+	ImageList *im;
+	int x, y;
+	int n = 0;
+	int nlimit = 256;
+	XRectangle *rects = NULL;
+	XGCValues gcvalues;
+	GC gc;
+	#endif // SIXEL_PATCH
+
 	#if VISUALBELL_3_PATCH
 	if (vbellmode == 3 && win.vbellset)
 		xdrawvbell();
@@ -2107,6 +2010,69 @@ xfinishdraw(void)
 	XSetForeground(xw.dpy, dc.gc,
 			dc.col[IS_SET(MODE_REVERSE)?
 				defaultfg : defaultbg].pixel);
+
+	#if SIXEL_PATCH
+	for (im = term.images; im; im = im->next) {
+		if (term.images == NULL) {
+			/* last image was deleted, bail out */
+			break;
+		}
+
+		if (im->should_delete) {
+			delete_image(im);
+
+			/* prevent the next iteration from accessing an invalid image pointer */
+			im = term.images;
+			if (im == NULL) {
+				break;
+			} else {
+				continue;
+			}
+		}
+
+		if (!im->pixmap) {
+			im->pixmap = (void *)XCreatePixmap(xw.dpy, xw.win, im->width, im->height,
+				#if ALPHA_PATCH
+				xw.depth
+				#else
+				DefaultDepth(xw.dpy, xw.scr)
+				#endif // ALPHA_PATCH
+			);
+			XImage ximage = {
+				.format = ZPixmap,
+				.data = (char *)im->pixels,
+				.width = im->width,
+				.height = im->height,
+				.xoffset = 0,
+				.byte_order = LSBFirst,
+				.bitmap_bit_order = MSBFirst,
+				.bits_per_pixel = 32,
+				.bytes_per_line = im->width * 4,
+				.bitmap_unit = 32,
+				.bitmap_pad = 32,
+				#if ALPHA_PATCH
+				.depth = xw.depth
+				#else
+				.depth = 24
+				#endif // ALPHA_PATCH
+			};
+			XPutImage(xw.dpy, (Drawable)im->pixmap, dc.gc, &ximage, 0, 0, 0, 0, im->width, im->height);
+			free(im->pixels);
+			im->pixels = NULL;
+		}
+
+		n = 0;
+		memset(&gcvalues, 0, sizeof(gcvalues));
+		gc = XCreateGC(xw.dpy, xw.win, 0, &gcvalues);
+
+		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0, im->width, im->height, borderpx + im->x * win.cw, borderpx + im->y * win.ch);
+		XFreeGC(xw.dpy, gc);
+
+	}
+
+	free(rects);
+	drawregion(0, 0, term.col, term.row);
+	#endif // SIXEL_PATCH
 }
 
 void

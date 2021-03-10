@@ -20,3 +20,6 @@
 #if SCROLLBACK_PATCH || SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 #include "scrollback.c"
 #endif
+#if SIXEL_PATCH
+#include "sixel_st.c"
+#endif

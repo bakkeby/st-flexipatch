@@ -8,7 +8,10 @@ include config.mk
 #LIGATURES_C = hb.c
 #LIGATURES_H = hb.h
 
-SRC = st.c x.c $(LIGATURES_C)
+# Uncomment this for the SIXEL patch / SIXEL_PATCH
+#SIXEL_C = sixel.c sixel_hls.c
+
+SRC = st.c x.c $(LIGATURES_C) $(SIXEL_C)
 OBJ = $(SRC:.c=.o)
 
 all: options st
