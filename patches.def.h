@@ -216,6 +216,11 @@
  *      not specific to this variant of st - the same issue is present in
  *      the xterm implementation. This is likely an issue of sixel height
  *      not being detected correctly.
+ *    - If combined with the alpha patch sixel graphics disappear (become white)
+ *      when transparent and rendered against a white background. This is believed
+ *      to be related to how the sixel graphics use RGB colors instead of RGBA.
+ *      A pull request or instructions for how to properly add alpha support for
+ *      sixel graphics would be very welcome.
  *
  * Note that you need to uncomment the corresponding lines in Makefile when including this patch.
  *
