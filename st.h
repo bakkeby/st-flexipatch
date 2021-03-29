@@ -311,9 +311,6 @@ void boxdraw_xinit(Display *, Colormap, XftDraw *, Visual *);
 void drawboxes(int, int, int, int, XftColor *, XftColor *, const XftGlyphFontSpec *, int);
 #endif // XFT_VERSION
 #endif // BOXDRAW_PATCH
-#if RELATIVEBORDER_PATCH
-int borderpx;
-#endif // RELATIVEBORDER_PATCH
 
 /* config.h globals */
 extern char *utmp;
