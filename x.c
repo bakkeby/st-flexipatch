@@ -189,6 +189,9 @@ static int oldbutton = 3; /* button event on startup: 3 = release */
 #if VISUALBELL_1_PATCH
 static int bellon = 0;    /* visual bell status */
 #endif // VISUALBELL_1_PATCH
+#if RELATIVEBORDER_PATCH
+int borderpx;
+#endif // RELATIVEBORDER_PATCH
 
 #include "patch/x_include.c"
 
@@ -1999,10 +2002,6 @@ xfinishdraw(void)
 	GC gc;
 	#endif // SIXEL_PATCH
 
-	#if VISUALBELL_3_PATCH
-	if (vbellmode == 3 && win.vbellset)
-		xdrawvbell();
-	#endif // VISUALBELL_3_PATCH
 	#if !SINGLE_DRAWABLE_BUFFER_PATCH
 	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w,
 			win.h, 0, 0);
