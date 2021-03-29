@@ -32,6 +32,9 @@
 
 #define TRUECOLOR(r,g,b)	(1 << 24 | (r) << 16 | (g) << 8 | (b))
 #define IS_TRUECOL(x)		(1 << 24 & (x))
+#if SCROLLBACK_PATCH
+#define HISTSIZE      2000
+#endif // SCROLLBACK_PATCH
 
 enum glyph_attribute {
 	ATTR_NULL       = 0,
