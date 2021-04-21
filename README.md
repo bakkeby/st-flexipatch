@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-04-21 - Added (temporary?) hack for Variable Fonts (VT) support
+
 2021-03-10 - Added sixel support
 
 2021-02-26 - Added the dynamic cursor color patch
@@ -171,6 +173,12 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [wide-glyphs](https://www.reddit.com/r/suckless/comments/jt90ai/update_support_for_proper_glyph_rendering_in_st/)
       - adds proper support for wide glyphs, as opposed to rendering smaller or cut glyphs
+
+   - [wide-glyph-spacing](https://github.com/googlefonts/Inconsolata/issues/42#issuecomment-737508890)
+      - there is a known issue that Google's Variable Fonts (VF) can end up with letter spacing
+        that is too wide in programs that use Xft, for example Inconsolata v3.000
+      - this is intended as a temporary workaround / patch / hack until (if) this is fixed in the
+        Xft library itself
 
    - [workingdir](https://st.suckless.org/patches/workingdir/)
       - allows user to specify the initial path st should use as the working directory
