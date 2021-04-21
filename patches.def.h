@@ -272,6 +272,16 @@
  */
 #define WIDE_GLYPHS_PATCH 0
 
+/* There is a known issue that Google's Variable Fonts (VF) can end up with letter spacing
+ * that is too wide in programs that use Xft, for example Inconsolata v3.000.
+ *
+ * This is intended as a temporary patch / hack until (if) this is fixed in the Xft library
+ * itself.
+ *
+ * https://github.com/googlefonts/Inconsolata/issues/42#issuecomment-737508890
+ */
+#define WIDE_GLYPH_SPACING_PATCH 0
+
 /* This patch allows user to specify the initial path st should use as the working directory.
  * https://st.suckless.org/patches/workingdir/
  */

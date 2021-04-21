@@ -1025,7 +1025,11 @@ xloadfont(Font *f, FcPattern *pattern)
 	f->rbearing = f->match->max_advance_width;
 
 	f->height = f->ascent + f->descent;
+	#if WIDE_GLYPH_SPACING_PATCH
+	f->width = DIVCEIL(extents.xOff > 18 ? extents.xOff / 3 : extents.xOff, strlen(ascii_printable));
+	#else
 	f->width = DIVCEIL(extents.xOff, strlen(ascii_printable));
+	#endif //WIDE_GLYPH_SPACING_PATCH
 
 	return 0;
 }
