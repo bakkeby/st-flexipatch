@@ -813,6 +813,16 @@ xsetcolorname(int x, const char *name)
 	XftColorFree(xw.dpy, xw.vis, xw.cmap, &dc.col[x]);
 	dc.col[x] = ncolor;
 
+	#if ALPHA_PATCH
+	/* set alpha value of bg color */
+	if (x == defaultbg) {
+		if (opt_alpha)
+			alpha = strtof(opt_alpha, NULL);
+		dc.col[defaultbg].color.alpha = (unsigned short)(0xffff * alpha);
+		dc.col[defaultbg].pixel &= 0x00FFFFFF;
+		dc.col[defaultbg].pixel |= (unsigned char)(0xff * alpha) << 24;
+	}
+	#endif // ALPHA_PATCH
 	return 0;
 }
 
