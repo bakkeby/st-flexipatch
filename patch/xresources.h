@@ -14,4 +14,8 @@ typedef struct {
 } ResourcePref;
 
 int resource_load(XrmDatabase, char *, enum resource_type, void *);
+#if XRESOURCES_RELOAD_PATCH
+void config_init(Display *dpy);
+#else
 void config_init(void);
+#endif // XRESOURCES_RELOAD_PATCH
