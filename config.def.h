@@ -239,7 +239,11 @@ ResourcePref resources[] = {
 		{ "blinktimeout", INTEGER, &blinktimeout },
 		{ "bellvolume",   INTEGER, &bellvolume },
 		{ "tabspaces",    INTEGER, &tabspaces },
+		#if RELATIVEBORDER_PATCH
+		{ "borderperc",   INTEGER, &borderperc },
+		#else
 		{ "borderpx",     INTEGER, &borderpx },
+		#endif // RELATIVEBORDER_PATCH
 		{ "cwscale",      FLOAT,   &cwscale },
 		{ "chscale",      FLOAT,   &chscale },
 		#if ALPHA_PATCH
