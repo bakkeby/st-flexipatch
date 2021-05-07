@@ -2576,7 +2576,7 @@ run:
 
 	setlocale(LC_CTYPE, "");
 	XSetLocaleModifiers("");
-	#if XRESOURCES_RELOAD_PATCH
+	#if XRESOURCES_RELOAD_PATCH && XRESOURCES_PATCH
 	reload_config(-1);
 	#elif XRESOURCES_PATCH
 	if (!(xw.dpy = XOpenDisplay(NULL)))

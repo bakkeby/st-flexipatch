@@ -34,15 +34,13 @@ resource_load(XrmDatabase db, char *name, enum resource_type rtype, void *dst)
 	return 0;
 }
 
+void
 #if XRESOURCES_RELOAD_PATCH
-void
 config_init(Display *dpy)
-{
 #else
-void
 config_init(void)
-{
 #endif // XRESOURCES_RELOAD_PATCH
+{
 	char *resm;
 	XrmDatabase db;
 	ResourcePref *p;
@@ -62,7 +60,9 @@ config_init(void)
 }
 
 #if XRESOURCES_RELOAD_PATCH
-void reload_config(int sig){
+void
+reload_config(int sig)
+{
 	/* Recreate a Display object to have up to date Xresources entries */
 	Display *dpy;
 	if (!(dpy = XOpenDisplay(NULL)))
