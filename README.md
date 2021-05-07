@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-05-07 - Added xresources reload patch
+
 2021-04-21 - Added (temporary?) hack for Variable Fonts (VT) support
 
 2021-03-10 - Added sixel support
