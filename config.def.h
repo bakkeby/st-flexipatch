@@ -37,7 +37,11 @@ char *scroll = NULL;
 char *stty_args = "stty raw pass8 nl -echo -iexten -cstopb 38400";
 
 /* identification sequence returned in DA and DECID */
+#if SIXEL_PATCH
+char *vtiden = "\033[?12;4c";
+#else
 char *vtiden = "\033[?6c";
+#endif
 
 /* Kerning / character bounding-box multipliers */
 static float cwscale = 1.0;
