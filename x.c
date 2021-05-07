@@ -2576,12 +2576,14 @@ run:
 
 	setlocale(LC_CTYPE, "");
 	XSetLocaleModifiers("");
-	#if XRESOURCES_PATCH
+	#if XRESOURCES_RELOAD_PATCH
+	reload_config(-1);
+	#elif XRESOURCES_PATCH
 	if (!(xw.dpy = XOpenDisplay(NULL)))
 		die("Can't open display\n");
 
 	config_init();
-	#endif // XRESOURCES_PATCH
+	#endif // XRESOURCES_RELOAD_PATCH
 	cols = MAX(cols, 1);
 	rows = MAX(rows, 1);
 	tnew(cols, rows);
