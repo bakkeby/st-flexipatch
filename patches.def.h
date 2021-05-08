@@ -292,6 +292,12 @@
  */
 #define UNDERCURL_PATCH 0
 
+/* Allows mouse scroll without modifier keys for regardless of alt screen using the external
+ * scroll program.
+ * https://st.suckless.org/patches/universcroll/
+ */
+#define UNIVERSCROLL_PATCH 0
+
 /* Vertically center lines in the space available if you have set a larger chscale in config.h
  * https://st.suckless.org/patches/vertcenter/
  */

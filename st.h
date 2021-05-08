@@ -243,6 +243,9 @@ typedef struct {
 	void (*func)(const Arg *);
 	const Arg arg;
 	uint  release;
+	#if UNIVERSCROLL_PATCH
+	int  altscrn;  /* 0: don't care, -1: not alt screen, 1: alt screen */
+	#endif // UNIVERSCROLL_PATCH
 } MouseShortcut;
 
 typedef struct {
