@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-08 - Added blinking cursor, delkey, undercurl, desktopentry, netwmicon and osc_10_11_12_2 patches
+2021-05-08 - Added blinking cursor, delkey, undercurl,universcroll, desktopentry, netwmicon and osc_10_11_12_2 patches
 
 2021-05-07 - Added xresources reload patch
 
@@ -189,6 +189,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [undercurl](https://st.suckless.org/patches/undercurl/)
       - adds support for special underlines, e.g. curly / wavy underlines
+
+   - [universcroll](https://st.suckless.org/patches/universcroll/)
+      - allows mouse scroll without modifier keys for regardless of alt screen using the external
+        scroll program
 
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h

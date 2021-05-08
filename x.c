@@ -334,6 +334,9 @@ mouseaction(XEvent *e, uint release)
 	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
 		if (ms->release == release &&
 				ms->button == e->xbutton.button &&
+				#if UNIVERSCROLL_PATCH
+				(!ms->altscrn || (ms->altscrn == (tisaltscr() ? 1 : -1))) &&
+				#endif // UNIVERSCROLL_PATCH
 				(match(ms->mod, state) ||  /* exact or forced */
 				 match(ms->mod, state & ~forcemousemod))) {
 			ms->func(&(ms->arg));

@@ -15,7 +15,3 @@ typedef struct {
 
 extern MouseKey mkeys[];
 #endif // SCROLLBACK_MOUSE_PATCH / SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-
-#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-int tisaltscr(void);
-#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
