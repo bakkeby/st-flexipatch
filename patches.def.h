@@ -258,6 +258,20 @@
  */
 #define THEMED_CURSOR_PATCH 0
 
+/* Adds support for special underlines.
+ *
+ * Example test command:
+ *    $ echo -e "\e[4:3m\e[58:5:10munderline\e[0m"
+ *                  ^ ^     ^ ^  ^- sets terminal color 10
+ *                  | |     |  \- indicates that terminal colors should be used
+ *                  | |      \- indicates that underline color is being set
+ *                  |  \- sets underline style to curvy
+ *                   \- set underline
+ *
+ * https://st.suckless.org/patches/undercurl/
+ */
+#define UNDERCURL_PATCH 0
+
 /* Vertically center lines in the space available if you have set a larger chscale in config.h
  * https://st.suckless.org/patches/vertcenter/
  */

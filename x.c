@@ -1713,7 +1713,100 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
-		#if VERTCENTER_PATCH
+		#if UNDERCURL_PATCH
+		// Underline Color
+		int wlw = 1; // Wave Line Width
+		int linecolor;
+		if ((base.ucolor[0] >= 0) &&
+			!(base.mode & ATTR_BLINK && win.mode & MODE_BLINK) &&
+			!(base.mode & ATTR_INVISIBLE)
+		) {
+			// Special color for underline
+			// Index
+			if (base.ucolor[1] < 0) {
+				linecolor = dc.col[base.ucolor[0]].pixel;
+			}
+			// RGB
+			else {
+				XColor lcolor;
+				lcolor.red = base.ucolor[0] * 257;
+				lcolor.green = base.ucolor[1] * 257;
+				lcolor.blue = base.ucolor[2] * 257;
+				lcolor.flags = DoRed | DoGreen | DoBlue;
+				XAllocColor(xw.dpy, xw.cmap, &lcolor);
+				linecolor = lcolor.pixel;
+			}
+		} else {
+			// Foreground color for underline
+			linecolor = fg->pixel;
+		}
+
+		XGCValues ugcv = {
+			.foreground = linecolor,
+			.line_width = wlw,
+			.line_style = LineSolid,
+			.cap_style = CapNotLast
+		};
+
+		GC ugc = XCreateGC(xw.dpy, XftDrawDrawable(xw.draw),
+			GCForeground | GCLineWidth | GCLineStyle | GCCapStyle,
+			&ugcv);
+
+		// Underline Style
+		if (base.ustyle != 3) {
+			//XftDrawRect(xw.draw, fg, winx, winy + dc.font.ascent + 1, width, 1);
+			XFillRectangle(xw.dpy, XftDrawDrawable(xw.draw), ugc, winx,
+				winy + dc.font.ascent + 1, width, wlw);
+		} else if (base.ustyle == 3) {
+			int ww = win.cw;//width;
+			int wh = dc.font.descent - wlw/2 - 1;//r.height/7;
+			int wx = winx;
+			int wy = winy + win.ch - dc.font.descent;
+			#if VERTCENTER_PATCH
+			wy += win.cyo;
+			#endif // VERTCENTER_PATCH
+
+			// Draw waves
+			int narcs = charlen * 2 + 1;
+			XArc *arcs = xmalloc(sizeof(XArc) * narcs);
+
+			int i = 0;
+			for (i = 0; i < charlen-1; i++) {
+				arcs[i*2] = (XArc) {
+					.x = wx + win.cw * i + ww / 4,
+					.y = wy,
+					.width = win.cw / 2,
+					.height = wh,
+					.angle1 = 0,
+					.angle2 = 180 * 64
+				};
+				arcs[i*2+1] = (XArc) {
+					.x = wx + win.cw * i + ww * 0.75,
+					.y = wy,
+					.width = win.cw/2,
+					.height = wh,
+					.angle1 = 180 * 64,
+					.angle2 = 180 * 64
+				};
+			}
+			// Last wave
+			arcs[i*2] = (XArc) {wx + ww * i + ww / 4, wy, ww / 2, wh,
+			0, 180 * 64 };
+			// Last wave tail
+			arcs[i*2+1] = (XArc) {wx + ww * i + ww * 0.75, wy, ceil(ww / 2.),
+			wh, 180 * 64, 90 * 64};
+			// First wave tail
+			i++;
+			arcs[i*2] = (XArc) {wx - ww/4 - 1, wy, ceil(ww / 2.), wh, 270 * 64,
+			90 * 64 };
+
+			XDrawArcs(xw.dpy, XftDrawDrawable(xw.draw), ugc, arcs, narcs);
+
+			free(arcs);
+		}
+
+		XFreeGC(xw.dpy, ugc);
+		#elif VERTCENTER_PATCH
 		XftDrawRect(xw.draw, fg, winx, winy + win.cyo + dc.font.ascent + 1,
 				width, 1);
 		#else
