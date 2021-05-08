@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=st
+Comment=st is a simple terminal implementation for X
+Exec=st
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=System;TerminalEmulator;
