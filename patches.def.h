@@ -35,6 +35,14 @@
  */
 #define ANYSIZE_NOBAR_PATCH 0
 
+/* This patch allows the use of a blinking cursor.
+ * Only cursor styles 0, 1, 3, 5, and 7 blink. Set cursorstyle accordingly.
+ * Cursor styles are defined here:
+ *    https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h4-Functions-using-CSI-_-ordered-by-the-final-character-lparen-s-rparen:CSI-Ps-SP-q.1D81
+ * https://st.suckless.org/patches/blinking_cursor/
+ */
+#define BLINKING_CURSOR_PATCH 0
+
 /* By default bold text is rendered with a bold font in the bright variant of the current color.
  * This patch makes bold text rendered simply as bold, leaving the color unaffected.
  * https://st.suckless.org/patches/bold-is-not-bright/
