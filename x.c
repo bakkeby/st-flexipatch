@@ -186,6 +186,9 @@ static char *opt_dir   = NULL;
 #endif // WORKINGDIR_PATCH
 
 static int oldbutton = 3; /* button event on startup: 3 = release */
+#if BLINKING_CURSOR_PATCH
+static int cursorblinks = 0;
+#endif // BLINKING_CURSOR_PATCH
 #if VISUALBELL_1_PATCH
 static int bellon = 0;    /* visual bell status */
 #endif // VISUALBELL_1_PATCH
@@ -1826,16 +1829,28 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	/* draw the new one */
 	if (IS_SET(MODE_FOCUSED)) {
 		switch (win.cursor) {
+		#if !BLINKING_CURSOR_PATCH
 		case 7: /* st extension */
 			g.u = 0x2603; /* snowman (U+2603) */
 			/* FALLTHROUGH */
-		case 0: /* Blinking Block */
-		case 1: /* Blinking Block (Default) */
-		case 2: /* Steady Block */
+		#endif // BLINKING_CURSOR_PATCH
+		case 0: /* Blinking block */
+		case 1: /* Blinking block (default) */
+			#if BLINKING_CURSOR_PATCH
+			if (IS_SET(MODE_BLINK))
+				break;
+			/* FALLTHROUGH */
+			#endif // BLINKING_CURSOR_PATCH
+		case 2: /* Steady block */
 			xdrawglyph(g, cx, cy);
 			break;
-		case 3: /* Blinking Underline */
-		case 4: /* Steady Underline */
+		case 3: /* Blinking underline */
+			#if BLINKING_CURSOR_PATCH
+			if (IS_SET(MODE_BLINK))
+				break;
+			/* FALLTHROUGH */
+			#endif // BLINKING_CURSOR_PATCH
+		case 4: /* Steady underline */
 			#if ANYSIZE_PATCH
 			XftDrawRect(xw.draw, &drawcol,
 					win.hborderpx + cx * win.cw,
@@ -1851,6 +1866,11 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			#endif // ANYSIZE_PATCH
 			break;
 		case 5: /* Blinking bar */
+			#if BLINKING_CURSOR_PATCH
+			if (IS_SET(MODE_BLINK))
+				break;
+			/* FALLTHROUGH */
+			#endif // BLINKING_CURSOR_PATCH
 		case 6: /* Steady bar */
 			XftDrawRect(xw.draw, &drawcol,
 					#if ANYSIZE_PATCH
@@ -1862,6 +1882,16 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 					#endif // ANYSIZE_PATCH
 					cursorthickness, win.ch);
 			break;
+		#if BLINKING_CURSOR_PATCH
+		case 7: /* Blinking st cursor */
+			if (IS_SET(MODE_BLINK))
+				break;
+			/* FALLTHROUGH */
+		case 8: /* Steady st cursor */
+			g.u = stcursor;
+			xdrawglyph(g, cx, cy);
+			break;
+		#endif // BLINKING_CURSOR_PATCH
 		}
 	} else {
 		XftDrawRect(xw.draw, &drawcol,
@@ -2150,9 +2180,18 @@ xsetmode(int set, unsigned int flags)
 int
 xsetcursor(int cursor)
 {
+	#if BLINKING_CURSOR_PATCH
+	if (!BETWEEN(cursor, 0, 8)) /* 7-8: st extensions */
+	#else
 	if (!BETWEEN(cursor, 0, 7)) /* 7: st extension */
+	#endif // BLINKING_CURSOR_PATCH
 		return 1;
 	win.cursor = cursor;
+	#if BLINKING_CURSOR_PATCH
+	cursorblinks = win.cursor == 0 || win.cursor == 1 ||
+	               win.cursor == 3 || win.cursor == 5 ||
+	               win.cursor == 7;
+	#endif // BLINKING_CURSOR_PATCH
 	return 0;
 }
 
@@ -2439,6 +2478,12 @@ run(void)
 		if (FD_ISSET(ttyfd, &rfd) || xev) {
 			if (!drawing) {
 				trigger = now;
+				#if BLINKING_CURSOR_PATCH
+				if (IS_SET(MODE_BLINK)) {
+					win.mode ^= MODE_BLINK;
+				}
+				lastblink = now;
+				#endif // BLINKING_CURSOR_PATCH
 				drawing = 1;
 			}
 			timeout = (maxlatency - TIMEDIFF(now, trigger)) \
@@ -2449,7 +2494,12 @@ run(void)
 
 		/* idle detected or maxlatency exhausted -> draw */
 		timeout = -1;
-		if (blinktimeout && tattrset(ATTR_BLINK)) {
+		#if BLINKING_CURSOR_PATCH
+		if (blinktimeout && (cursorblinks || tattrset(ATTR_BLINK)))
+		#else
+		if (blinktimeout && tattrset(ATTR_BLINK))
+		#endif // BLINKING_CURSOR_PATCH
+		{
 			timeout = blinktimeout - TIMEDIFF(now, lastblink);
 			if (timeout <= 0) {
 				if (-timeout > blinktimeout) /* start visible */
@@ -2511,7 +2561,11 @@ main(int argc, char *argv[])
 {
 	xw.l = xw.t = 0;
 	xw.isfixed = False;
+	#if BLINKING_CURSOR_PATCH
+	xsetcursor(cursorstyle);
+	#else
 	xsetcursor(cursorshape);
+	#endif // BLINKING_CURSOR_PATCH
 
 	ARGBEGIN {
 	case 'a':

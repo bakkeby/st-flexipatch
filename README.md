@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-05-08 - Added blinking cursor patch
+
 2021-05-07 - Added xresources reload patch
 
 2021-04-21 - Added (temporary?) hack for Variable Fonts (VT) support
@@ -69,6 +71,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [anysize_nobar](https://github.com/connor-brooks/st-anysize-nobar)
       - a patch that aims to prevent black bars being drawn on the edges of st terminals using the anysize patch
+
+   - [blinking-cursor](https://st.suckless.org/patches/blinking_cursor/)
+      - allows the use of a blinking cursor
 
    - [bold-is-not-bright](https://st.suckless.org/patches/bold-is-not-bright/)
       - by default bold text is rendered with a bold font in the bright variant of the current color
