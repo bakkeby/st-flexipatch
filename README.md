@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-08 - Added blinking cursor, undercurl, desktopentry, netwmicon and osc_10_11_12_2 patches
+2021-05-08 - Added blinking cursor, delkey, undercurl, desktopentry, netwmicon and osc_10_11_12_2 patches
 
 2021-05-07 - Added xresources reload patch
 
@@ -89,6 +89,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [copyurl](https://st.suckless.org/patches/copyurl/)
       - this patch allows you to select and copy the last URL displayed with Mod+l
       - multiple invocations cycle through the available URLs
+
+   - [delkey](https://st.suckless.org/patches/delkey/)
+      - return BS on pressing backspace and DEL on pressing the delete key
 
    - [desktopentry](https://st.suckless.org/patches/desktopentry/)
       - adds a desktop entry for st so that it can be displayed with an icon when using a graphical launcher
