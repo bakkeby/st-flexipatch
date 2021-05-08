@@ -2140,10 +2140,43 @@ strhandle(void)
 				}
 			}
 			return;
-		case 4: /* color set */
 		case 10: /* foreground set */
+			#if OSC_10_11_12_2_PATCH
+			if (narg < 2)
+				break;
+
+			p = strescseq.args[1];
+			if (xsetcolorname(defaultfg, p))
+				fprintf(stderr, "erresc: invalid foreground color %d\n", p);
+			else
+				redraw();
+			break;
+			#endif // OSC_10_11_12_2_PATCH
 		case 11: /* background set */
+			#if OSC_10_11_12_2_PATCH
+			if (narg < 2)
+				break;
+
+			p = strescseq.args[1];
+			if (xsetcolorname(defaultbg, p))
+				fprintf(stderr, "erresc: invalid background color %d\n", p);
+			else
+				redraw();
+			break;
+			#endif // OSC_10_11_12_2_PATCH
 		case 12: /* cursor color */
+			#if OSC_10_11_12_2_PATCH
+			if (narg < 2)
+				break;
+
+			p = strescseq.args[1];
+			if (xsetcolorname(defaultcs, p))
+				fprintf(stderr, "erresc: invalid cursor color %d\n", p);
+			else
+				redraw();
+			break;
+			#endif // OSC_10_11_12_2_PATCH
+		case 4: /* color set */
 			if ((par == 4 && narg < 3) || narg < 2)
 				break;
 			p = strescseq.args[((par == 4) ? 2 : 1)];
