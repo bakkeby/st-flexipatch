@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-08 - Added blinking cursor patch
+2021-05-08 - Added blinking cursor and undercurl patches
 
 2021-05-07 - Added xresources reload patch
 
@@ -168,6 +168,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [themed-cursor](https://st.suckless.org/patches/themed_cursor/)
       - instead of a default X cursor, use the xterm cursor from your cursor theme
+
+   - [undercurl](https://st.suckless.org/patches/undercurl/)
+      - adds support for special underlines, e.g. curly / wavy underlines
 
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h

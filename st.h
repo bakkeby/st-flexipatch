@@ -59,6 +59,9 @@ enum glyph_attribute {
 	ATTR_SIXEL      = 1 << 13,
 	#endif // SIXEL_PATCH
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
+	#if UNDERCURL_PATCH
+	ATTR_DIRTYUNDERLINE = 1 << 15,
+	#endif // UNDERCURL_PATCH
 };
 
 #if SIXEL_PATCH
@@ -115,6 +118,10 @@ typedef struct {
 	ushort mode;      /* attribute flags */
 	uint32_t fg;      /* foreground  */
 	uint32_t bg;      /* background  */
+	#if UNDERCURL_PATCH
+	int ustyle;	      /* underline style */
+	int ucolor[3];    /* underline color */
+	#endif // UNDERCURL_PATCH
 } Glyph;
 
 typedef Glyph *Line;
