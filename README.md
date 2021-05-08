@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-08 - Added blinking cursor, undercurl, desktopentry and netwmicon patches
+2021-05-08 - Added blinking cursor, undercurl, desktopentry, netwmicon and osc_10_11_12_2 patches
 
 2021-05-07 - Added xresources reload patch
 
@@ -153,6 +153,14 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
       - open contents of the clipboard in a user-defined browser
+
+   - [osc_10_11_12_2](https://st.suckless.org/patches/osc_10_11_12_2/)
+      - this patch adds support for OSC escape sequences 10, 11, and 12 in the way they are
+        implemented in most other terminals (e.g libvte, kitty)
+      - specifically it differs from [osc_10_11_12](https://st.suckless.org/patches/osc_10_11_12/)
+        in that it treats the background and foreground colors as distinct from palette colours 01
+        and 07 in order to facilitate the use of theme setting scripts like
+        [theme.sh](https://github.com/lemnos/theme.sh) which expect these colours to be distinct
 
    - [relativeborder](https://st.suckless.org/patches/relativeborder/)
       - allows you to specify a border that is relative in size to the width of a cell in the terminal
