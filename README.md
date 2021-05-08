@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-08 - Added blinking cursor and undercurl patches
+2021-05-08 - Added blinking cursor, undercurl, desktopentry and netwmicon patches
 
 2021-05-07 - Added xresources reload patch
 
@@ -90,6 +90,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
       - this patch allows you to select and copy the last URL displayed with Mod+l
       - multiple invocations cycle through the available URLs
 
+   - [desktopentry](https://st.suckless.org/patches/desktopentry/)
+      - adds a desktop entry for st so that it can be displayed with an icon when using a graphical launcher
+      - this patch only applies to the Makefile and is enabled by default, remove if not needed
+
    - [disable-fonts](https://st.suckless.org/patches/disable_bold_italic_fonts/)
       - this patch adds the option of disabling bold/italic/roman fonts globally
 
@@ -139,6 +143,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [monochrome](https://www.reddit.com/r/suckless/comments/ixbx6z/how_to_use_black_and_white_only_for_st/)
       - makes st ignore terminal color attributes to make for a monochrome look
+
+   - [netwmicon](https://st.suckless.org/patches/netwmicon/)
+      - this patch sets the \_NET\_WM\_ICON X property with a hardcoded icon for st
 
    - [newterm](https://st.suckless.org/patches/newterm/)
       - allows you to spawn a new st terminal using Ctrl-Shift-Return
