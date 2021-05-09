@@ -209,9 +209,6 @@ clipcopy(const Arg *dummy)
 
 	free(xsel.clipboard);
 	xsel.clipboard = NULL;
-	#if VIM_BROWSE_PATCH
-	xsetsel(getsel());
-	#endif // VIM_BROWSE_PATCH
 
 	if (xsel.primary != NULL) {
 		xsel.clipboard = xstrdup(xsel.primary);
