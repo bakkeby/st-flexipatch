@@ -26,3 +26,6 @@
 #if SIXEL_PATCH
 #include "sixel_st.h"
 #endif
+#if SYNC_PATCH
+#include "sync.h"
+#endif

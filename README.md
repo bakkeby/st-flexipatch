@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-05-09 - Added the sync patch
+
 2021-05-08 - Added blinking cursor, delkey, undercurl,universcroll, desktopentry, netwmicon and osc_10_11_12_2 patches
 
 2021-05-07 - Added xresources reload patch
@@ -183,6 +185,11 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [spoiler](https://st.suckless.org/patches/spoiler/)
       - use inverted defaultbg/fg for selection when bg/fg are the same
+
+   - [sync](https://st.suckless.org/patches/sync/)
+      - adds synchronized-updates/application-sync support in st
+      - this has no effect except when an application uses the synchronized-update escape sequences
+      - with this patch nearly all cursor flicker is eliminated in tmux, and tmux detects it automatically via terminfo
 
    - [themed-cursor](https://st.suckless.org/patches/themed_cursor/)
       - instead of a default X cursor, use the xterm cursor from your cursor theme
