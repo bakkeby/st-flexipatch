@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-09 - Added the sync and alpha-focus-hightlight patches
+2021-05-09 - Added the sync, alpha-focus-hightlight and vim browse patches
 
 2021-05-08 - Added blinking cursor, delkey, undercurl,universcroll, desktopentry, netwmicon and osc_10_11_12_2 patches
 
@@ -207,6 +207,12 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h
+
+   - [vim-browse](https://st.suckless.org/patches/vim_browse/)
+      - the vim-browse patch offers the possibility to move through the terminal history-buffer,
+        search for strings using VIM-like motions, operations and quantifiers
+      - it overlays the screen with highlighted search results and displays the current operation
+        / motions / search string in the bottom right corner
 
    - [visualbell](https://st.suckless.org/patches/visualbell/)
       - adds visual indicators for the terminal bell event

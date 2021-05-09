@@ -327,6 +327,16 @@
  */
 #define VERTCENTER_PATCH 0
 
+/* The vim-browse patch offers the possibility to move through the terminal history-buffer,
+ * search for strings using VIM-like motions, operations and quantifiers. It overlays the
+ * screen with highlighted search results and displays the current operation / motions / search
+ * string in the bottom right corner.
+ *
+ * https://github.com/juliusHuelsmann/st-history-vim
+ * https://st.suckless.org/patches/vim_browse/
+ */
+#define VIM_BROWSE_PATCH 0
+
 /* Briefly inverts window content on terminal bell event.
  * https://st.suckless.org/patches/visualbell/
  */

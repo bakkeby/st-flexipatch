@@ -29,3 +29,6 @@
 #if SYNC_PATCH
 #include "sync.h"
 #endif
+// #if VIM_BROWSE_PATCH
+// #include "normalMode.h"
+// #endif
