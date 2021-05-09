@@ -169,9 +169,8 @@
 /* This patch adds support for drawing ligatures using the Harfbuzz library to transform
  * original text of a single line to a list of glyphs with ligatures included.
  * This patch depends on the Harfbuzz library and headers to compile.
- * You need to uncomment the corresponding line in config.mk to use the harfbuzz library
+ * You need to uncomment the corresponding lines in config.mk to use the harfbuzz library
  * when including this patch.
- * You need to uncomment the corresponding lines in Makefile when including this patch.
  * https://github.com/cog1to/st-ligatures
  * https://st.suckless.org/patches/ligatures/
  */
