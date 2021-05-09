@@ -54,7 +54,7 @@ copyurl(const Arg *arg) {
 		colend = 0, /* column of last occurrence */
 		passes = 0; /* how many rows have been scanned */
 
-	char *linestr = calloc(sizeof(char), term.col+1); /* assume ascii */
+	char *linestr = calloc(term.col+1, sizeof(Rune));
 	char *c = NULL,
 		 *match = NULL;
 
@@ -74,9 +74,6 @@ copyurl(const Arg *arg) {
  		** we hit previous occurrence of URL
 		*/
 		for (col = 0, i = 0; col < colend; ++col,++i) {
-			/* assume ascii */
-			if (term.line[row][col].u > 127)
-				continue;
 			linestr[i] = term.line[row][col].u;
 		}
 		linestr[term.col] = '\0';
@@ -135,7 +132,7 @@ copyurl(const Arg *arg) {
 		"0123456789-._~:/?#@!$&'*+,;=%";
 
 	int i, row, startrow;
-	char *linestr = calloc(sizeof(char), term.col+1); /* assume ascii */
+	char *linestr = calloc(term.col+1, sizeof(Rune));
 	char *c, *match = NULL;
 
 	row = (sel.ob.x >= 0 && sel.nb.y > 0) ? sel.nb.y-1 : term.bot;
@@ -145,8 +142,6 @@ copyurl(const Arg *arg) {
 	/* find the start of the last url before selection */
 	do {
 		for (i = 0; i < term.col; ++i) {
-			if (term.line[row][i].u > 127) /* assume ascii */
-				continue;
 			linestr[i] = term.line[row][i].u;
 		}
 		linestr[term.col] = '\0';
