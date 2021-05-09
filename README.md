@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2021-05-09 - Added the sync patch
+2021-05-09 - Added the sync and alpha-focus-hightlight patches
 
 2021-05-08 - Added blinking cursor, delkey, undercurl,universcroll, desktopentry, netwmicon and osc_10_11_12_2 patches
 
@@ -67,6 +67,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [alpha](https://st.suckless.org/patches/alpha/)
       - adds transparency for the terminal
+
+   - [alpha-focus-highlight](https://st.suckless.org/patches/alpha_focus_highlight/)
+      - allows the user to specify two distinct opacity values or background colors in order to
+        easily differentiate between focused and unfocused terminal windows
 
    - [anysize](https://st.suckless.org/patches/anysize/)
       - allows st to reize to any pixel size rather than snapping to character width / height
