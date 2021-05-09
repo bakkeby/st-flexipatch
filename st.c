@@ -904,7 +904,11 @@ ttyread(void)
 	int ret, written;
 
 	/* append read bytes to unprocessed bytes */
+	#if SYNC_PATCH
+	ret = twrite_aborted ? 1 : read(cmdfd, buf+buflen, LEN(buf)-buflen);
+	#else
 	ret = read(cmdfd, buf+buflen, LEN(buf)-buflen);
+	#endif // SYNC_PATCH
 
 	switch (ret) {
 	case 0:
@@ -912,7 +916,11 @@ ttyread(void)
 	case -1:
 		die("couldn't read from shell: %s\n", strerror(errno));
 	default:
+		#if SYNC_PATCH
+		buflen += twrite_aborted ? 0 : ret;
+		#else
 		buflen += ret;
+		#endif // SYNC_PATCH
 		written = twrite(buf, buflen, 0);
 		buflen -= written;
 		/* keep any incomplete UTF-8 byte sequence for the next call */
@@ -1077,6 +1085,9 @@ tsetdirtattr(int attr)
 void
 tfulldirt(void)
 {
+	#if SYNC_PATCH
+	tsync_end();
+	#endif // SYNC_PATCH
 	tsetdirt(0, term.row-1);
 }
 
@@ -2241,8 +2252,17 @@ strhandle(void)
 				tnewline(1);
 			}
 		}
-		return;
 		#endif // SIXEL_PATCH
+		#if SYNC_PATCH
+		/* https://gitlab.com/gnachman/iterm2/-/wikis/synchronized-updates-spec */
+		if (strstr(strescseq.buf, "=1s") == strescseq.buf)
+			tsync_begin();  /* BSU */
+		else if (strstr(strescseq.buf, "=2s") == strescseq.buf)
+			tsync_end();  /* ESU */
+		#endif // SYNC_PATCH
+		#if SIXEL_PATCH || SYNC_PATCH
+		return;
+		#endif // SIXEL_PATCH | SYNC_PATCH
 	case '_': /* APC -- Application Program Command */
 	case '^': /* PM -- Privacy Message */
 		return;
@@ -2834,6 +2854,11 @@ twrite(const char *buf, int buflen, int show_ctrl)
 	Rune u;
 	int n;
 
+	#if SYNC_PATCH
+	int su0 = su;
+	twrite_aborted = 0;
+	#endif // SYNC_PATCH
+
 	for (n = 0; n < buflen; n += charsize) {
 		#if SIXEL_PATCH
 		if (IS_SET(MODE_UTF8) && !IS_SET(MODE_SIXEL))
@@ -2849,6 +2874,12 @@ twrite(const char *buf, int buflen, int show_ctrl)
 			u = buf[n] & 0xFF;
 			charsize = 1;
 		}
+		#if SYNC_PATCH
+		if (su0 && !su) {
+			twrite_aborted = 1;
+			break;  // ESU - allow rendering before a new BSU
+		}
+		#endif // SYNC_PATCH
 		if (show_ctrl && ISCONTROL(u)) {
 			if (u & 0x80) {
 				u &= 0x7f;

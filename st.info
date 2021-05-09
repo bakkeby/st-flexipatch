@@ -1,4 +1,5 @@
 st-mono| simpleterm monocolor,
+# undercurl patch / UNDERCURL_PATCH
 	Su,
 	acsc=+C\,D-A.B0E``aaffgghFiGjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
 	am,
@@ -192,6 +193,8 @@ st-mono| simpleterm monocolor,
 	Ms=\E]52;%p1%s;%p2%s\007,
 	Se=\E[2 q,
 	Ss=\E[%p1%d q,
+# sync patch / SYNC_PATCH
+	Sync=\EP=%p1%ds\E\\,
 
 st| simpleterm,
 	use=st-mono,
