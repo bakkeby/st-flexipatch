@@ -140,6 +140,9 @@ float alpha = 0.8;
 float grad_alpha = 0.54; //alpha value that'll change
 float stat_alpha = 0.46; //constant alpha value that'll get added to grad_alpha
 #endif // ALPHA_GRADIENT_PATCH
+#if ALPHA_FOCUS_HIGHLIGHT_PATCH
+float alphaUnfocused = 0.6;
+#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 #endif // ALPHA_PATCH
 
 /* Terminal colors (16 first used in escape sequence) */
@@ -178,8 +181,13 @@ static const char *colorname[] = {
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-unsigned int defaultfg = 259;
+#if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
+unsigned int defaultbg = 0;
+unsigned int bg = 17, bgUnfocused = 16;
+#else
 unsigned int defaultbg = 258;
+#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
+unsigned int defaultfg = 259;
 unsigned int defaultcs = 256;
 unsigned int defaultrcs = 257;
 

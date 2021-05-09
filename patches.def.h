@@ -16,6 +16,14 @@
  */
 #define ALPHA_PATCH 0
 
+/* The alpha focus highlight patch allows the user to specify two distinct opacity values or
+ * background colors in order to easily differentiate between focused and unfocused terminal
+ * windows. This depends on the alpha patch.
+ * https://github.com/juliusHuelsmann/st-focus/
+ * https://st.suckless.org/patches/alpha_focus_highlight/
+ */
+#define ALPHA_FOCUS_HIGHLIGHT_PATCH 0
+
 /* Adds gradient transparency to st, depends on the alpha patch.
  * https://st.suckless.org/patches/gradient/
  */

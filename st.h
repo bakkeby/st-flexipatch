@@ -343,6 +343,9 @@ extern const int boxdraw, boxdraw_bold, boxdraw_braille;
 #endif // BOXDRAW_PATCH
 #if ALPHA_PATCH
 extern float alpha;
+#if ALPHA_FOCUS_HIGHLIGHT_PATCH
+extern float alphaUnfocused;
+#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 #endif // ALPHA_PATCH
 
 extern DC dc;
