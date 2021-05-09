@@ -191,6 +191,24 @@ unsigned int defaultfg = 259;
 unsigned int defaultcs = 256;
 unsigned int defaultrcs = 257;
 
+#if VIM_BROWSE_PATCH
+unsigned int const currentBg = 6, buffSize = 2048;
+/// Enable double / triple click yanking / selection of word / line.
+int const mouseYank = 1, mouseSelect = 0;
+/// [Vim Browse] Colors for search results currently on screen.
+unsigned int const highlightBg = 160, highlightFg = 15;
+char const wDelS[] = "!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~", wDelL[] = " \t";
+char *nmKeys [] = {              ///< Shortcusts executed in normal mode
+  "R/Building\nN", "r/Building\n", "X/juli@machine\nN", "x/juli@machine\n",
+  "Q?[Leaving vim, starting execution]\n","F/: error:\nN", "f/: error:\n", "DQf"
+};
+unsigned int const amountNmKeys = sizeof(nmKeys) / sizeof(*nmKeys);
+/// Style of the {command, search} string shown in the right corner (y,v,V,/)
+Glyph styleSearch = {' ', ATTR_ITALIC | ATTR_BOLD_FAINT, 7, 16};
+Glyph style[] = {{' ',ATTR_ITALIC|ATTR_FAINT,15,16}, {' ',ATTR_ITALIC,232,11},
+                 {' ', ATTR_ITALIC, 232, 4}, {' ', ATTR_ITALIC, 232, 12}};
+#endif // VIM_BROWSE_PATCH
+
 #if BLINKING_CURSOR_PATCH
 /*
  * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h4-Functions-using-CSI-_-ordered-by-the-final-character-lparen-s-rparen:CSI-Ps-SP-q.1D81
@@ -273,7 +291,7 @@ ResourcePref resources[] = {
 		{ "termname",     STRING,  &termname },
 		{ "shell",        STRING,  &shell },
 		{ "minlatency",   INTEGER, &minlatency },
-		{ "maxlatency",   INTEGER, &minlatency },
+		{ "maxlatency",   INTEGER, &maxlatency },
 		{ "blinktimeout", INTEGER, &blinktimeout },
 		{ "bellvolume",   INTEGER, &bellvolume },
 		{ "tabspaces",    INTEGER, &tabspaces },
@@ -287,6 +305,9 @@ ResourcePref resources[] = {
 		#if ALPHA_PATCH
 		{ "alpha",        FLOAT,   &alpha },
 		#endif // ALPHA_PATCH
+		#if ALPHA_FOCUS_HIGHLIGHT_PATCH
+		{ "alphaUnfocused",FLOAT,  &alphaUnfocused },
+		#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 };
 #endif // XRESOURCES_PATCH
 
@@ -398,6 +419,9 @@ static Shortcut shortcuts[] = {
 	#if INVERT_PATCH
 	{ TERMMOD,              XK_X,           invert,          { 0 } },
 	#endif // INVERT_PATCH
+	#if VIM_BROWSE_PATCH
+	{ MODKEY,               XK_c,           normalMode,      {.i =  0} },
+	#endif // VIM_BROWSE_PATCH
 };
 
 /*

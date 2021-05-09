@@ -209,6 +209,9 @@ clipcopy(const Arg *dummy)
 
 	free(xsel.clipboard);
 	xsel.clipboard = NULL;
+	#if VIM_BROWSE_PATCH
+	xsetsel(getsel());
+	#endif // VIM_BROWSE_PATCH
 
 	if (xsel.primary != NULL) {
 		xsel.clipboard = xstrdup(xsel.primary);
@@ -435,7 +438,9 @@ void
 bpress(XEvent *e)
 {
 	struct timespec now;
+	#if !VIM_BROWSE_PATCH
 	int snap;
+	#endif // VIM_BROWSE_PATCH
 
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forcemousemod)) {
 		mousereport(e);
@@ -451,6 +456,34 @@ bpress(XEvent *e)
 		 * snapping behaviour is exposed.
 		 */
 		clock_gettime(CLOCK_MONOTONIC, &now);
+		#if VIM_BROWSE_PATCH
+		int const tripleClick = TIMEDIFF(now, xsel.tclick2) <= tripleclicktimeout,
+		doubleClick = TIMEDIFF(now, xsel.tclick1) <= doubleclicktimeout;
+		if ((mouseYank || mouseSelect) && (tripleClick || doubleClick)) {
+			if (!IS_SET(MODE_NORMAL)) normalMode();
+			historyOpToggle(1, 1);
+			tmoveto(evcol(e), evrow(e));
+			if (tripleClick) {
+				if (mouseYank) pressKeys("dVy", 3);
+				if (mouseSelect) pressKeys("dV", 2);
+			} else if (doubleClick) {
+				if (mouseYank) pressKeys("dyiW", 4);
+				if (mouseSelect) {
+					tmoveto(evcol(e), evrow(e));
+					pressKeys("viW", 3);
+				}
+			}
+			historyOpToggle(-1, 1);
+		} else {
+			if (!IS_SET(MODE_NORMAL)) selstart(evcol(e), evrow(e), 0);
+			else {
+				historyOpToggle(1, 1);
+				tmoveto(evcol(e), evrow(e));
+				pressKeys("v", 1);
+				historyOpToggle(-1, 1);
+			}
+ 		}
+		#else
 		if (TIMEDIFF(now, xsel.tclick2) <= tripleclicktimeout) {
 			snap = SNAP_LINE;
 		} else if (TIMEDIFF(now, xsel.tclick1) <= doubleclicktimeout) {
@@ -458,10 +491,13 @@ bpress(XEvent *e)
 		} else {
 			snap = 0;
 		}
+		#endif // VIM_BROWSE_PATCH
 		xsel.tclick2 = xsel.tclick1;
 		xsel.tclick1 = now;
 
+		#if !VIM_BROWSE_PATCH
 		selstart(evcol(e), evrow(e), snap);
+		#endif // VIM_BROWSE_PATCH
 	}
 }
 
@@ -670,8 +706,13 @@ brelease(XEvent *e)
 
 	if (mouseaction(e, 1))
 		return;
+	#if VIM_BROWSE_PATCH
+	if (e->xbutton.button == Button1 && !IS_SET(MODE_NORMAL))
+		mousesel(e, 1);
+	#else
 	if (e->xbutton.button == Button1)
 		mousesel(e, 1);
+	#endif // VIM_BROWSE_PATCH
 	#if RIGHTCLICKTOPLUMB_PATCH
 	else if (e->xbutton.button == Button3)
 		plumb(xsel.primary);
@@ -775,6 +816,13 @@ xloadcolor(int i, const char *name, Color *ncolor)
 
 	return XftColorAllocName(xw.dpy, xw.vis, xw.cmap, name, ncolor);
 }
+
+#if VIM_BROWSE_PATCH
+void normalMode()
+{
+	historyModeToggle((win.mode ^=MODE_NORMAL) & MODE_NORMAL);
+}
+#endif // VIM_BROWSE_PATCH
 
 #if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 void
@@ -1435,8 +1483,15 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	#endif // VERTCENTER_PATCH
 	{
 		/* Fetch rune and mode for current glyph. */
+		#if VIM_BROWSE_PATCH
+		Glyph g = glyphs[i];
+		historyOverlay(x+i, y, &g);
+		rune = g.u;
+		mode = g.mode;
+		#else
 		rune = glyphs[i].u;
 		mode = glyphs[i].mode;
+		#endif // VIM_BROWSE_PATCH
 
 		/* Skip dummy wide-character spacing. */
 		#if LIGATURES_PATCH
@@ -1537,7 +1592,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 			if (frclen >= frccap) {
 				frccap += 16;
 				frc = xrealloc(frc, frccap * sizeof(Fontcache));
- 			}
+			}
 
 			frc[frclen].font = XftFontOpenPattern(xw.dpy,
 					fontpattern);
@@ -1815,7 +1870,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 			int wx = winx;
 			int wy = winy + win.ch - dc.font.descent;
 			#if VERTCENTER_PATCH
-			wy += win.cyo;
+			wy -= win.cyo;
 			#endif // VERTCENTER_PATCH
 
 			// Draw waves
@@ -2131,6 +2186,9 @@ xdrawline(Line line, int x1, int y1, int x2)
 		i = ox = 0;
 		for (x = x1; x < x2 && i < numspecs; x++) {
 			new = line[x];
+			#if VIM_BROWSE_PATCH
+			historyOverlay(x, y1, &new);
+			#endif // VIM_BROWSE_PATCH
 			if (new.mode == ATTR_WDUMMY)
 				continue;
 			if (selected(x, y1))
@@ -2487,6 +2545,13 @@ kpress(XEvent *ev)
 		return;
 	}
 	#endif // KEYBOARDSELECT_PATCH
+	#if VIM_BROWSE_PATCH
+	if (IS_SET(MODE_NORMAL)) {
+		if (kPressHist(buf, len, match(ControlMask, e->state), &ksym)
+		                                      == finish) normalMode();
+		return;
+	}
+	#endif // VIM_BROWSE_PATCH
 
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
