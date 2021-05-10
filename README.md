@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-05-10 - Upgrade to 46b02f, 2021-03-28
+
 2021-05-09 - Added the sync, alpha-focus-hightlight and vim browse patches
 
 2021-05-08 - Added blinking cursor, delkey, undercurl,universcroll, desktopentry, netwmicon and osc_10_11_12_2 patches
