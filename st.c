@@ -948,7 +948,7 @@ execsh(char *cmd, char **args)
 		prog = sh;
 		arg = NULL;
 	}
-	DEFAULT(args, ((char *[]) {prog, NULL}));
+	DEFAULT(args, ((char *[]) {prog, arg, NULL}));
 
 	unsetenv("COLUMNS");
 	unsetenv("LINES");
