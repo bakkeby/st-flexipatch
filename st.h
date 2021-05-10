@@ -303,7 +303,7 @@ void tmoveto(int x, int y);
 #endif // VIM_BROWSE_PATCH
 void tsetdirtattr(int);
 void ttyhangup(void);
-int ttynew(char *, char *, char *, char **);
+int ttynew(const char *, char *, const char *, char **);
 size_t ttyread(void);
 void ttyresize(int, int);
 void ttywrite(const char *, size_t, int);
@@ -321,7 +321,7 @@ size_t utf8encode(Rune, char *);
 
 void *xmalloc(size_t);
 void *xrealloc(void *, size_t);
-char *xstrdup(char *);
+char *xstrdup(const char *);
 #if BOXDRAW_PATCH
 int isboxdraw(Rune);
 ushort boxdrawindex(const Glyph *);
