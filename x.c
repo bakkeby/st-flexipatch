@@ -481,7 +481,7 @@ bpress(XEvent *e)
 				pressKeys("v", 1);
 				historyOpToggle(-1, 1);
 			}
- 		}
+		}
 		#else
 		if (TIMEDIFF(now, xsel.tclick2) <= tripleclicktimeout) {
 			snap = SNAP_LINE;
@@ -2228,6 +2228,9 @@ xdrawline(Line line, int x1, int y1, int x2)
 	i = ox = 0;
 	for (x = x1; x < x2 && i < numspecs; x++) {
 		new = line[x];
+		#if VIM_BROWSE_PATCH
+		historyOverlay(x, y1, &new);
+		#endif // VIM_BROWSE_PATCH
 		if (new.mode == ATTR_WDUMMY)
 			continue;
 		if (selected(x, y1))
