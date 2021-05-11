@@ -80,6 +80,21 @@
  */
 #define COPYURL_HIGHLIGHT_SELECTED_URLS_PATCH 0
 
+/* According to the specification (see link in BLINKING_CURSOR_PATCH) the "Set cursor style
+ * (DECSCUSR), VT520." escape sequences define both values of 0 and 1 as a blinking block,
+ * with 1 being the default.
+ *
+ * This patch allows the default cursor to be set when value 0 is used, as opposed to
+ * setting the cursor to a blinking block.
+ *
+ * This allows a command like this to restore the cursor to what st is configured with:
+ *    $ echo -ne "\e[ q"
+ *
+ * While many terminal emulators do this it is not adhering to specification. xterm is an
+ * example terminal that sets a blinking block instead of the configured one, same as st.
+ */
+#define DEFAULT_CURSOR_PATCH 0
+
 /* Return BS on pressing backspace and DEL on pressing the delete key.
  * https://st.suckless.org/patches/delkey/
  */

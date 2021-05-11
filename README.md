@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-05-11 - Added default cursor patch
+
 2021-05-10 - Upgrade to 46b02f, 2021-03-28
 
 2021-05-09 - Added the sync, alpha-focus-hightlight and vim browse patches
@@ -97,6 +99,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [copyurl](https://st.suckless.org/patches/copyurl/)
       - this patch allows you to select and copy the last URL displayed with Mod+l
       - multiple invocations cycle through the available URLs
+
+   - default-cursor
+      - minor change allowing escape sequences like `\e[ q` or `\e[0 q` to set the cursor back to default configuration instead of a blinking block
+      - while many terminals do this the behaviour is not according to the specification
 
    - [delkey](https://st.suckless.org/patches/delkey/)
       - return BS on pressing backspace and DEL on pressing the delete key
