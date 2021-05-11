@@ -2405,7 +2405,15 @@ xsetcursor(int cursor)
 	if (!BETWEEN(cursor, 0, 7)) /* 7: st extension */
 	#endif // BLINKING_CURSOR_PATCH
 		return 1;
+	#if DEFAULT_CURSOR_PATCH
+	#if BLINKING_CURSOR_PATCH
+	win.cursor = (cursor ? cursor : cursorstyle);
+	#else
+	win.cursor = (cursor ? cursor : cursorshape);
+	#endif // BLINKING_CURSOR_PATCH
+	#else
 	win.cursor = cursor;
+	#endif // DEFAULT_CURSOR_PATCH
 	#if BLINKING_CURSOR_PATCH
 	cursorblinks = win.cursor == 0 || win.cursor == 1 ||
 	               win.cursor == 3 || win.cursor == 5 ||
