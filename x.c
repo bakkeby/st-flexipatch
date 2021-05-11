@@ -2415,6 +2415,16 @@ xsetcursor(int cursor)
 }
 
 void
+xsetdefaultcursor(void)
+{
+	#if BLINKING_CURSOR_PATCH
+	xsetcursor(cursorstyle);
+	#else
+	xsetcursor(cursorshape);
+	#endif // BLINKING_CURSOR_PATCH
+}
+
+void
 xseturgency(int add)
 {
 	XWMHints *h = XGetWMHints(xw.dpy, xw.win);

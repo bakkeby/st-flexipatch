@@ -1379,6 +1379,8 @@ tswapscreen(void)
 	term.images_alt = im;
 	#endif // SIXEL_PATCH
 	term.mode ^= MODE_ALTSCREEN;
+	if (!IS_SET(MODE_ALTSCREEN))
+		xsetdefaultcursor();
 	tfulldirt();
 }
 
