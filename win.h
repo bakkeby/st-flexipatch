@@ -43,6 +43,7 @@ int xsetcolorname(int, const char *);
 void xseticontitle(char *);
 void xsettitle(char *);
 int xsetcursor(int);
+void xsetdefaultcursor(void);
 void xsetmode(int, unsigned int);
 void xsetpointermotion(int);
 void xsetsel(char *);
