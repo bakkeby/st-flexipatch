@@ -1,3 +1,5 @@
+int extpipeactive = 0;
+
 void
 #if EXTERNALPIPEIN_PATCH
 extpipe(const Arg *arg, int in)
@@ -58,6 +60,7 @@ externalpipe(const Arg *arg)
 	close(to[1]);
 	/* restore */
 	signal(SIGPIPE, oldsigpipe);
+	extpipeactive = 1;
 }
 
 #if EXTERNALPIPEIN_PATCH
