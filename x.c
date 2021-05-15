@@ -1135,7 +1135,7 @@ xloadfont(Font *f, FcPattern *pattern)
 	f->width = DIVCEIL(extents.xOff > 18 ? extents.xOff / 3 : extents.xOff, strlen(ascii_printable));
 	#else
 	f->width = DIVCEIL(extents.xOff, strlen(ascii_printable));
-	#endif //WIDE_GLYPH_SPACING_PATCH
+	#endif // WIDE_GLYPH_SPACING_PATCH
 
 	return 0;
 }
@@ -1643,7 +1643,9 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	int width = charlen * win.cw;
 	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg;
 	XRenderColor colfg, colbg;
+	#if !WIDE_GLYPHS_PATCH
 	XRectangle r;
+	#endif // WIDE_GLYPHS_PATCH
 
 	/* Fallback on color display for attributes not supported by the font */
 	if (base.mode & ATTR_ITALIC && base.mode & ATTR_BOLD) {
@@ -1796,12 +1798,14 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 	#endif // WIDE_GLYPHS_PATCH
 
+	#if !WIDE_GLYPHS_PATCH
 	/* Set the clip region because Xft is sometimes dirty. */
 	r.x = 0;
 	r.y = 0;
 	r.height = win.ch;
 	r.width = width;
 	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
+	#endif // WIDE_GLYPHS_PATCH
 
 	#if WIDE_GLYPHS_PATCH
 	if (dmode & DRAW_FG) {
@@ -1919,7 +1923,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 		#else
 		XftDrawRect(xw.draw, fg, winx, winy + dc.font.ascent + 1,
 				width, 1);
-		#endif
+		#endif // UNDERCURL_PATCH | VERTCENTER_PATCH
 	}
 
 	if (base.mode & ATTR_STRUCK) {
@@ -1935,8 +1939,10 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 	#endif // WIDE_GLYPHS_PATCH
 
+	#if !WIDE_GLYPHS_PATCH
 	/* Reset clip to none. */
 	XftDrawSetClip(xw.draw, 0);
+	#endif // WIDE_GLYPHS_PATCH
 }
 
 void
