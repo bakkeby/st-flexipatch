@@ -345,6 +345,10 @@ extern unsigned int tabspaces;
 extern unsigned int defaultfg;
 extern unsigned int defaultbg;
 extern unsigned int defaultcs;
+#if EXTERNALPIPE_PATCH
+extern int extpipeactive;
+#endif // EXTERNALPIPE_PATCH
+
 #if BOXDRAW_PATCH
 extern const int boxdraw, boxdraw_bold, boxdraw_braille;
 #endif // BOXDRAW_PATCH

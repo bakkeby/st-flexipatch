@@ -977,7 +977,7 @@ sigchld(int a)
 	pid_t p;
 
 	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
-	if ((p = waitpid(-1, &stat, WNOHANG)) < 0)
+	if ((p = waitpid((extpipeactive ? -1 : pid), &stat, WNOHANG)) < 0)
 	#else
 	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
 	#endif // EXTERNALPIPEIN_PATCH
@@ -985,11 +985,15 @@ sigchld(int a)
 
 	#if EXTERNALPIPE_PATCH
 	if (pid != p) {
+		if (!extpipeactive)
+			return;
+
 		if (p == 0 && wait(&stat) < 0)
 			die("wait: %s\n", strerror(errno));
 
 		/* reinstall sigchld handler */
 		signal(SIGCHLD, sigchld);
+		extpipeactive = 0;
 		return;
 	}
 	#else
