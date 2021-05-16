@@ -199,6 +199,10 @@ static int bellon = 0;    /* visual bell status */
 #if RELATIVEBORDER_PATCH
 int borderpx;
 #endif // RELATIVEBORDER_PATCH
+#if SWAPMOUSE_PATCH
+static Cursor cursor;
+static XColor xmousefg, xmousebg;
+#endif // SWAPMOUSE_PATCH
 
 #include "patch/x_include.c"
 
@@ -723,7 +727,14 @@ bmotion(XEvent *e)
 {
 	#if HIDECURSOR_PATCH
 	if (!xw.pointerisvisible) {
+		#if SWAPMOUSE_PATCH
+		if (win.mode & MODE_MOUSE)
+			XUndefineCursor(xw.dpy, xw.win);
+		else
+			XDefineCursor(xw.dpy, xw.win, xw.vpointer);
+		#else
 		XDefineCursor(xw.dpy, xw.win, xw.vpointer);
+		#endif // SWAPMOUSE_PATCH
 		xw.pointerisvisible = 1;
 		if (!IS_SET(MODE_MOUSEMANY))
 			xsetpointermotion(0);
@@ -1255,12 +1266,14 @@ xinit(int cols, int rows)
 	XGCValues gcvalues;
 	#if HIDECURSOR_PATCH
 	Pixmap blankpm;
-	#else
+	#elif !SWAPMOUSE_PATCH
 	Cursor cursor;
 	#endif // HIDECURSOR_PATCH
 	Window parent;
 	pid_t thispid = getpid();
+	#if !SWAPMOUSE_PATCH
 	XColor xmousefg, xmousebg;
+	#endif // SWAPMOUSE_PATCH
 	#if ALPHA_PATCH
 	XWindowAttributes attr;
 	XVisualInfo vis;
@@ -2398,6 +2411,18 @@ xsetmode(int set, unsigned int flags)
 {
 	int mode = win.mode;
 	MODBIT(win.mode, set, flags);
+	#if SWAPMOUSE_PATCH
+	if ((flags & MODE_MOUSE)
+	#if HIDECURSOR_PATCH
+		&& xw.pointerisvisible
+	#endif // HIDECURSOR_PATCH
+	) {
+		if (win.mode & MODE_MOUSE)
+			XUndefineCursor(xw.dpy, xw.win);
+		else
+			XDefineCursor(xw.dpy, xw.win, cursor);
+	}
+	#endif // SWAPMOUSE_PATCH
 	if ((win.mode & MODE_REVERSE) != (mode & MODE_REVERSE))
 		redraw();
 }
