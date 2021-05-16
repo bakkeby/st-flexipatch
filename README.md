@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-05-16 - Added swapmouse patch
+
 2021-05-11 - Added default cursor patch
 
 2021-05-10 - Upgrade to 46b02f, 2021-03-28
@@ -180,7 +182,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
         [theme.sh](https://github.com/lemnos/theme.sh) which expect these colours to be distinct
 
    - [relativeborder](https://st.suckless.org/patches/relativeborder/)
-      - allows you to specify a border that is relative in size to the width of a cell in the terminal
+      - allows you to specify a border that is relative in size to the width of a cell in the
+        terminal
 
    - [right-click-to-plumb](https://st.suckless.org/patches/right_click_to_plumb/)
       - allows you to right-click on some selected text to send it to the plumbing program of choice
@@ -192,16 +195,23 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
       - this patch adds SIXEL graphics support
 
    - st-embedder
-      - this patch allows clients to embed into the st window and can be useful if you tend to start X applications from the terminal
+      - this patch allows clients to embed into the st window and can be useful if you tend to
+        start X applications from the terminal
       - the behavior is similar to Plan 9 where applications can take over windows
 
    - [spoiler](https://st.suckless.org/patches/spoiler/)
       - use inverted defaultbg/fg for selection when bg/fg are the same
 
+   - [swapmouse](https://st.suckless.org/patches/swapmouse/)
+      - changes the mouse shape to the global default when the running program subscribes for mouse
+        events, for instance, in programs like ranger and fzf
+      - it emulates the behaviour shown by vte terminals like termite
+
    - [sync](https://st.suckless.org/patches/sync/)
       - adds synchronized-updates/application-sync support in st
       - this has no effect except when an application uses the synchronized-update escape sequences
-      - with this patch nearly all cursor flicker is eliminated in tmux, and tmux detects it automatically via terminfo
+      - with this patch nearly all cursor flicker is eliminated in tmux, and tmux detects it
+        automatically via terminfo
 
    - [themed-cursor](https://st.suckless.org/patches/themed_cursor/)
       - instead of a default X cursor, use the xterm cursor from your cursor theme

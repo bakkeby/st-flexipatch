@@ -293,6 +293,13 @@
  */
 #define SPOILER_PATCH 0
 
+/* This patch changes the mouse shape to the global default when the running program subscribes
+ * for mouse events, for instance, in programs like ranger and fzf. It emulates the behaviour
+ * shown by vte terminals like termite.
+ * https://st.suckless.org/patches/swapmouse/
+ */
+#define SWAPMOUSE_PATCH 0
+
 /* This patch adds synchronized-updates/application-sync support in st.
  * This will have no effect except when an application uses the synchronized-update escape
  * sequences. With this patch nearly all cursor flicker is eliminated in tmux, and tmux detects
