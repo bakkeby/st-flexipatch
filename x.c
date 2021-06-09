@@ -1995,8 +1995,13 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	xdrawglyph(og, ox, oy);
 	#endif // LIGATURES_PATCH
 
+	#if HIDE_TERMINAL_CURSOR_PATCH
+	if (IS_SET(MODE_HIDE) || !IS_SET(MODE_FOCUSED))
+		return;
+	#else
 	if (IS_SET(MODE_HIDE))
 		return;
+	#endif // HIDE_TERMINAL_CURSOR_PATCH
 
 	/*
 	 * Select the right color for the right mode.

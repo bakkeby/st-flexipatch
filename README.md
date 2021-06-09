@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-06-09 - Added the hide terminal cursor patch
+
 2021-05-16 - Added swapmouse patch
 
 2021-05-11 - Added default cursor patch
@@ -146,6 +148,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [hidecursor](https://st.suckless.org/patches/hidecursor/)
       - hides the X cursor whenever a key is pressed and show it back when the mouse is moved in the terminal window
+
+   - [hide-terminal-cursor](https://www.reddit.com/r/suckless/comments/nvee8h/how_to_hide_cursor_in_st_is_there_a_patch_for_it/)
+      - hides the terminal cursor when the window loses focus (as opposed to showing a hollow cursor)
 
    - [invert](https://st.suckless.org/patches/invert/)
       - adds a keybinding that lets you invert the current colorscheme of st
