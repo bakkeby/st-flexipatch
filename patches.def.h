@@ -219,6 +219,13 @@
  */
 #define OPENCOPIED_PATCH 0
 
+/* This patch allows for URLs to be opened directly when you click on them. This may not work with
+ * all terminal applications.
+ *
+ * https://www.reddit.com/r/suckless/comments/cc83om/st_open_url/
+ */
+#define OPENURLONCLICK_PATCH 0
+
 /* This patch adds support for OSC escape sequences 10, 11 and 12 that modify the background,
  * foreground and cursor colors in the way they are implemented in most other terminals
  * (e.g libvte, kitty). Specifically it differs from https://st.suckless.org/patches/osc_10_11_12/

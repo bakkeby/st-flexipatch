@@ -710,11 +710,19 @@ brelease(XEvent *e)
 	if (mouseaction(e, 1))
 		return;
 	#if VIM_BROWSE_PATCH
-	if (e->xbutton.button == Button1 && !IS_SET(MODE_NORMAL))
+	if (e->xbutton.button == Button1 && !IS_SET(MODE_NORMAL)) {
 		mousesel(e, 1);
+		#if OPENURLONCLICK_PATCH
+		openUrlOnClick(evcol(e), evrow(e), url_opener);
+		#endif // OPENURLONCLICK_PATCH
+	}
 	#else
-	if (e->xbutton.button == Button1)
+	if (e->xbutton.button == Button1) {
 		mousesel(e, 1);
+		#if OPENURLONCLICK_PATCH
+		openUrlOnClick(evcol(e), evrow(e), url_opener);
+		#endif // OPENURLONCLICK_PATCH
+	}
 	#endif // VIM_BROWSE_PATCH
 	#if RIGHTCLICKTOPLUMB_PATCH
 	else if (e->xbutton.button == Button3)

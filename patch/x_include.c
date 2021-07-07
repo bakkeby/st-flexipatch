@@ -17,6 +17,9 @@
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.c"
 #endif
+#if OPENURLONCLICK_PATCH
+#include "openurlonclick.c"
+#endif
 #if RIGHTCLICKTOPLUMB_PATCH
 #include "rightclicktoplumb_x.c"
 #endif
