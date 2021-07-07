@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-07-07 - Added sixel scrollback and the openurlonclick patch
+
 2021-06-09 - Added the hide terminal cursor patch
 
 2021-05-16 - Added swapmouse patch
@@ -177,6 +179,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
       - open contents of the clipboard in a user-defined browser
+
+   - [openurlonclick](https://www.reddit.com/r/suckless/comments/cc83om/st_open_url/)
+      - allows for URLs to be opened directly when you click on them
 
    - [osc_10_11_12_2](https://st.suckless.org/patches/osc_10_11_12_2/)
       - this patch adds support for OSC escape sequences 10, 11, and 12 in the way they are

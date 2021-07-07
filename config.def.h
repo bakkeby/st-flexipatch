@@ -22,6 +22,10 @@ int borderperc = 20;
 static int borderpx = 2;
 #endif // RELATIVEBORDER_PATCH
 
+#if OPENURLONCLICK_PATCH
+static char *url_opener = "xdg-open";
+#endif // OPENURLONCLICK_PATCH
+
 /*
  * What program is execed by st depends of these precedence rules:
  * 1: program passed with -e

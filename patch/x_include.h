@@ -17,6 +17,9 @@
 #if NETWMICON_PATCH
 #include "netwmicon.h"
 #endif
+#if OPENURLONCLICK_PATCH
+#include "openurlonclick.h"
+#endif
 #if RIGHTCLICKTOPLUMB_PATCH
 #include "rightclicktoplumb_x.h"
 #endif
