@@ -2028,8 +2028,9 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			g.bg = defaultrcs;
 		} else {
 			#if DYNAMIC_CURSOR_COLOR_PATCH
+			unsigned int tmpcol = g.bg;
 			g.bg = g.fg;
-			g.fg = defaultbg;
+			g.fg = tmpcol;
 			#else
 			g.fg = defaultbg;
 			g.bg = defaultcs;
