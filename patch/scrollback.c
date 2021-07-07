@@ -14,6 +14,10 @@ kscrolldown(const Arg* a)
 		selscroll(0, -n);
 		tfulldirt();
 	}
+
+	#if SIXEL_PATCH
+	scroll_images(-1*n);
+	#endif // SIXEL_PATCH
 }
 
 void
@@ -28,4 +32,8 @@ kscrollup(const Arg* a)
 		selscroll(0, n);
 		tfulldirt();
 	}
+
+	#if SIXEL_PATCH
+	scroll_images(n);
+	#endif // SIXEL_PATCH
 }

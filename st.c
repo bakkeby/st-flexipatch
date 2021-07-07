@@ -1399,9 +1399,6 @@ tscrolldown(int orig, int n)
 	#endif // VIM_BROWSE_PATCH
 	int i;
 	Line temp;
-	#if SIXEL_PATCH
-	ImageList *im;
-	#endif // SIXEL_PATCH
 
 	LIMIT(n, 0, term.bot-orig+1);
 
@@ -1424,12 +1421,7 @@ tscrolldown(int orig, int n)
 	}
 
 	#if SIXEL_PATCH
-	for (im = term.images; im; im = im->next) {
-		if (im->y < term.bot)
-			im->y += n;
-		if (im->y > term.bot)
-			im->should_delete = 1;
-	}
+	scroll_images(n);
 	#endif // SIXEL_PATCH
 
 	#if SCROLLBACK_PATCH
@@ -1453,9 +1445,6 @@ tscrollup(int orig, int n)
 	#endif // VIM_BROWSE_PATCH
 	int i;
 	Line temp;
-	#if SIXEL_PATCH
-	ImageList *im;
-	#endif // SIXEL_PATCH
 
 	LIMIT(n, 0, term.bot-orig+1);
 
@@ -1481,12 +1470,7 @@ tscrollup(int orig, int n)
 	}
 
 	#if SIXEL_PATCH
-	for (im = term.images; im; im = im->next) {
-		if (im->y+im->height/win.ch > term.top)
-			im->y -= n;
-		if (im->y+im->height/win.ch < term.top)
-			im->should_delete = 1;
-	}
+	scroll_images(-1 * n);
 	#endif // SIXEL_PATCH
 
 	#if SCROLLBACK_PATCH
@@ -2106,6 +2090,9 @@ csihandle(void)
 {
 	char buf[40];
 	int len;
+	#if SIXEL_PATCH
+	ImageList *im;
+	#endif // SIXEL_PATCH
 
 	switch (csiescseq.mode[0]) {
 	default:
@@ -2201,6 +2188,16 @@ csihandle(void)
 		tputtab(csiescseq.arg[0]);
 		break;
 	case 'J': /* ED -- Clear screen */
+
+		#if SIXEL_PATCH
+		/* purge sixels */
+		/* TODO: kinda gross, should probably make this only purge
+		 * visible sixels */
+		for (im = term.images; im; im = im->next) {
+			im->should_delete = 1;
+		}
+		#endif // SIXEL_PATCH
+
 		switch (csiescseq.arg[0]) {
 		case 0: /* below */
 			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y);
@@ -2237,7 +2234,9 @@ csihandle(void)
 		break;
 	case 'S': /* SU -- Scroll <n> line up */
 		DEFAULT(csiescseq.arg[0], 1);
-		#if SCROLLBACK_PATCH
+		#if SIXEL_PATCH && SCROLLBACK_PATCH
+		tscrollup(term.top, csiescseq.arg[0], 1);
+		#elif SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 0);
 		#else
 		tscrollup(term.top, csiescseq.arg[0]);
@@ -2245,7 +2244,9 @@ csihandle(void)
 		break;
 	case 'T': /* SD -- Scroll <n> line down */
 		DEFAULT(csiescseq.arg[0], 1);
-		#if SCROLLBACK_PATCH
+		#if SIXEL_PATCH && SCROLLBACK_PATCH
+		tscrolldown(term.top, csiescseq.arg[0], 1);
+		#elif SCROLLBACK_PATCH
 		tscrolldown(term.top, csiescseq.arg[0], 0);
 		#else
 		tscrolldown(term.top, csiescseq.arg[0]);
@@ -2308,6 +2309,12 @@ csihandle(void)
 	case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
 		tcursor(CURSOR_LOAD);
 		break;
+	#if SIXEL_PATCH
+	case 't':
+		/* TODO should probably not be hard-coded */
+		ttywrite(";420;720t", 10, 1);
+		break;
+	#endif // SIXEL_PATCH
 	case ' ':
 		switch (csiescseq.mode[1]) {
 		case 'q': /* DECSCUSR -- Set Cursor Style */
@@ -2404,6 +2411,9 @@ strhandle(void)
 			else
 				redraw();
 			break;
+			#elif SIXEL_PATCH
+			ttywrite("10;rgb:0000/0000/0000", 21, 1);
+			return;
 			#endif // OSC_10_11_12_2_PATCH
 		case 11: /* background set */
 			#if OSC_10_11_12_2_PATCH
@@ -2416,6 +2426,9 @@ strhandle(void)
 			else
 				redraw();
 			break;
+			#elif SIXEL_PATCH
+			ttywrite("11;rgb:ffff/ffff/ffff", 21, 1);
+			return;
 			#endif // OSC_10_11_12_2_PATCH
 		case 12: /* cursor color */
 			#if OSC_10_11_12_2_PATCH
