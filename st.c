@@ -2411,8 +2411,6 @@ strhandle(void)
 			else
 				redraw();
 			break;
-			#elif SIXEL_PATCH
-			ttywrite("10;rgb:0000/0000/0000", 21, 1);
 			return;
 			#endif // OSC_10_11_12_2_PATCH
 		case 11: /* background set */
@@ -2426,8 +2424,6 @@ strhandle(void)
 			else
 				redraw();
 			break;
-			#elif SIXEL_PATCH
-			ttywrite("11;rgb:ffff/ffff/ffff", 21, 1);
 			return;
 			#endif // OSC_10_11_12_2_PATCH
 		case 12: /* cursor color */
