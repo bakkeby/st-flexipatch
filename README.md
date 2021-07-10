@@ -263,3 +263,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [xresources](https://st.suckless.org/patches/xresources/)
       - adds the ability to configure st via Xresources
       - during startup, st will read and apply the resources named in the resources[] array in config.h
+
+## Original 
+
+https://github.com/bakkeby/st-flexipatch
