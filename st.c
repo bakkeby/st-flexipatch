@@ -2188,16 +2188,6 @@ csihandle(void)
 		tputtab(csiescseq.arg[0]);
 		break;
 	case 'J': /* ED -- Clear screen */
-
-		#if SIXEL_PATCH
-		/* purge sixels */
-		/* TODO: kinda gross, should probably make this only purge
-		 * visible sixels */
-		for (im = term.images; im; im = im->next) {
-			im->should_delete = 1;
-		}
-		#endif // SIXEL_PATCH
-
 		switch (csiescseq.arg[0]) {
 		case 0: /* below */
 			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y);
