@@ -2201,8 +2201,23 @@ csihandle(void)
 				tclearregion(0, 0, term.col-1, term.c.y-1);
 			tclearregion(0, term.c.y, term.c.x, term.c.y);
 			break;
-		case 2: /* all */
+		case 2: /* screen */
 			tclearregion(0, 0, term.col-1, term.row-1);
+			break;
+		case 3: /* all including scrollback */
+			tclearregion(0, 0, term.col-1, term.row-1);
+
+			#if SCROLLBACK_PATCH
+			term.scr = 0;
+			term.histi = 0;
+			for (int i = 0; i < HISTSIZE; i++)
+				term.hist[i][0].u = '\0';
+			#endif // SCROLLBACK_PATCH
+
+			#if SIXEL_PATCH
+			for (im = term.images; im; im = im->next)
+				im->should_delete = 1;
+			#endif // SIXEL_PATCH
 			break;
 		default:
 			goto unknown;
