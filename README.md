@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-07-26 - Added columns patch
+
 2021-07-07 - Added sixel scrollback and the openurlonclick patch
 
 2021-06-09 - Added the hide terminal cursor patch
@@ -101,6 +103,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [clipboard](https://st.suckless.org/patches/clipboard/)
       - by default st only sets PRIMARY on selection
       - this patch makes st set CLIPBOARD on selection
+
+   - [columns](https://github.com/bakkeby/st-flexipatch/issues/34)
+      - allows st to be resized without cutting off text when the terminal window is made larger again
+      - text does not wrap when the terminal window is made smaller
 
    - [copyurl](https://st.suckless.org/patches/copyurl/)
       - this patch allows you to select and copy the last URL displayed with Mod+l

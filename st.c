@@ -1654,6 +1654,9 @@ tclearregion(int x1, int y1, int x2, int y2)
 	#if VIM_BROWSE_PATCH
 	LIMIT(x1, 0, buffCols-1);
 	LIMIT(x2, 0, buffCols-1);
+	#elif COLUMNS_PATCH
+	LIMIT(x1, 0, term.maxcol-1);
+	LIMIT(x2, 0, term.maxcol-1);
 	#else
 	LIMIT(x1, 0, term.col-1);
 	LIMIT(x2, 0, term.col-1);
@@ -3165,6 +3168,15 @@ tresize(int col, int row)
 	col = MAX(col, buffCols);
 	row = MIN(row, buffSize);
 	int const minrow = MIN(row, term.row), mincol = MIN(col, buffCols);
+	#elif COLUMNS_PATCH
+	int tmp = col;
+	int minrow, mincol;
+
+	if (!term.maxcol)
+		term.maxcol = term.col;
+	col = MAX(col, term.maxcol);
+	minrow = MIN(row, term.row);
+	mincol = MIN(col, term.maxcol);
 	#else
 	int minrow = MIN(row, term.row);
 	int mincol = MIN(col, term.col);
@@ -3251,6 +3263,8 @@ tresize(int col, int row)
 	}
 	#if VIM_BROWSE_PATCH
 	if (col > buffCols)
+	#elif COLUMNS_PATCH
+	if (col > term.maxcol)
 	#else
 	if (col > term.col)
 	#endif // VIM_BROWSE_PATCH
@@ -3258,6 +3272,9 @@ tresize(int col, int row)
 		#if VIM_BROWSE_PATCH
 		bp = term.tabs + buffCols;
 		memset(bp, 0, sizeof(*term.tabs) * (col - buffCols));
+		#elif COLUMNS_PATCH
+		bp = term.tabs + term.maxcol;
+		memset(bp, 0, sizeof(*term.tabs) * (col - term.maxcol));
 		#else
 		bp = term.tabs + term.col;
 		memset(bp, 0, sizeof(*term.tabs) * (col - term.col));
@@ -3282,6 +3299,9 @@ tresize(int col, int row)
 	#if VIM_BROWSE_PATCH
 	term.col = colSet;
 	buffCols = col;
+	#elif COLUMNS_PATCH
+	term.col = tmp;
+	term.maxcol = col;
 	#else
 	term.col = col;
 	#endif // VIM_BROWSE_PATCH
