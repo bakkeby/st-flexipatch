@@ -140,6 +140,9 @@ typedef struct {
 typedef struct {
 	int row;      /* nb row */
 	int col;      /* nb col */
+	#if COLUMNS_PATCH && !VIM_BROWSE_PATCH
+	int maxcol;
+	#endif // COLUMNS_PATCH
 	Line *line;   /* screen */
 	Line *alt;    /* alternate screen */
 	#if SCROLLBACK_PATCH

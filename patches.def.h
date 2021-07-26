@@ -68,6 +68,15 @@
  */
 #define CLIPBOARD_PATCH 0
 
+/* This patch allows st to be resized without cutting off text when the terminal window is
+ * made larger again. Text does not wrap when the terminal window is made smaller.
+ *
+ * The vim browse patch takes precedence over this patch.
+ *
+ * https://github.com/bakkeby/st-flexipatch/issues/34
+ */
+#define COLUMNS_PATCH 0
+
 /* Select and copy the last URL displayed with Mod+l. Multiple invocations cycle through the
  * available URLs.
  * https://st.suckless.org/patches/copyurl/
