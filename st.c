@@ -2317,12 +2317,6 @@ csihandle(void)
 	case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
 		tcursor(CURSOR_LOAD);
 		break;
-	#if SIXEL_PATCH
-	case 't':
-		/* TODO should probably not be hard-coded */
-		ttywrite(";420;720t", 10, 1);
-		break;
-	#endif // SIXEL_PATCH
 	case ' ':
 		switch (csiescseq.mode[1]) {
 		case 'q': /* DECSCUSR -- Set Cursor Style */
