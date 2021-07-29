@@ -2034,18 +2034,21 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		if (selected(cx, cy)) {
 			g.fg = defaultfg;
 			g.bg = defaultrcs;
-		} else {
-			#if DYNAMIC_CURSOR_COLOR_PATCH
+		}
+		#if !DYNAMIC_CURSOR_COLOR_PATCH
+		else {
+			g.fg = defaultbg;
+			g.bg = defaultcs;
+		}
+
+		drawcol = dc.col[g.bg];
+		#else
+		else if (!(og.mode & ATTR_REVERSE)) {
 			unsigned int tmpcol = g.bg;
 			g.bg = g.fg;
 			g.fg = tmpcol;
-			#else
-			g.fg = defaultbg;
-			g.bg = defaultcs;
-			#endif // DYNAMIC_CURSOR_COLOR_PATCH
 		}
 
-		#if DYNAMIC_CURSOR_COLOR_PATCH
 		if (IS_TRUECOL(g.bg)) {
 			colbg.alpha = 0xffff;
 			colbg.red = TRUERED(g.bg);
@@ -2054,8 +2057,6 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colbg, &drawcol);
 		} else
 			drawcol = dc.col[g.bg];
-		#else
-		drawcol = dc.col[g.bg];
 		#endif // DYNAMIC_CURSOR_COLOR_PATCH
 	}
 
