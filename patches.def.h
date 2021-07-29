@@ -43,6 +43,11 @@
  */
 #define ANYSIZE_NOBAR_PATCH 0
 
+/* A simple variant of the anysize patch that only changes the resize hints to allow the window to
+ * be resized to any size.
+ */
+#define ANYSIZE_SIMPLE_PATCH 0
+
 /* This patch allows the use of a blinking cursor.
  * Only cursor styles 0, 1, 3, 5, and 7 blink. Set cursorstyle accordingly.
  * Cursor styles are defined here:
