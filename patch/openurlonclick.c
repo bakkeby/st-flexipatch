@@ -46,13 +46,14 @@ openUrlOnClick(int col, int row, char* url_opener)
            col_start = 0;
            row_start++;
        }
-   } while (row_start != row_end || col_start != col_end);
+   } while (url_index < (sizeof(url)-1) &&
+            (row_start != row_end || col_start != col_end));
 
    if (strncmp("http", url, 4) != 0) {
        return;
    }
 
-   char command[strlen(url_opener)+1+strlen(url)];
+   char command[strlen(url_opener)+strlen(url)+2];
    sprintf(command, "%s %s", url_opener, url);
    system(command);
 }
