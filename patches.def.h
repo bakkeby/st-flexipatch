@@ -288,7 +288,6 @@
 /* This patch adds SIXEL graphics support for st.
  * Note that patch/sixel.c/sixel_hls.c come from mintty, licensed under GPL.
  * Known issues:
- *    - Entering clear causes all sixels to be deleted from scrollback.
  *    - Rendering sixel graphics may cause unusual cursor placement, this is
  *      not specific to this variant of st - the same issue is present in
  *      the xterm implementation. This is likely an issue of sixel height
@@ -299,7 +298,7 @@
  *      A pull request or instructions for how to properly add alpha support for
  *      sixel graphics would be very welcome.
  *
- * Note that you need to uncomment the corresponding lines in Makefile when including this patch.
+ * Note that you need to uncomment the corresponding lines in config.mk when including this patch.
  *
  * https://gist.github.com/saitoha/70e0fdf22e3e8f63ce937c7f7da71809
  */
