@@ -48,6 +48,11 @@ static void zoomreset(const Arg *);
 /* config.h for applying patches and the configuration. */
 #include "config.h"
 
+#if CSI_22_23_PATCH
+/* size of title stack */
+#define TITLESTACKSIZE 8
+#endif // CSI_22_23_PATCH
+
 /* XEMBED messages */
 #define XEMBED_FOCUS_IN  4
 #define XEMBED_FOCUS_OUT 5
@@ -147,6 +152,11 @@ DC dc;
 XWindow xw;
 XSelection xsel;
 TermWindow win;
+
+#if CSI_22_23_PATCH
+static int tstki; /* title stack index */
+static char *titlestack[TITLESTACKSIZE]; /* title stack */
+#endif // CSI_22_23_PATCH
 
 /* Font Ring Cache */
 enum {
@@ -2189,6 +2199,49 @@ xseticontitle(char *p)
 	XFree(prop.value);
 }
 
+#if CSI_22_23_PATCH
+void
+xsettitle(char *p, int pop)
+{
+	XTextProperty prop;
+
+	free(titlestack[tstki]);
+	if (pop) {
+		titlestack[tstki] = NULL;
+		tstki = (tstki - 1 + TITLESTACKSIZE) % TITLESTACKSIZE;
+		p = titlestack[tstki] ? titlestack[tstki] : opt_title;
+	} else if (p) {
+		titlestack[tstki] = xstrdup(p);
+	} else {
+		titlestack[tstki] = NULL;
+		p = opt_title;
+	}
+
+	Xutf8TextListToTextProperty(xw.dpy, &p, 1, XUTF8StringStyle, &prop);
+	XSetWMName(xw.dpy, xw.win, &prop);
+	XSetTextProperty(xw.dpy, xw.win, &prop, xw.netwmname);
+	XFree(prop.value);
+}
+
+void
+xpushtitle(void)
+{
+	int tstkin = (tstki + 1) % TITLESTACKSIZE;
+
+	free(titlestack[tstkin]);
+	titlestack[tstkin] = titlestack[tstki] ? xstrdup(titlestack[tstki]) : NULL;
+	tstki = tstkin;
+}
+
+void
+xfreetitlestack(void)
+{
+	for (int i = 0; i < LEN(titlestack); i++) {
+		free(titlestack[i]);
+		titlestack[i] = NULL;
+	}
+}
+#else
 void
 xsettitle(char *p)
 {
@@ -2201,6 +2254,7 @@ xsettitle(char *p)
 	XSetTextProperty(xw.dpy, xw.win, &prop, xw.netwmname);
 	XFree(prop.value);
 }
+#endif // CSI_22_23_PATCH
 
 int
 xstartdraw(void)
