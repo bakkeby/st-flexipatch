@@ -2314,6 +2314,36 @@ csihandle(void)
 	case 's': /* DECSC -- Save cursor position (ANSI.SYS) */
 		tcursor(CURSOR_SAVE);
 		break;
+	#if CSI_22_23_PATCH
+	case 't': /* title stack operations */
+		switch (csiescseq.arg[0]) {
+		case 22: /* pust current title on stack */
+			switch (csiescseq.arg[1]) {
+			case 0:
+			case 1:
+			case 2:
+				xpushtitle();
+				break;
+			default:
+				goto unknown;
+			}
+			break;
+		case 23: /* pop last title from stack */
+			switch (csiescseq.arg[1]) {
+			case 0:
+			case 1:
+			case 2:
+				xsettitle(NULL, 1);
+				break;
+			default:
+				goto unknown;
+			}
+			break;
+		default:
+			goto unknown;
+		}
+		break;
+	#endif // CSI_22_23_PATCH
 	case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
 		tcursor(CURSOR_LOAD);
 		break;
@@ -2379,7 +2409,11 @@ strhandle(void)
 		switch (par) {
 		case 0:
 			if (narg > 1) {
+				#if CSI_22_23_PATCH
+				xsettitle(strescseq.args[1], 0);
+				#else
 				xsettitle(strescseq.args[1]);
+				#endif // CSI_22_23_PATCH
 				xseticontitle(strescseq.args[1]);
 			}
 			return;
@@ -2389,7 +2423,11 @@ strhandle(void)
 			return;
 		case 2:
 			if (narg > 1)
+				#if CSI_22_23_PATCH
+				xsettitle(strescseq.args[1], 0);
+				#else
 				xsettitle(strescseq.args[1]);
+				#endif // CSI_22_23_PATCH
 			return;
 		case 52:
 			if (narg > 2 && allowwindowops) {
@@ -2469,7 +2507,11 @@ strhandle(void)
 		}
 		break;
 	case 'k': /* old title set compatibility */
+		#if CSI_22_23_PATCH
+		xsettitle(strescseq.args[0], 0);
+		#else
 		xsettitle(strescseq.args[0]);
+		#endif // CSI_22_23_PATCH
 		return;
 	case 'P': /* DCS -- Device Control String */
 		#if SIXEL_PATCH
@@ -2905,6 +2947,9 @@ eschandle(uchar ascii)
 		break;
 	case 'c': /* RIS -- Reset to initial state */
 		treset();
+		#if CSI_22_23_PATCH
+		xfreetitlestack();
+		#endif // CSI_22_23_PATCH
 		resettitle();
 		xloadcols();
 		break;
@@ -3326,7 +3371,11 @@ tresize(int col, int row)
 void
 resettitle(void)
 {
+	#if CSI_22_23_PATCH
+	xsettitle(NULL, 0);
+	#else
 	xsettitle(NULL);
+	#endif // CSI_22_23_PATCH
 }
 
 void

@@ -41,7 +41,13 @@ void xfinishdraw(void);
 void xloadcols(void);
 int xsetcolorname(int, const char *);
 void xseticontitle(char *);
+#if CSI_22_23_PATCH
+void xfreetitlestack(void);
+void xsettitle(char *, int);
+void xpushtitle(void);
+#else
 void xsettitle(char *);
+#endif // CSI_22_23_PATCH
 int xsetcursor(int);
 void xsetmode(int, unsigned int);
 void xsetpointermotion(int);
