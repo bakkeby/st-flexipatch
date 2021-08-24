@@ -1073,6 +1073,7 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 		break;
 	case 0:
 		close(iofd);
+		close(m);
 		setsid(); /* create a new process group */
 		dup2(s, 0);
 		dup2(s, 1);
@@ -1081,6 +1082,8 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 			die("ioctl TIOCSCTTY failed: %s\n", strerror(errno));
 		close(s);
 		close(m);
+		if (s > 2)
+				close(s);
 #ifdef __OpenBSD__
 		if (pledge("stdio getpw proc exec", NULL) == -1)
 			die("pledge\n");
