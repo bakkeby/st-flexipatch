@@ -252,7 +252,7 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels)
 			*dst++ = color >> 16 & 0xff;   /* b */
 			*dst++ = color >> 8 & 0xff;    /* g */
 			*dst++ = color >> 0 & 0xff;    /* r */
-			dst++;                         /* a */
+			*dst++ = 255;                  /* a */
 		}
 		/* fill right padding with bgcolor */
 		for (; x < st->image.width; ++x) {
