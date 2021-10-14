@@ -29,7 +29,7 @@
  */
 #define ALPHA_GRADIENT_PATCH 0
 
-/* This patch allows st to reize to any pixel size rather than snapping to character width/height.
+/* This patch allows st to resize to any pixel size rather than snapping to character width/height.
  * https://st.suckless.org/patches/anysize/
  */
 #define ANYSIZE_PATCH 0
