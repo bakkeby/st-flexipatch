@@ -82,6 +82,12 @@
  */
 #define COLUMNS_PATCH 0
 
+/* This variant of the columns patch allows rows wrap around when st is resized.
+ * https://github.com/ashish-yadav11/st
+ * https://github.com/BeyondMagic/st/blob/master/patches/columns-rows-reflow-st-unpatched.patch
+ */
+#define COLUMNS_REFLOW_PATCH 0
+
 /* Select and copy the last URL displayed with Mod+l. Multiple invocations cycle through the
  * available URLs.
  * https://st.suckless.org/patches/copyurl/

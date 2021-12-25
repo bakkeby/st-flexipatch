@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2021-12-25 - Added the columns reflow patch
+
 2021-08-18 - Added the CSI 22 & 23 patch
 
 2021-07-26 - Added columns patch
@@ -110,6 +112,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [columns](https://github.com/bakkeby/st-flexipatch/issues/34)
       - allows st to be resized without cutting off text when the terminal window is made larger again
       - text does not wrap when the terminal window is made smaller
+
+   - [columns_reflow](https://github.com/BeyondMagic/st/blob/master/patches/columns-rows-reflow-st-unpatched.patch)
+      - allows st to be resized without cutting off text when the terminal window is made larger again
+      - text wraps when the terminal window is made smaller
 
    - [copyurl](https://st.suckless.org/patches/copyurl/)
       - this patch allows you to select and copy the last URL displayed with Mod+l

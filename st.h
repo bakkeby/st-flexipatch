@@ -35,9 +35,12 @@
 
 #define TRUECOLOR(r,g,b)	(1 << 24 | (r) << 16 | (g) << 8 | (b))
 #define IS_TRUECOL(x)		(1 << 24 & (x))
-#if SCROLLBACK_PATCH
+#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 #define HISTSIZE      2000
-#endif // SCROLLBACK_PATCH
+#endif // SCROLLBACK_PATCH | COLUMNS_REFLOW_PATCH
+#if COLUMNS_REFLOW_PATCH
+#define RESIZEBUFFER  1000
+#endif // COLUMNS_REFLOW_PATCH
 
 enum glyph_attribute {
 	ATTR_NULL       = 0,
@@ -65,6 +68,9 @@ enum glyph_attribute {
 	#if UNDERCURL_PATCH
 	ATTR_DIRTYUNDERLINE = 1 << 15,
 	#endif // UNDERCURL_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	ATTR_SELECTED   = 1 << 16,
+	#endif // COLUMNS_REFLOW_PATCH
 };
 
 #if SIXEL_PATCH
@@ -87,6 +93,15 @@ enum drawing_mode {
 	DRAW_FG   = 1 << 1,
 };
 #endif // WIDE_GLYPHS_PATCH
+
+#if COLUMNS_REFLOW_PATCH
+enum glyph_state {
+	GLYPH_EMPTY,
+	GLYPH_SET,
+	GLYPH_TAB,
+	GLYPH_TDUMMY
+};
+#endif // COLUMNS_REFLOW_PATCH
 
 enum selection_mode {
 	SEL_IDLE = 0,
@@ -119,6 +134,9 @@ typedef XftGlyphFontSpec GlyphFontSpec;
 typedef struct {
 	Rune u;           /* character code */
 	ushort mode;      /* attribute flags */
+	#if COLUMNS_REFLOW_PATCH
+	ushort state;     /* state flags */
+	#endif // COLUMNS_REFLOW_PATCH
 	uint32_t fg;      /* foreground  */
 	uint32_t bg;      /* background  */
 	#if UNDERCURL_PATCH
@@ -145,11 +163,15 @@ typedef struct {
 	#endif // COLUMNS_PATCH
 	Line *line;   /* screen */
 	Line *alt;    /* alternate screen */
-	#if SCROLLBACK_PATCH
+	#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
 	int scr;      /* scroll back */
-	#endif // SCROLLBACK_PATCH
+	#endif // SCROLLBACK_PATCH | COLUMNS_REFLOW_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	int histf;           /* nb history available */
+	int wrapcwidth[2];   /* used in updating WRAPNEXT when resizing */
+	#endif // COLUMNS_REFLOW_PATCH
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
 	int ocx;      /* old cursor col */

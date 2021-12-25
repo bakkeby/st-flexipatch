@@ -2,6 +2,18 @@
                      term.scr + HISTSIZE + 1) % HISTSIZE] : \
                      term.line[(y) - term.scr])
 
+#if COLUMNS_REFLOW_PATCH
+#define TLINEABS(y) ( \
+	(y) < 0 ? term.hist[(term.histi + (y) + 1 + HISTSIZE) % HISTSIZE] : term.line[(y)] \
+)
+
+enum scroll_mode {
+	SCROLL_RESIZE = -1,
+	SCROLL_NOSAVEHIST = 0,
+	SCROLL_SAVEHIST = 1
+};
+#endif // COLUMNS_REFLOW_PATCH
+
 void kscrolldown(const Arg *);
 void kscrollup(const Arg *);
 

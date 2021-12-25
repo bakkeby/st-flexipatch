@@ -23,7 +23,8 @@ newterm(const Arg* a)
 	}
 }
 
-static char *getcwd_by_pid(pid_t pid) {
+static char *getcwd_by_pid(pid_t pid)
+{
 	char buf[32];
 	snprintf(buf, sizeof buf, "/proc/%d/cwd", pid);
 	return realpath(buf, NULL);

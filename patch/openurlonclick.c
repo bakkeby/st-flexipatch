@@ -55,5 +55,5 @@ openUrlOnClick(int col, int row, char* url_opener)
 
    char command[strlen(url_opener)+strlen(url)+2];
    sprintf(command, "%s %s", url_opener, url);
-   system(command);
+   if (system(command));
 }

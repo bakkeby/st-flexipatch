@@ -62,6 +62,17 @@
 static inline int max(int a, int b) { return a > b ? a : b; }
 static inline int min(int a, int b) { return a < b ? a : b; }
 #endif // VIM_BROWSE_PATCH
+#if COLUMNS_REFLOW_PATCH
+#define ISSPACE(gp)		(gp->u == ' ' && gp->state == GLYPH_SET)
+#define STRESCARGREST(n)	((n) == 0 ? strescseq.buf : strescseq.args[(n)-1] + 1)
+#define STRESCARGJUST(n)	(*(strescseq.args[n]) = '\0', STRESCARGREST(n))
+#define UPDATEWRAPNEXT(alt, col) do { \
+	if ((term.c.state & CURSOR_WRAPNEXT) && term.c.x + term.wrapcwidth[alt] < col) { \
+		term.c.x += term.wrapcwidth[alt]; \
+		term.c.state &= ~CURSOR_WRAPNEXT; \
+	} \
+} while (0);
+#endif // COLUMNS_REFLOW_PATCH
 
 enum term_mode {
 	MODE_WRAP        = 1 << 0,
@@ -178,13 +189,21 @@ static void tprinter(char *, size_t);
 static void tdumpsel(void);
 static void tdumpline(int);
 static void tdump(void);
+#if COLUMNS_REFLOW_PATCH
+static void tclearregion(int, int, int, int, int);
+#else
 static void tclearregion(int, int, int, int);
+#endif // COLUMNS_REFLOW_PATCH
 static void tcursor(int);
 static void tdeletechar(int);
 static void tdeleteline(int);
 static void tinsertblank(int);
 static void tinsertblankline(int);
+#if COLUMNS_REFLOW_PATCH
+static int tlinelen(Line len);
+#else
 static int tlinelen(int);
+#endif // COLUMNS_REFLOW_PATCH
 #if !VIM_BROWSE_PATCH
 static void tmoveto(int, int);
 #endif // VIM_BROWSE_PATCH
@@ -193,13 +212,16 @@ static void tnewline(int);
 static void tputtab(int);
 static void tputc(Rune);
 static void treset(void);
-#if SCROLLBACK_PATCH
+#if COLUMNS_REFLOW_PATCH
+static void tscrollup(int, int, int, int);
+static void tscrolldown(int, int);
+#elif SCROLLBACK_PATCH
 static void tscrollup(int, int, int);
 static void tscrolldown(int, int, int);
 #else
 static void tscrollup(int, int);
 static void tscrolldown(int, int);
-#endif // SCROLLBACK_PATCH
+#endif // COLUMNS_REFLOW_PATCH | SCROLLBACK_PATCH
 static void tsetattr(const int *, int);
 static void tsetchar(Rune, const Glyph *, int, int);
 static void tsetdirt(int, int);
@@ -214,7 +236,11 @@ static int32_t tdefcolor(const int *, int *, int);
 static void tdeftran(char);
 static void tstrsequence(uchar);
 static void selnormalize(void);
+#if COLUMNS_REFLOW_PATCH
+static void selscroll(int, int, int);
+#else
 static void selscroll(int, int);
+#endif // COLUMNS_REFLOW_PATCH
 #if !VIM_BROWSE_PATCH
 static void selsnap(int *, int *, int);
 #endif // VIM_BROWSE_PATCH
@@ -439,6 +465,16 @@ selinit(void)
 	sel.ob.x = -1;
 }
 
+#if COLUMNS_REFLOW_PATCH
+int
+tlinelen(Line line)
+{
+	int i = term.col - 1;
+
+	for (; i >= 0 && line[i].state == GLYPH_EMPTY; i--);
+	return i + 1;
+}
+#else
 int
 tlinelen(int y)
 {
@@ -460,6 +496,7 @@ tlinelen(int y)
 
 	return i;
 }
+#endif // COLUMNS_REFLOW_PATCH
 
 #if VIM_BROWSE_PATCH
 void historyOpToggle(int start, int paint) {
@@ -508,7 +545,7 @@ int historyBufferScroll(int n) {
 		if (sel.oe.y == last && sel.ob.y == last) selclear();
 	}
 	selnormalize();
-  // Clear the new region exposed by the shift.
+	// Clear the new region exposed by the shift.
 	if (!histOp) tclearregion(0, n>0?r+1:0, buffCols-1, n>0?term.row:p-1);
 	return 1;
 }
@@ -641,6 +678,9 @@ void
 selnormalize(void)
 {
 	int i;
+	#if COLUMNS_REFLOW_PATCH
+	Line line;
+	#endif // COLUMNS_REFLOW_PATCH
 
 	if (sel.type == SEL_REGULAR && sel.ob.y != sel.oe.y) {
 		sel.nb.x = sel.ob.y < sel.oe.y ? sel.ob.x : sel.oe.x;
@@ -655,6 +695,29 @@ selnormalize(void)
 	selsnap(&sel.nb.x, &sel.nb.y, -1);
 	selsnap(&sel.ne.x, &sel.ne.y, +1);
 
+	#if COLUMNS_REFLOW_PATCH
+	if (sel.type == SEL_RECTANGULAR)
+		return;
+
+	/* expand selection over line breaks and tabs */
+	line = TLINE(sel.nb.y);
+	i = tlinelen(line);
+	if (sel.nb.x > i)
+		sel.nb.x = i;
+	while (sel.nb.x > 0 && line[sel.nb.x].state == GLYPH_TDUMMY)
+		if (line[sel.nb.x-1].state >= GLYPH_TAB)
+			sel.nb.x--;
+
+	line = TLINE(sel.ne.y);
+	i = tlinelen(line) - 1;
+	if (sel.ne.x > i) {
+		sel.ne.x = term.col - 1;
+		return;
+	}
+	if (line[sel.ne.x].state >= GLYPH_TAB)
+		while (sel.ne.x < i && line[sel.ne.x+1].state == GLYPH_TDUMMY)
+			sel.ne.x++;
+	#else
 	/* expand selection over line breaks */
 	if (sel.type == SEL_RECTANGULAR)
 		return;
@@ -663,12 +726,16 @@ selnormalize(void)
 		sel.nb.x = i;
 	if (tlinelen(sel.ne.y) <= sel.ne.x)
 		sel.ne.x = term.col - 1;
+	#endif // COLUMNS_REFLOW_PATCH
 }
 #endif // VIM_BROWSE_PATCH
 
 int
 selected(int x, int y)
 {
+	#if COLUMNS_REFLOW_PATCH
+	return regionselected(x, y, x, y);
+	#else
 	if (sel.mode == SEL_EMPTY || sel.ob.x == -1 ||
 			sel.alt != IS_SET(MODE_ALTSCREEN))
 		return 0;
@@ -687,6 +754,7 @@ selected(int x, int y)
 	    && (y != sel.nb.y || x >= sel.nb.x)
 	    && (y != sel.ne.y || x <= sel.ne.x);
 	#endif // VIM_BROWSE_PATCH
+	#endif // COLUMNS_REFLOW_PATCH
 }
 
 #if !VIM_BROWSE_PATCH
@@ -694,8 +762,16 @@ void
 selsnap(int *x, int *y, int direction)
 {
 	int newx, newy, xt, yt;
+	#if COLUMNS_REFLOW_PATCH
+	int rtop = 0, rbot = term.row - 1;
+	#endif // COLUMNS_REFLOW_PATCH
 	int delim, prevdelim;
 	const Glyph *gp, *prevgp;
+
+	#if COLUMNS_REFLOW_PATCH
+	if (!IS_SET(MODE_ALTSCREEN))
+		rtop += -term.histf + term.scr, rbot += term.scr;
+	#endif // COLUMNS_REFLOW_PATCH
 
 	switch (sel.snap) {
 	case SNAP_WORD:
@@ -703,7 +779,7 @@ selsnap(int *x, int *y, int direction)
 		 * Snap around if the word wraps around at the end or
 		 * beginning of a line.
 		 */
-		#if SCROLLBACK_PATCH
+		#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 		prevgp = &TLINE(*y)[*x];
 		#else
 		prevgp = &term.line[*y][*x];
@@ -715,14 +791,18 @@ selsnap(int *x, int *y, int direction)
 			if (!BETWEEN(newx, 0, term.col - 1)) {
 				newy += direction;
 				newx = (newx + term.col) % term.col;
+				#if COLUMNS_REFLOW_PATCH
+				if (!BETWEEN(newy, rtop, rbot))
+				#else
 				if (!BETWEEN(newy, 0, term.row - 1))
+				#endif // COLUMNS_REFLOW_PATCH
 					break;
 
 				if (direction > 0)
 					yt = *y, xt = *x;
 				else
 					yt = newy, xt = newx;
-				#if SCROLLBACK_PATCH
+				#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 				if (!(TLINE(yt)[xt].mode & ATTR_WRAP))
 				#else
 				if (!(term.line[yt][xt].mode & ATTR_WRAP))
@@ -730,17 +810,26 @@ selsnap(int *x, int *y, int direction)
 					break;
 			}
 
+			#if COLUMNS_REFLOW_PATCH
+			if (newx >= tlinelen(TLINE(newy)))
+			#else
 			if (newx >= tlinelen(newy))
+			#endif // COLUMNS_REFLOW_PATCH
 				break;
 
-			#if SCROLLBACK_PATCH
+			#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 			gp = &TLINE(newy)[newx];
 			#else
 			gp = &term.line[newy][newx];
 			#endif // SCROLLBACK_PATCH
 			delim = ISDELIM(gp->u);
+			#if COLUMNS_REFLOW_PATCH
+			if (!(gp->mode & ATTR_WDUMMY) && (delim != prevdelim ||
+			    (delim && !(ISSPACE(gp) && ISSPACE(prevgp)))))
+			#else
 			if (!(gp->mode & ATTR_WDUMMY) && (delim != prevdelim
 					|| (delim && gp->u != prevgp->u)))
+			#endif // COLUMNS_REFLOW_PATCH
 				break;
 
 			*x = newx;
@@ -757,6 +846,12 @@ selsnap(int *x, int *y, int direction)
 		 */
 		*x = (direction < 0) ? 0 : term.col - 1;
 		if (direction < 0) {
+			#if COLUMNS_REFLOW_PATCH
+			for (; *y > rtop; *y -= 1) {
+				if (!tiswrapped(TLINE(*y-1)))
+					break;
+			}
+			#else
 			for (; *y > 0; *y += direction) {
 				#if SCROLLBACK_PATCH
 				if (!(TLINE(*y-1)[term.col-1].mode & ATTR_WRAP))
@@ -767,7 +862,14 @@ selsnap(int *x, int *y, int direction)
 					break;
 				}
 			}
+			#endif // COLUMNS_REFLOW_PATCH
 		} else if (direction > 0) {
+			#if COLUMNS_REFLOW_PATCH
+			for (; *y < rbot; *y += 1) {
+				if (!tiswrapped(TLINE(*y)))
+					break;
+			}
+ 			#else
 			for (; *y < term.row-1; *y += direction) {
 				#if SCROLLBACK_PATCH
 				if (!(TLINE(*y)[term.col-1].mode & ATTR_WRAP))
@@ -778,6 +880,7 @@ selsnap(int *x, int *y, int direction)
 					break;
 				}
 			}
+			#endif // COLUMNS_REFLOW_PATCH
 		}
 		break;
 	}
@@ -788,74 +891,100 @@ char *
 getsel(void)
 {
 	char *str, *ptr;
-	#if VIM_BROWSE_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	int y, lastx, linelen;
+	#elif VIM_BROWSE_PATCH
 	int y, yy, bufsize, lastx;
 	#else
 	int y, bufsize, lastx, linelen;
-	#endif // VIM_BROWSE_PATCH
+	#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH
 	const Glyph *gp, *last;
 
+	#if COLUMNS_REFLOW_PATCH
+	if (sel.ob.x == -1 || sel.alt != IS_SET(MODE_ALTSCREEN))
+	#else
 	if (sel.ob.x == -1)
+	#endif // COLUMNS_REFLOW_PATCH
 		return NULL;
 
-	#if VIM_BROWSE_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	str = xmalloc((term.col + 1) * (sel.ne.y - sel.nb.y + 1) * UTF_SIZ);
+	ptr = str;
+	#elif VIM_BROWSE_PATCH
 	int const start = sel.swap ? sel.oe.y : sel.ob.y, h = rows();
 	int endy = (sel.swap ? sel.ob.y : sel.oe.y);
 	for (; endy < start; endy += h);
 	Line * const cbuf = IS_SET(MODE_ALTSCREEN) ? term.line : buf;
 	bufsize = (term.col+1) * (endy-start+1 ) * UTF_SIZ;
 	assert(bufsize > 0);
+	ptr = str = xmalloc(bufsize);
 	#else
 	bufsize = (term.col+1) * (sel.ne.y-sel.nb.y+1) * UTF_SIZ;
-	#endif // VIM_BROWSE_PATCH
 	ptr = str = xmalloc(bufsize);
+	#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH
 
 	/* append every set & selected glyph to the selection */
-	#if VIM_BROWSE_PATCH
+	#if VIM_BROWSE_PATCH && !COLUMNS_REFLOW_PATCH
 	for (y = start; y <= endy; y++)
 	#else
 	for (y = sel.nb.y; y <= sel.ne.y; y++)
 	#endif // VIM_BROWSE_PATCH
 	{
-		#if VIM_BROWSE_PATCH
+		#if COLUMNS_REFLOW_PATCH
+		Line line = TLINE(y);
+
+		if ((linelen = tlinelen(line)) == 0) {
+			*ptr++ = '\n';
+			continue;
+		}
+		#elif VIM_BROWSE_PATCH
 		yy = y % h;
 		#else
 		if ((linelen = tlinelen(y)) == 0) {
 			*ptr++ = '\n';
 			continue;
 		}
-		#endif // VIM_BROWSE_PATCH
+		#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH
 
 		if (sel.type == SEL_RECTANGULAR) {
-			#if VIM_BROWSE_PATCH
+			#if COLUMNS_REFLOW_PATCH
+			gp = &line[sel.nb.x];
+			#elif VIM_BROWSE_PATCH
 			gp = &cbuf[yy][sel.nb.x];
 			#elif SCROLLBACK_PATCH
 			gp = &TLINE(y)[sel.nb.x];
 			#else
 			gp = &term.line[y][sel.nb.x];
-			#endif // SCROLLBACK_PATCH
+			#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH | SCROLLBACK_PATCH
 			lastx = sel.ne.x;
 		} else {
-			#if VIM_BROWSE_PATCH
+			#if COLUMNS_REFLOW_PATCH
+			gp = &line[sel.nb.y == y ? sel.nb.x : 0];
+			#elif VIM_BROWSE_PATCH
 			gp = &cbuf[yy][start == y ? sel.nb.x : 0];
 			#elif SCROLLBACK_PATCH
 			gp = &TLINE(y)[sel.nb.y == y ? sel.nb.x : 0];
 			#else
 			gp = &term.line[y][sel.nb.y == y ? sel.nb.x : 0];
-			#endif // SCROLLBACK_PATCH
-			#if VIM_BROWSE_PATCH
+			#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH | SCROLLBACK_PATCH
+			#if VIM_BROWSE_PATCH && !COLUMNS_REFLOW_PATCH
 			lastx = (endy == y) ? sel.ne.x : term.col-1;
 			#else
 			lastx = (sel.ne.y == y) ? sel.ne.x : term.col-1;
 			#endif // VIM_BROWSE_PATCH
 		}
-		#if VIM_BROWSE_PATCH
+		#if COLUMNS_REFLOW_PATCH
+		last = &line[MIN(lastx, linelen-1)];
+		ptr = tgetline(ptr, gp, last, sel.type != SEL_RECTANGULAR);
+		#elif VIM_BROWSE_PATCH
 		last = &cbuf[yy][lastx];
 		#elif SCROLLBACK_PATCH
 		last = &TLINE(y)[MIN(lastx, linelen-1)];
 		#else
 		last = &term.line[y][MIN(lastx, linelen-1)];
-		#endif // SCROLLBACK_PATCH
+		#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH | SCROLLBACK_PATCH
+
+		#if !COLUMNS_REFLOW_PATCH
 		#if VIM_BROWSE_PATCH
 		if (!(cbuf[yy][term.col - 1].mode & ATTR_WRAP))
 			while (last > gp && last->u == ' ') --last;
@@ -870,6 +999,7 @@ getsel(void)
 
 			ptr += utf8encode(gp->u, ptr);
 		}
+		#endif // COLUMNS_REFLOW_PATCH
 
 		/*
 		 * Copy and pasting of line endings is inconsistent
@@ -889,7 +1019,11 @@ getsel(void)
 		    && (!(last->mode & ATTR_WRAP) || sel.type == SEL_RECTANGULAR))
 			*ptr++ = '\n';
 	}
+	#if COLUMNS_REFLOW_PATCH
+	*ptr = '\0';
+	#else
 	*ptr = 0;
+	#endif // COLUMNS_REFLOW_PATCH
 	return str;
 }
 
@@ -898,6 +1032,10 @@ selclear(void)
 {
 	if (sel.ob.x == -1)
 		return;
+	#if COLUMNS_REFLOW_PATCH
+	selremove();
+	tsetdirt(sel.nb.y, sel.ne.y);
+	#else
 	sel.mode = SEL_IDLE;
 	sel.ob.x = -1;
 	#if VIM_BROWSE_PATCH
@@ -905,6 +1043,7 @@ selclear(void)
 	#else
 	tsetdirt(sel.nb.y, sel.ne.y);
 	#endif // VIM_BROWSE_PATCH
+	#endif // COLUMNS_REFLOW_PATCH
 }
 
 void
@@ -1154,9 +1293,7 @@ ttywrite(const char *s, size_t n, int may_echo)
 {
 	const char *next;
 	#if SCROLLBACK_PATCH
-	Arg arg = (Arg) { .i = term.scr };
-
-	kscrolldown(&arg);
+	kscrolldown(&((Arg){ .i = term.scr }));
 	#endif // SCROLLBACK_PATCH
 
 	if (may_echo && IS_SET(MODE_ECHO))
@@ -1294,7 +1431,11 @@ tsetdirtattr(int attr)
 	for (i = 0; i < term.row-1; i++) {
 		for (j = 0; j < term.col-1; j++) {
 			if (term.line[i][j].mode & attr) {
+				#if COLUMNS_REFLOW_PATCH
+				term.dirty[i] = 1;
+				#else
 				tsetdirt(i, i);
+				#endif // COLUMNS_REFLOW_PATCH
 				break;
 			}
 		}
@@ -1307,7 +1448,11 @@ tfulldirt(void)
 	#if SYNC_PATCH
 	tsync_end();
 	#endif // SYNC_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	memset(term.dirty, 1, term.row * sizeof(*term.dirty));
+	#else
 	tsetdirt(0, term.row-1);
+	#endif // COLUMNS_REFLOW_PATCH
 }
 
 void
@@ -1336,26 +1481,40 @@ treset(void)
 	ImageList *im;
 	#endif // SIXEL_PATCH
 
+	#if COLUMNS_REFLOW_PATCH
+	tresetcursor();
+	#else
 	term.c = (TCursor){{
 		.mode = ATTR_NULL,
 		.fg = defaultfg,
 		.bg = defaultbg
 	}, .x = 0, .y = 0, .state = CURSOR_DEFAULT};
+	#endif // COLUMNS_REFLOW_PATCH
 
 	memset(term.tabs, 0, term.col * sizeof(*term.tabs));
 	for (i = tabspaces; i < term.col; i += tabspaces)
 		term.tabs[i] = 1;
 	term.top = 0;
+	#if COLUMNS_REFLOW_PATCH
+	term.histf = 0;
+	term.scr = 0;
+	#endif // COLUMNS_REFLOW_PATCH
 	term.bot = term.row - 1;
 	term.mode = MODE_WRAP|MODE_UTF8;
 	memset(term.trantbl, CS_USA, sizeof(term.trantbl));
 	term.charset = 0;
 
 	for (i = 0; i < 2; i++) {
+		#if COLUMNS_REFLOW_PATCH
+		tcursor(CURSOR_SAVE);
+		tclearregion(0, 0, term.col-1, term.row-1, 0);
+		tswapscreen();
+		#else
 		tmoveto(0, 0);
 		tcursor(CURSOR_SAVE);
 		tclearregion(0, 0, term.col-1, term.row-1);
 		tswapscreen();
+		#endif // COLUMNS_REFLOW_PATCH
 	}
 	#if SIXEL_PATCH
 	for (im = term.images; im; im = im->next)
@@ -1366,43 +1525,87 @@ treset(void)
 void
 tnew(int col, int row)
 {
+	#if COLUMNS_REFLOW_PATCH
+	int i, j;
+
+	for (i = 0; i < 2; i++) {
+		term.line = xmalloc(row * sizeof(Line));
+		for (j = 0; j < row; j++)
+			term.line[j] = xmalloc(col * sizeof(Glyph));
+		term.col = col, term.row = row;
+		tswapscreen();
+	}
+	term.dirty = xmalloc(row * sizeof(*term.dirty));
+	term.tabs = xmalloc(col * sizeof(*term.tabs));
+	for (i = 0; i < HISTSIZE; i++)
+		term.hist[i] = xmalloc(col * sizeof(Glyph));
+	treset();
+	#else
 	term = (Term){ .c = { .attr = { .fg = defaultfg, .bg = defaultbg } } };
 	tresize(col, row);
 	treset();
+	#endif // COLUMNS_REFLOW_PATCH
 }
 
 void
 tswapscreen(void)
 {
+	#if COLUMNS_REFLOW_PATCH
+	static Line *altline;
+	Line *tmpline = term.line;
+	static int altcol, altrow;
+	int tmpcol = term.col, tmprow = term.row;
+	#else
 	Line *tmp = term.line;
+	#endif // COLUMNS_REFLOW_PATCH
 	#if SIXEL_PATCH
 	ImageList *im = term.images;
 	#endif // SIXEL_PATCH
 
+	#if COLUMNS_REFLOW_PATCH
+	term.line = altline;
+	term.col = altcol, term.row = altrow;
+	altline = tmpline;
+	altcol = tmpcol, altrow = tmprow;
+	#else
 	term.line = term.alt;
 	term.alt = tmp;
+	#endif // COLUMNS_REFLOW_PATCH
 	#if SIXEL_PATCH
 	term.images = term.images_alt;
 	term.images_alt = im;
 	#endif // SIXEL_PATCH
 	term.mode ^= MODE_ALTSCREEN;
+	#if !COLUMNS_REFLOW_PATCH
 	tfulldirt();
+	#endif // COLUMNS_REFLOW_PATCH
 }
 
 void
-#if SCROLLBACK_PATCH
+#if COLUMNS_REFLOW_PATCH
+tscrolldown(int top, int n)
+#elif SCROLLBACK_PATCH
 tscrolldown(int orig, int n, int copyhist)
 #else
 tscrolldown(int orig, int n)
-#endif // SCROLLBACK_PATCH
+#endif // COLUMNS_REFLOW_PATCH | SCROLLBACK_PATCH
 {
-	#if VIM_BROWSE_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	int bot = term.bot;
+	#elif VIM_BROWSE_PATCH
 	if (!orig && historyBufferScroll(-n))
 		return;
-	#endif // VIM_BROWSE_PATCH
+	#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH
 	int i;
 	Line temp;
 
+	#if COLUMNS_REFLOW_PATCH
+	if (n <= 0)
+		return;
+	n = MIN(n, bot-top+1);
+	tsetdirt(top, bot-n);
+	tclearregion(0, bot-n+1, term.col-1, bot, 1);
+	#else
 	LIMIT(n, 0, term.bot-orig+1);
 
 	#if SCROLLBACK_PATCH
@@ -1416,8 +1619,14 @@ tscrolldown(int orig, int n)
 
 	tsetdirt(orig, term.bot-n);
 	tclearregion(0, term.bot-n+1, term.col-1, term.bot);
+	#endif // COLUMNS_REFLOW_PATCH
 
-	for (i = term.bot; i >= orig+n; i--) {
+	#if COLUMNS_REFLOW_PATCH
+	for (i = bot; i >= top+n; i--)
+	#else
+	for (i = term.bot; i >= orig+n; i--)
+	#endif // COLUMNS_REFLOW_PATCH
+	{
 		temp = term.line[i];
 		term.line[i] = term.line[i-n];
 		term.line[i-n] = temp;
@@ -1427,7 +1636,10 @@ tscrolldown(int orig, int n)
 	scroll_images(n);
 	#endif // SIXEL_PATCH
 
-	#if SCROLLBACK_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	if (sel.ob.x != -1 && sel.alt == IS_SET(MODE_ALTSCREEN))
+		selscroll(top, bot, n);
+	#elif SCROLLBACK_PATCH
 	if (term.scr == 0)
 		selscroll(orig, n);
 	#else
@@ -1436,19 +1648,53 @@ tscrolldown(int orig, int n)
 }
 
 void
-#if SCROLLBACK_PATCH
+#if COLUMNS_REFLOW_PATCH
+tscrollup(int top, int bot, int n, int mode)
+#elif SCROLLBACK_PATCH
 tscrollup(int orig, int n, int copyhist)
 #else
 tscrollup(int orig, int n)
-#endif // SCROLLBACK_PATCH
+#endif // COLUMNS_REFLOW_PATCH | SCROLLBACK_PATCH
 {
-	#if VIM_BROWSE_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	int j, s;
+	int alt = IS_SET(MODE_ALTSCREEN);
+	int savehist = !alt && top == 0 && mode != SCROLL_NOSAVEHIST;
+	#elif VIM_BROWSE_PATCH
 	if (!orig && historyBufferScroll(n))
 		return;
 	#endif // VIM_BROWSE_PATCH
 	int i;
 	Line temp;
 
+	#if COLUMNS_REFLOW_PATCH
+	if (n <= 0)
+		return;
+	n = MIN(n, bot-top+1);
+
+	if (savehist) {
+		for (i = 0; i < n; i++) {
+			term.histi = (term.histi + 1) % HISTSIZE;
+			temp = term.hist[term.histi];
+			for (j = 0; j < term.col; j++)
+				tclearglyph(&temp[j], 1);
+			term.hist[term.histi] = term.line[i];
+			term.line[i] = temp;
+		}
+		term.histf = MIN(term.histf + n, HISTSIZE);
+		s = n;
+		if (term.scr) {
+			j = term.scr;
+			term.scr = MIN(j + n, HISTSIZE);
+			s = j + n - term.scr;
+		}
+		if (mode != SCROLL_RESIZE)
+			tfulldirt();
+	} else {
+		tclearregion(0, top, term.col-1, top+n-1, 1);
+		tsetdirt(top+n, bot);
+	}
+	#else
 	LIMIT(n, 0, term.bot-orig+1);
 
 	#if SCROLLBACK_PATCH
@@ -1465,8 +1711,14 @@ tscrollup(int orig, int n)
 
 	tclearregion(0, orig, term.col-1, orig+n-1);
 	tsetdirt(orig+n, term.bot);
+	#endif // COLUMNS_REFLOW_PATCH
 
-	for (i = orig; i <= term.bot-n; i++) {
+	#if COLUMNS_REFLOW_PATCH
+	for (i = top; i <= bot-n; i++)
+	#else
+	for (i = orig; i <= term.bot-n; i++)
+	#endif // COLUMNS_REFLOW_PATCH
+	{
 		temp = term.line[i];
 		term.line[i] = term.line[i+n];
 		term.line[i+n] = temp;
@@ -1476,7 +1728,17 @@ tscrollup(int orig, int n)
 	scroll_images(-1 * n);
 	#endif // SIXEL_PATCH
 
-	#if SCROLLBACK_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	if (sel.ob.x != -1 && sel.alt == alt) {
+		if (!savehist) {
+			selscroll(top, bot, -n);
+		} else if (s > 0) {
+			selmove(-s);
+			if (-term.scr + sel.nb.y < -term.histf)
+				selremove();
+		}
+	}
+	#elif SCROLLBACK_PATCH
 	if (term.scr == 0)
 		selscroll(orig, -n);
 	#else
@@ -1484,6 +1746,21 @@ tscrollup(int orig, int n)
 	#endif // SCROLLBACK_PATCH
 }
 
+#if COLUMNS_REFLOW_PATCH
+void
+selscroll(int top, int bot, int n)
+{
+	/* turn absolute coordinates into relative */
+	top += term.scr, bot += term.scr;
+	if (BETWEEN(sel.nb.y, top, bot) != BETWEEN(sel.ne.y, top, bot)) {
+		selclear();
+	} else if (BETWEEN(sel.nb.y, top, bot)) {
+		selmove(n);
+		if (sel.nb.y < top || sel.ne.y > bot)
+			selclear();
+	}
+}
+#else
 void
 selscroll(int orig, int n)
 {
@@ -1503,6 +1780,7 @@ selscroll(int orig, int n)
 		}
 	}
 }
+#endif // COLUMNS_REFLOW_PATCH
 
 void
 tnewline(int first_col)
@@ -1510,7 +1788,9 @@ tnewline(int first_col)
 	int y = term.c.y;
 
 	if (y == term.bot) {
-		#if SCROLLBACK_PATCH
+		#if COLUMNS_REFLOW_PATCH
+		tscrollup(term.top, term.bot, 1, SCROLL_SAVEHIST);
+		#elif SCROLLBACK_PATCH
 		tscrollup(term.top, 1, 1);
 		#else
 		tscrollup(term.top, 1);
@@ -1636,6 +1916,9 @@ tsetchar(Rune u, const Glyph *attr, int x, int y)
 	term.dirty[y] = 1;
 	term.line[y][x] = *attr;
 	term.line[y][x].u = u;
+	#if COLUMNS_REFLOW_PATCH
+	term.line[y][x].state = GLYPH_SET;
+	#endif // COLUMNS_REFLOW_PATCH
 
 	#if BOXDRAW_PATCH
 	if (isboxdraw(u))
@@ -1643,6 +1926,23 @@ tsetchar(Rune u, const Glyph *attr, int x, int y)
 	#endif // BOXDRAW_PATCH
 }
 
+#if COLUMNS_REFLOW_PATCH
+void
+tclearregion(int x1, int y1, int x2, int y2, int usecurattr)
+{
+	int x, y;
+
+	/* regionselected() takes relative coordinates */
+	if (regionselected(x1+term.scr, y1+term.scr, x2+term.scr, y2+term.scr))
+		selremove();
+
+	for (y = y1; y <= y2; y++) {
+		term.dirty[y] = 1;
+		for (x = x1; x <= x2; x++)
+			tclearglyph(&term.line[y][x], usecurattr);
+	}
+}
+#else
 void
 tclearregion(int x1, int y1, int x2, int y2)
 {
@@ -1680,7 +1980,28 @@ tclearregion(int x1, int y1, int x2, int y2)
 		}
 	}
 }
+#endif // COLUMNS_REFLOW_PATCH
 
+#if COLUMNS_REFLOW_PATCH
+void
+tdeletechar(int n)
+{
+	int src, dst, size;
+	Line line;
+
+	if (n <= 0)
+		return;
+	dst = term.c.x;
+	src = MIN(term.c.x + n, term.col);
+	size = term.col - src;
+	if (size > 0) { /* otherwise src would point beyond the array
+	                   https://stackoverflow.com/questions/29844298 */
+		line = term.line[term.c.y];
+		memmove(&line[dst], &line[src], size * sizeof(Glyph));
+	}
+	tclearregion(dst + size, term.c.y, term.col - 1, term.c.y, 1);
+}
+#else
 void
 tdeletechar(int n)
 {
@@ -1697,7 +2018,27 @@ tdeletechar(int n)
 	memmove(&line[dst], &line[src], size * sizeof(Glyph));
 	tclearregion(term.col-n, term.c.y, term.col-1, term.c.y);
 }
+#endif // COLUMNS_REFLOW_PATCH
 
+#if COLUMNS_REFLOW_PATCH
+void
+tinsertblank(int n)
+{
+	int src, dst, size;
+	Line line;
+
+	if (n <= 0)
+		return;
+	dst = MIN(term.c.x + n, term.col);
+	src = term.c.x;
+	size = term.col - dst;
+	if (size > 0) { /* otherwise dst would point beyond the array */
+		line = term.line[term.c.y];
+		memmove(&line[dst], &line[src], size * sizeof(Glyph));
+	}
+	tclearregion(src, term.c.y, dst - 1, term.c.y, 1);
+}
+#else
 void
 tinsertblank(int n)
 {
@@ -1714,12 +2055,13 @@ tinsertblank(int n)
 	memmove(&line[dst], &line[src], size * sizeof(Glyph));
 	tclearregion(src, term.c.y, dst - 1, term.c.y);
 }
+#endif // COLUMNS_REFLOW_PATCH
 
 void
 tinsertblankline(int n)
 {
 	if (BETWEEN(term.c.y, term.top, term.bot))
-		#if SCROLLBACK_PATCH
+		#if SCROLLBACK_PATCH && !COLUMNS_REFLOW_PATCH
 		tscrolldown(term.c.y, n, 0);
 		#else
 		tscrolldown(term.c.y, n);
@@ -1730,11 +2072,13 @@ void
 tdeleteline(int n)
 {
 	if (BETWEEN(term.c.y, term.top, term.bot))
-		#if SCROLLBACK_PATCH
+		#if COLUMNS_REFLOW_PATCH
+		tscrollup(term.c.y, term.bot, n, SCROLL_NOSAVEHIST);
+		#elif SCROLLBACK_PATCH
 		tscrollup(term.c.y, n, 0);
 		#else
 		tscrollup(term.c.y, n);
-		#endif // SCROLLBACK_PATCH
+		#endif // COLUMNS_REFLOW_PATCH | SCROLLBACK_PATCH
 }
 
 int32_t
@@ -1963,7 +2307,9 @@ tsetscroll(int t, int b)
 void
 tsetmode(int priv, int set, const int *args, int narg)
 {
+	#if !COLUMNS_REFLOW_PATCH
 	int alt;
+	#endif // COLUMNS_REFLOW_PATCH
 	const int *lim;
 
 	for (lim = args + narg; args < lim; ++args) {
@@ -2025,14 +2371,23 @@ tsetmode(int priv, int set, const int *args, int narg)
 				xsetmode(set, MODE_8BIT);
 				break;
 			case 1049: /* swap screen & set/restore cursor as xterm */
+				#if !COLUMNS_REFLOW_PATCH
 				if (!allowaltscreen)
 					break;
 				tcursor((set) ? CURSOR_SAVE : CURSOR_LOAD);
 				/* FALLTHROUGH */
+				#endif // COLUMNS_REFLOW_PATCH
 			case 47: /* swap screen */
 			case 1047:
 				if (!allowaltscreen)
 					break;
+				#if COLUMNS_REFLOW_PATCH
+				if (set)
+					tloadaltscreen(*args == 1049, *args == 1049);
+				else
+					tloaddefscreen(*args == 1047, *args == 1049);
+				break;
+				#else
 				alt = IS_SET(MODE_ALTSCREEN);
 				if (alt) {
 					tclearregion(0, 0, term.col-1,
@@ -2043,7 +2398,12 @@ tsetmode(int priv, int set, const int *args, int narg)
 				if (*args != 1049)
 					break;
 				/* FALLTHROUGH */
+				#endif // COLUMNS_REFLOW_PATCH
 			case 1048:
+				#if COLUMNS_REFLOW_PATCH
+				if (!allowaltscreen)
+					break;
+				#endif // COLUMNS_REFLOW_PATCH
 				tcursor((set) ? CURSOR_SAVE : CURSOR_LOAD);
 				break;
 			case 2004: /* 2004: bracketed paste mode */
@@ -2095,7 +2455,11 @@ void
 csihandle(void)
 {
 	char buf[40];
+	#if COLUMNS_REFLOW_PATCH
+	int n, x;
+	#else
 	int len;
+	#endif // COLUMNS_REFLOW_PATCH
 	#if SIXEL_PATCH
 	ImageList *im;
 	#endif // SIXEL_PATCH
@@ -2196,21 +2560,53 @@ csihandle(void)
 	case 'J': /* ED -- Clear screen */
 		switch (csiescseq.arg[0]) {
 		case 0: /* below */
+			#if COLUMNS_REFLOW_PATCH
+			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y, 1);
+			#else
 			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y);
+			#endif // COLUMNS_REFLOW_PATCH
 			if (term.c.y < term.row-1) {
+				#if COLUMNS_REFLOW_PATCH
+				tclearregion(0, term.c.y+1, term.col-1, term.row-1, 1);
+				#else
 				tclearregion(0, term.c.y+1, term.col-1,
 						term.row-1);
+				#endif // COLUMNS_REFLOW_PATCH
 			}
 			break;
 		case 1: /* above */
+			#if COLUMNS_REFLOW_PATCH
+			if (term.c.y >= 1)
+				tclearregion(0, 0, term.col-1, term.c.y-1, 1);
+			tclearregion(0, term.c.y, term.c.x, term.c.y, 1);
+			#else
 			if (term.c.y > 1)
 				tclearregion(0, 0, term.col-1, term.c.y-1);
 			tclearregion(0, term.c.y, term.c.x, term.c.y);
+			#endif // COLUMNS_REFLOW_PATCH
 			break;
 		case 2: /* screen */
+			#if COLUMNS_REFLOW_PATCH
+			tclearregion(0, 0, term.col-1, term.row-1, 1);
+			#else
 			tclearregion(0, 0, term.col-1, term.row-1);
+			#endif // COLUMNS_REFLOW_PATCH
 			break;
 		case 3: /* all including scrollback */
+			#if COLUMNS_REFLOW_PATCH
+			if (IS_SET(MODE_ALTSCREEN)) {
+				tclearregion(0, 0, term.col-1, term.row-1, 1);
+				break;
+			}
+			/* vte does this:
+			tscrollup(0, term.row-1, term.row, SCROLL_SAVEHIST); */
+
+			/* alacritty does this: */
+			for (n = term.row-1; n >= 0 && tlinelen(term.line[n]) == 0; n--);
+			if (n >= 0)
+				tscrollup(0, term.row-1, n+1, SCROLL_SAVEHIST);
+			tscrollup(0, term.row-1, term.row-n-1, SCROLL_NOSAVEHIST);
+			#else
 			tclearregion(0, 0, term.col-1, term.row-1);
 
 			#if SCROLLBACK_PATCH
@@ -2219,6 +2615,7 @@ csihandle(void)
 			for (int i = 0; i < HISTSIZE; i++)
 				term.hist[i][0].u = '\0';
 			#endif // SCROLLBACK_PATCH
+			#endif // COLUMNS_REFLOW_PATCH
 
 			#if SIXEL_PATCH
 			for (im = term.images; im; im = im->next)
@@ -2232,30 +2629,46 @@ csihandle(void)
 	case 'K': /* EL -- Clear line */
 		switch (csiescseq.arg[0]) {
 		case 0: /* right */
-			tclearregion(term.c.x, term.c.y, term.col-1,
-					term.c.y);
+			#if COLUMNS_REFLOW_PATCH
+			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y, 1);
+			#else
+			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y);
+			#endif // COLUMNS_REFLOW_PATCH
 			break;
 		case 1: /* left */
+			#if COLUMNS_REFLOW_PATCH
+			tclearregion(0, term.c.y, term.c.x, term.c.y, 1);
+			#else
 			tclearregion(0, term.c.y, term.c.x, term.c.y);
+			#endif // COLUMNS_REFLOW_PATCH
 			break;
 		case 2: /* all */
+			#if COLUMNS_REFLOW_PATCH
+			tclearregion(0, term.c.y, term.col-1, term.c.y, 1);
+			#else
 			tclearregion(0, term.c.y, term.col-1, term.c.y);
+			#endif // COLUMNS_REFLOW_PATCH
 			break;
 		}
 		break;
 	case 'S': /* SU -- Scroll <n> line up */
 		DEFAULT(csiescseq.arg[0], 1);
-		#if SIXEL_PATCH && SCROLLBACK_PATCH
+		#if COLUMNS_REFLOW_PATCH
+		/* xterm, urxvt, alacritty save this in history */
+		tscrollup(term.top, term.bot, csiescseq.arg[0], SCROLL_SAVEHIST);
+		#elif SIXEL_PATCH && SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 1);
 		#elif SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 0);
 		#else
 		tscrollup(term.top, csiescseq.arg[0]);
-		#endif // SCROLLBACK_PATCH
+		#endif // COLUMNS_REFLOW_PATCH | SIXEL_PATCH | SCROLLBACK_PATCH
 		break;
 	case 'T': /* SD -- Scroll <n> line down */
 		DEFAULT(csiescseq.arg[0], 1);
-		#if SIXEL_PATCH && SCROLLBACK_PATCH
+		#if COLUMNS_REFLOW_PATCH
+		tscrolldown(term.top, csiescseq.arg[0]);
+		#elif SIXEL_PATCH && SCROLLBACK_PATCH
 		tscrolldown(term.top, csiescseq.arg[0], 1);
 		#elif SCROLLBACK_PATCH
 		tscrolldown(term.top, csiescseq.arg[0], 0);
@@ -2275,9 +2688,17 @@ csihandle(void)
 		tdeleteline(csiescseq.arg[0]);
 		break;
 	case 'X': /* ECH -- Erase <n> char */
+		#if COLUMNS_REFLOW_PATCH
+		if (csiescseq.arg[0] < 0)
+			return;
+		DEFAULT(csiescseq.arg[0], 1);
+		x = MIN(term.c.x + csiescseq.arg[0], term.col) - 1;
+		tclearregion(term.c.x, term.c.y, x, term.c.y, 1);
+		#else
 		DEFAULT(csiescseq.arg[0], 1);
 		tclearregion(term.c.x, term.c.y,
 				term.c.x + csiescseq.arg[0] - 1, term.c.y);
+		#endif // COLUMNS_REFLOW_PATCH
 		break;
 	case 'P': /* DCH -- Delete <n> char */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -2299,9 +2720,15 @@ csihandle(void)
 		break;
 	case 'n': /* DSR – Device Status Report (cursor position) */
 		if (csiescseq.arg[0] == 6) {
+			#if COLUMNS_REFLOW_PATCH
+			n = snprintf(buf, sizeof(buf), "\033[%i;%iR",
+					term.c.y+1, term.c.x+1);
+			ttywrite(buf, n, 0);
+			#else
 			len = snprintf(buf, sizeof(buf), "\033[%i;%iR",
 					term.c.y+1, term.c.x+1);
 			ttywrite(buf, len, 0);
+			#endif // COLUMNS_REFLOW_PATCH
 		}
 		break;
 	case 'r': /* DECSTBM -- Set Scrolling Region */
@@ -2404,37 +2831,66 @@ strhandle(void)
 	#endif // SIXEL_PATCH
 
 	term.esc &= ~(ESC_STR_END|ESC_STR);
+	#if COLUMNS_REFLOW_PATCH
+	strescseq.buf[strescseq.len] = '\0';
+	#else
 	strparse();
 	par = (narg = strescseq.narg) ? atoi(strescseq.args[0]) : 0;
+	#endif // COLUMNS_REFLOW_PATCH
 
 	switch (strescseq.type) {
 	case ']': /* OSC -- Operating System Command */
+		#if COLUMNS_REFLOW_PATCH
+		strparse();
+		par = (narg = strescseq.narg) ? atoi(STRESCARGJUST(0)) : 0;
+		#endif // COLUMNS_REFLOW_PATCH
+
 		switch (par) {
 		case 0:
 			if (narg > 1) {
-				#if CSI_22_23_PATCH
+				#if COLUMNS_REFLOW_PATCH && CSI_22_23_PATCH
+				xsettitle(STRESCARGREST(1), 0);
+				#elif COLUMNS_REFLOW_PATCH
+				xsettitle(STRESCARGREST(1));
+				#elif CSI_22_23_PATCH
 				xsettitle(strescseq.args[1], 0);
 				#else
 				xsettitle(strescseq.args[1]);
-				#endif // CSI_22_23_PATCH
+				#endif // COLUMNS_REFLOW_PATCH | CSI_22_23_PATCH
+				#if COLUMNS_REFLOW_PATCH
+				xseticontitle(STRESCARGREST(1));
+				#else
 				xseticontitle(strescseq.args[1]);
+				#endif // COLUMNS_REFLOW_PATCH
 			}
 			return;
 		case 1:
 			if (narg > 1)
+				#if COLUMNS_REFLOW_PATCH
+				xseticontitle(STRESCARGREST(1));
+				#else
 				xseticontitle(strescseq.args[1]);
+				#endif // COLUMNS_REFLOW_PATCH
 			return;
 		case 2:
 			if (narg > 1)
-				#if CSI_22_23_PATCH
+				#if COLUMNS_REFLOW_PATCH && CSI_22_23_PATCH
+				xsettitle(STRESCARGREST(1), 0);
+				#elif COLUMNS_REFLOW_PATCH
+				xsettitle(STRESCARGREST(1));
+				#elif CSI_22_23_PATCH
 				xsettitle(strescseq.args[1], 0);
 				#else
 				xsettitle(strescseq.args[1]);
-				#endif // CSI_22_23_PATCH
+				#endif // COLUMNS_REFLOW_PATCH | CSI_22_23_PATCH
 			return;
 		case 52:
 			if (narg > 2 && allowwindowops) {
+				#if COLUMNS_REFLOW_PATCH
+				dec = base64dec(STRESCARGREST(1));
+				#else
 				dec = base64dec(strescseq.args[2]);
+				#endif // COLUMNS_REFLOW_PATCH
 				if (dec) {
 					xsetsel(dec);
 					xclipcopy();
@@ -2450,7 +2906,7 @@ strhandle(void)
 
 			p = strescseq.args[1];
 			if (xsetcolorname(defaultfg, p))
-				fprintf(stderr, "erresc: invalid foreground color %d\n", p);
+				fprintf(stderr, "erresc: invalid foreground color %s\n", p);
 			else
 				redraw();
 			break;
@@ -2463,7 +2919,7 @@ strhandle(void)
 
 			p = strescseq.args[1];
 			if (xsetcolorname(defaultbg, p))
-				fprintf(stderr, "erresc: invalid background color %d\n", p);
+				fprintf(stderr, "erresc: invalid background color %s\n", p);
 			else
 				redraw();
 			break;
@@ -2476,7 +2932,7 @@ strhandle(void)
 
 			p = strescseq.args[1];
 			if (xsetcolorname(defaultcs, p))
-				fprintf(stderr, "erresc: invalid cursor color %d\n", p);
+				fprintf(stderr, "erresc: invalid cursor color %s\n", p);
 			else
 				redraw();
 			break;
@@ -2484,7 +2940,11 @@ strhandle(void)
 		case 4: /* color set */
 			if ((par == 4 && narg < 3) || narg < 2)
 				break;
+			#if COLUMNS_REFLOW_PATCH
+			p = STRESCARGREST(par == 4 ? 2 : 1);
+			#else
 			p = strescseq.args[((par == 4) ? 2 : 1)];
+			#endif // COLUMNS_REFLOW_PATCH
 			/* FALLTHROUGH */
 		case 104: /* color reset, here p = NULL */
 			if (par == 10)
@@ -2494,7 +2954,11 @@ strhandle(void)
 			else if (par == 12)
 				j = defaultcs;
 			else
+				#if COLUMNS_REFLOW_PATCH
+				j = (narg > 1) ? atoi(STRESCARGREST(1)) : -1;
+				#else
 				j = (narg > 1) ? atoi(strescseq.args[1]) : -1;
+				#endif // COLUMNS_REFLOW_PATCH
 
 			if (xsetcolorname(j, p)) {
 				if (par == 104 && narg <= 1)
@@ -2510,7 +2974,11 @@ strhandle(void)
 		}
 		break;
 	case 'k': /* old title set compatibility */
-		#if CSI_22_23_PATCH
+		#if COLUMNS_REFLOW_PATCH && CSI_22_23_PATCH
+		xsettitle(STRESCARGREST(0), 0);
+		#elif COLUMNS_REFLOW_PATCH
+		xsettitle(STRESCARGREST(0));
+		#elif CSI_22_23_PATCH
 		xsettitle(strescseq.args[0], 0);
 		#else
 		xsettitle(strescseq.args[0]);
@@ -2544,7 +3012,11 @@ strhandle(void)
 			}
 			for (i = 0; i < (sixel_st.image.height + win.ch-1)/win.ch; ++i) {
 				int x;
+				#if COLUMNS_REFLOW_PATCH
+				tclearregion(term.c.x, term.c.y, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw, term.c.y, 0);
+				#else
 				tclearregion(term.c.x, term.c.y, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw, term.c.y);
+				#endif // COLUMNS_REFLOW_PATCH
 				for (x = term.c.x; x < MIN(term.col, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw); x++)
 					term.line[term.c.y][x].mode |= ATTR_SIXEL;
 				tnewline(1);
@@ -2577,18 +3049,29 @@ strparse(void)
 	char *p = strescseq.buf;
 
 	strescseq.narg = 0;
+	#if !COLUMNS_REFLOW_PATCH
 	strescseq.buf[strescseq.len] = '\0';
+	#endif // COLUMNS_REFLOW_PATCH
 
 	if (*p == '\0')
 		return;
 
 	while (strescseq.narg < STR_ARG_SIZ) {
+		#if !COLUMNS_REFLOW_PATCH
 		strescseq.args[strescseq.narg++] = p;
+		#endif // COLUMNS_REFLOW_PATCH
 		while ((c = *p) != ';' && c != '\0')
 			++p;
+		#if COLUMNS_REFLOW_PATCH
+		strescseq.args[strescseq.narg++] = p;
+		#endif // COLUMNS_REFLOW_PATCH
 		if (c == '\0')
 			return;
+		#if COLUMNS_REFLOW_PATCH
+		p++;
+		#else
 		*p++ = '\0';
+		#endif // COLUMNS_REFLOW_PATCH
 	}
 }
 
@@ -2674,6 +3157,26 @@ tdumpsel(void)
 	}
 }
 
+#if COLUMNS_REFLOW_PATCH
+void
+tdumpline(int n)
+{
+	char str[(term.col + 1) * UTF_SIZ];
+	char *ptr;
+	const Glyph *gp, *last;
+
+	gp = &term.line[n][0];
+	last = &gp[term.col - 1];
+	while (last > gp && last->state == GLYPH_EMPTY)
+		last--;
+
+	ptr = tgetline(str, gp, last, 1);
+	if (!(last->mode & ATTR_WRAP))
+		*(ptr++) = '\n';
+
+	tprinter(str, ptr-str);
+}
+#else
 void
 tdumpline(int n)
 {
@@ -2688,6 +3191,7 @@ tdumpline(int n)
 	}
 	tprinter("\n", 1);
 }
+#endif // COLUMNS_REFLOW_PATCH
 
 void
 tdump(void)
@@ -2787,7 +3291,11 @@ tcontrolcode(uchar ascii)
 {
 	switch (ascii) {
 	case '\t':   /* HT */
+		#if COLUMNS_REFLOW_PATCH
+		twritetab();
+		#else
 		tputtab(1);
+		#endif // COLUMNS_REFLOW_PATCH
 		return;
 	case '\b':   /* BS */
 		tmoveto(term.c.x-1, term.c.y);
@@ -2919,11 +3427,13 @@ eschandle(uchar ascii)
 		return 0;
 	case 'D': /* IND -- Linefeed */
 		if (term.c.y == term.bot) {
-			#if SCROLLBACK_PATCH
+			#if COLUMNS_REFLOW_PATCH
+			tscrollup(term.top, term.bot, 1, SCROLL_SAVEHIST);
+			#elif SCROLLBACK_PATCH
 			tscrollup(term.top, 1, 1);
 			#else
 			tscrollup(term.top, 1);
-			#endif // SCROLLBACK_PATCH
+			#endif // COLUMNS_REFLOW_PATCH | SCROLLBACK_PATCH
 		} else {
 			tmoveto(term.c.x, term.c.y+1);
 		}
@@ -2936,7 +3446,7 @@ eschandle(uchar ascii)
 		break;
 	case 'M': /* RI -- Reverse index */
 		if (term.c.y == term.top) {
-			#if SCROLLBACK_PATCH
+			#if SCROLLBACK_PATCH && !COLUMNS_REFLOW_PATCH
 			tscrolldown(term.top, 1, 1);
 			#else
 			tscrolldown(term.top, 1);
@@ -3113,7 +3623,10 @@ check_control_code:
 		 */
 		return;
 	}
-	#if !VIM_BROWSE_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	if (selected(term.c.x + term.scr, term.c.y + term.scr))
+		selclear();
+	#elif !VIM_BROWSE_PATCH
 	if (selected(term.c.x, term.c.y))
 		selclear();
 	#endif // VIM_BROWSE_PATCH
@@ -3146,6 +3659,9 @@ check_control_code:
 	if (term.c.x+width < term.col) {
 		tmoveto(term.c.x+width, term.c.y);
 	} else {
+		#if COLUMNS_REFLOW_PATCH
+		term.wrapcwidth[IS_SET(MODE_ALTSCREEN)] = width;
+		#endif // COLUMNS_REFLOW_PATCH
 		term.c.state |= CURSOR_WRAPNEXT;
 	}
 }
@@ -3198,6 +3714,40 @@ twrite(const char *buf, int buflen, int show_ctrl)
 	return n;
 }
 
+#if COLUMNS_REFLOW_PATCH
+void
+tresize(int col, int row)
+{
+	int *bp;
+
+	/* col and row are always MAX(_, 1)
+	if (col < 1 || row < 1) {
+		fprintf(stderr, "tresize: error resizing to %dx%d\n", col, row);
+		return;
+	} */
+
+	term.dirty = xrealloc(term.dirty, row * sizeof(*term.dirty));
+	term.tabs = xrealloc(term.tabs, col * sizeof(*term.tabs));
+	if (col > term.col) {
+		bp = term.tabs + term.col;
+		memset(bp, 0, sizeof(*term.tabs) * (col - term.col));
+		while (--bp > term.tabs && !*bp)
+			/* nothing */ ;
+		for (bp += tabspaces; bp < term.tabs + col; bp += tabspaces)
+			*bp = 1;
+	}
+
+	#if KEYBOARDSELECT_PATCH
+	if ( row < term.row  || col < term.col )
+		toggle_winmode(trt_kbdselect(XK_Escape, NULL, 0));
+	#endif // KEYBOARDSELECT_PATCH
+
+	if (IS_SET(MODE_ALTSCREEN))
+		tresizealt(col, row);
+	else
+		tresizedef(col, row);
+}
+#else
 void
 tresize(int col, int row)
 {
@@ -3370,6 +3920,7 @@ tresize(int col, int row)
 	}
 	term.c = c;
 }
+#endif // COLUMNS_RESIZE_PATCH
 
 void
 resettitle(void)
