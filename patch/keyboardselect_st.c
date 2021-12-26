@@ -33,6 +33,21 @@ void set_notifmode(int type, KeySym ksym)
 	drawregion(0, bot, col, bot + 1);
 }
 
+#if SCROLLBACK_PATCH && KEYBOARDSELECT_PATCH
+Glyph getglyph(Term term, int y, int x)
+{
+	Glyph g;
+	int realy = y - term.scr;
+	if(realy >= 0) {
+		g = term.line[realy][x];
+	} else {
+		realy = term.histi - term.scr + y + 1;
+		g = term.hist[realy][x];
+	}
+	return g;
+}
+#endif
+
 void select_or_drawcursor(int selectsearch_mode, int type)
 {
 	int done = 0;
@@ -45,6 +60,9 @@ void select_or_drawcursor(int selectsearch_mode, int type)
 		xdrawcursor(term.c.x, term.c.y, term.line[term.c.y][term.c.x],
 					term.ocx, term.ocy, term.line[term.ocy][term.ocx],
 					term.line[term.ocy], term.col);
+		#elif SCROLLBACK_PATCH && KEYBOARDSELECT_PATCH
+		xdrawcursor(term.c.x, term.c.y, getglyph(term, term.c.y, term.c.x),
+		            term.ocx, term.ocy, getglyph(term, term.ocy, term.ocx));
 		#else
 		xdrawcursor(term.c.x, term.c.y, term.line[term.c.y][term.c.x],
 					term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
