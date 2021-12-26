@@ -1,4 +1,7 @@
 /* Patches */
+#if ALPHA_PATCH
+#include "alpha.c"
+#endif
 #if BOXDRAW_PATCH
 #include "boxdraw.c"
 #endif
