@@ -178,7 +178,7 @@ treflow(int col, int row)
 				for (j = nx; j < col; j++)
 					tclearglyph(&buf[ny][j], 0);
 				nx = 0;
-			} else {
+			} else if (nx > 0) {
 				buf[ny][nx - 1].mode &= ~ATTR_WRAP;
 			}
 			ox = 0, oy++;
@@ -192,6 +192,7 @@ treflow(int col, int row)
 			if (ox == len) {
 				ox = 0, oy++;
 			} else {
+				buf[ny][col - 1].state = GLYPH_SET;
 				buf[ny][col - 1].mode |= ATTR_WRAP;
 			}
 			nx = 0;

@@ -3633,6 +3633,9 @@ check_control_code:
 
 	gp = &term.line[term.c.y][term.c.x];
 	if (IS_SET(MODE_WRAP) && (term.c.state & CURSOR_WRAPNEXT)) {
+		#if COLUMNS_REFLOW_PATCH
+		gp->state = GLYPH_SET;
+		#endif // COLUMNS_REFLOW_PATCH
 		gp->mode |= ATTR_WRAP;
 		tnewline(1);
 		gp = &term.line[term.c.y][term.c.x];
