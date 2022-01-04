@@ -3955,11 +3955,11 @@ drawregion(int x1, int y1, int x2, int y2)
 			continue;
 
 		term.dirty[y] = 0;
-		#if SCROLLBACK_PATCH
+		#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 		xdrawline(TLINE(y), x1, y, x2);
 		#else
 		xdrawline(term.line[y], x1, y, x2);
-		#endif // SCROLLBACK_PATCH
+		#endif // SCROLLBACK_PATCH | COLUMNS_REFLOW_PATCH
 		#endif // VIM_BROWSE_PATCH
 	}
 	#if VIM_BROWSE_PATCH
