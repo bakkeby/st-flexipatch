@@ -1,4 +1,4 @@
-Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.4 (2f6e597, 2021-08-24) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
+Similar to [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch) this st 0.8.4 (8e31030, 2021-12-26) project has a different take on st patching. It uses preprocessor directives to decide whether or not to include a patch during build time. Essentially this means that this build, for better or worse, contains both the patched _and_ the original code. The aim being that you can select which patches to include and the build will contain that code and nothing more.
 
 For example to include the `alpha` patch then you would only need to flip this setting from 0 to 1 in [patches.h](https://github.com/bakkeby/st-flexipatch/blob/master/patches.def.h):
 ```c
@@ -14,6 +14,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 ---
 
 ### Changelog:
+
+2022-01-04 - Upstream changes, removing osc_10_11_12_2 patch
 
 2021-12-25 - Added the columns reflow patch
 
@@ -202,7 +204,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [openurlonclick](https://www.reddit.com/r/suckless/comments/cc83om/st_open_url/)
       - allows for URLs to be opened directly when you click on them
 
-   - [osc_10_11_12_2](https://st.suckless.org/patches/osc_10_11_12_2/)
+   - [~osc_10_11_12_2~](https://st.suckless.org/patches/osc_10_11_12_2/)
       - this patch adds support for OSC escape sequences 10, 11, and 12 in the way they are
         implemented in most other terminals (e.g libvte, kitty)
       - specifically it differs from [osc_10_11_12](https://st.suckless.org/patches/osc_10_11_12/)
