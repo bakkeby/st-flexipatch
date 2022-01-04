@@ -2991,7 +2991,7 @@ strhandle(void)
 			p = strescseq.args[((par == 4) ? 2 : 1)];
 			#endif // COLUMNS_REFLOW_PATCH
 			/* FALLTHROUGH */
-		case 104: /* color reset, here p = NULL */
+		case 104: /* color reset */
 			if (par == 10)
 				j = defaultfg;
 			else if (par == 11)
@@ -3005,7 +3005,7 @@ strhandle(void)
 				j = (narg > 1) ? atoi(strescseq.args[1]) : -1;
 				#endif // COLUMNS_REFLOW_PATCH
 
-			if (!strcmp(p, "?")) {
+			if (p && !strcmp(p, "?")) {
 				osc4_color_response(j);
 			} else if (xsetcolorname(j, p)) {
 				if (par == 104 && narg <= 1)
