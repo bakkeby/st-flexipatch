@@ -7,18 +7,29 @@ tiswrapped(Line line)
 }
 
 char *
-tgetline(char *buf, const Glyph *gp, const Glyph *last, int gettab)
+tgetglyphs(char *buf, const Glyph *gp, const Glyph *lgp)
 {
-	while (gp <= last)
+	while (gp <= lgp)
 		if (gp->mode & ATTR_WDUMMY) {
 			gp++;
-		} else if (gettab && gp->state == GLYPH_TAB) {
-			*(buf++) = '\t';
-			while (++gp <= last && gp->state == GLYPH_TDUMMY);
 		} else {
 			buf += utf8encode((gp++)->u, buf);
 		}
 	return buf;
+}
+
+size_t
+tgetline(char *buf, const Glyph *fgp)
+{
+	char *ptr;
+	const Glyph *lgp = &fgp[term.col - 1];
+
+	while (lgp > fgp && !(lgp->mode & (ATTR_SET | ATTR_WRAP)))
+		lgp--;
+	ptr = tgetglyphs(buf, fgp, lgp);
+	if (!(lgp->mode & ATTR_WRAP))
+		*(ptr++) = '\n';
+	return ptr - buf;
 }
 
 int
@@ -105,28 +116,7 @@ tclearglyph(Glyph *gp, int usecurattr)
 		gp->bg = defaultbg;
 	}
 	gp->mode = ATTR_NULL;
-	gp->state = GLYPH_EMPTY;
 	gp->u = ' ';
-}
-
-void
-twritetab(void)
-{
-	int x = term.c.x, y = term.c.y;
-
-	/* selected() takes relative coordinates */
-	if (selected(x + term.scr, y + term.scr))
-		selclear();
-
-	term.line[y][x].u = ' ';
-	term.line[y][x].state = GLYPH_TAB;
-
-	while (++x < term.col && !term.tabs[x]) {
-		term.line[y][x].u = ' ';
-		term.line[y][x].state = GLYPH_TDUMMY;
-	}
-
-	term.c.x = MIN(x, term.col-1);
 }
 
 void
@@ -187,14 +177,8 @@ treflow(int col, int row)
 			ox = 0, oy++, nx = 0;
 		} else/* if (col - nx < len - ox) */ {
 			memcpy(&buf[ny][nx], &line[ox], (col-nx) * sizeof(Glyph));
-			for (ox += col - nx; ox < len &&
-			                     line[ox].mode == GLYPH_TDUMMY; ox++);
-			if (ox == len) {
-				ox = 0, oy++;
-			} else {
-				buf[ny][col - 1].state = GLYPH_SET;
-				buf[ny][col - 1].mode |= ATTR_WRAP;
-			}
+			ox += col - nx;
+			buf[ny][col - 1].mode |= ATTR_WRAP;
 			nx = 0;
 		}
 	} while (oy <= oce);

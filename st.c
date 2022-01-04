@@ -63,7 +63,6 @@ static inline int max(int a, int b) { return a > b ? a : b; }
 static inline int min(int a, int b) { return a < b ? a : b; }
 #endif // VIM_BROWSE_PATCH
 #if COLUMNS_REFLOW_PATCH
-#define ISSPACE(gp)		(gp->u == ' ' && gp->state == GLYPH_SET)
 #define STRESCARGREST(n)	((n) == 0 ? strescseq.buf : strescseq.args[(n)-1] + 1)
 #define STRESCARGJUST(n)	(*(strescseq.args[n]) = '\0', STRESCARGREST(n))
 #define UPDATEWRAPNEXT(alt, col) do { \
@@ -471,7 +470,7 @@ tlinelen(Line line)
 {
 	int i = term.col - 1;
 
-	for (; i >= 0 && line[i].state == GLYPH_EMPTY; i--);
+	for (; i >= 0 && !(line[i].mode & (ATTR_SET | ATTR_WRAP)); i--);
 	return i + 1;
 }
 #else
@@ -512,7 +511,9 @@ void historyOpToggle(int start, int paint) {
 	*(!IS_SET(MODE_ALTSCREEN)?&term.line:&term.alt)=&buf[histOp?histOff:insertOff];
 }
 
-void historyModeToggle(int start) {
+void
+historyModeToggle(int start)
+{
 	if (!(histMode = (histOp = !!start))) {
 		selnormalize();
 		tfulldirt();
@@ -523,7 +524,9 @@ void historyModeToggle(int start) {
 	}
 }
 
-int historyBufferScroll(int n) {
+int
+historyBufferScroll(int n)
+{
 	if (IS_SET(MODE_ALTSCREEN) || !n) return histOp;
 	int p=abs(n=(n<0) ? max(n,-term.row) : min(n,term.row)), r=term.row-p,
 	          s=sizeof(*term.dirty), *ptr=histOp?&histOff:&insertOff;
@@ -550,7 +553,9 @@ int historyBufferScroll(int n) {
 	return 1;
 }
 
-int historyMove(int x, int y, int ly) {
+int
+historyMove(int x, int y, int ly)
+{
 	historyOpToggle(1, 1);
 	y += ((term.c.x += x) < 0 ?term.c.x-term.col :term.c.x) / term.col;//< x
 	if ((term.c.x %= term.col) < 0) term.c.x += term.col;
@@ -569,7 +574,9 @@ int historyMove(int x, int y, int ly) {
 	return finTop || finBot;
 }
 
-void selnormalize(void) {
+void
+selnormalize(void)
+{
 	historyOpToggle(1, 1);
 
 	int const oldb = sel.nb.y, olde = sel.ne.y;
@@ -678,9 +685,6 @@ void
 selnormalize(void)
 {
 	int i;
-	#if COLUMNS_REFLOW_PATCH
-	Line line;
-	#endif // COLUMNS_REFLOW_PATCH
 
 	if (sel.type == SEL_REGULAR && sel.ob.y != sel.oe.y) {
 		sel.nb.x = sel.ob.y < sel.oe.y ? sel.ob.x : sel.oe.x;
@@ -700,23 +704,11 @@ selnormalize(void)
 		return;
 
 	/* expand selection over line breaks and tabs */
-	line = TLINE(sel.nb.y);
-	i = tlinelen(line);
+	i = tlinelen(TLINE(sel.nb.y));
 	if (sel.nb.x > i)
 		sel.nb.x = i;
-	while (sel.nb.x > 0 && line[sel.nb.x].state == GLYPH_TDUMMY)
-		if (line[sel.nb.x-1].state >= GLYPH_TAB)
-			sel.nb.x--;
-
-	line = TLINE(sel.ne.y);
-	i = tlinelen(line) - 1;
-	if (sel.ne.x > i) {
+	if (sel.ne.x >= tlinelen(TLINE(sel.ne.y)))
 		sel.ne.x = term.col - 1;
-		return;
-	}
-	if (line[sel.ne.x].state >= GLYPH_TAB)
-		while (sel.ne.x < i && line[sel.ne.x+1].state == GLYPH_TDUMMY)
-			sel.ne.x++;
 	#else
 	/* expand selection over line breaks */
 	if (sel.type == SEL_RECTANGULAR)
@@ -825,7 +817,7 @@ selsnap(int *x, int *y, int direction)
 			delim = ISDELIM(gp->u);
 			#if COLUMNS_REFLOW_PATCH
 			if (!(gp->mode & ATTR_WDUMMY) && (delim != prevdelim ||
-			    (delim && !(ISSPACE(gp) && ISSPACE(prevgp)))))
+			    (delim && !(gp->u == ' ' && prevgp->u == ' '))))
 			#else
 			if (!(gp->mode & ATTR_WDUMMY) && (delim != prevdelim
 					|| (delim && gp->u != prevgp->u)))
@@ -898,7 +890,11 @@ getsel(void)
 	#else
 	int y, bufsize, lastx, linelen;
 	#endif // COLUMNS_REFLOW_PATCH | VIM_BROWSE_PATCH
+	#if COLUMNS_REFLOW_PATCH
+	const Glyph *gp, *lgp;
+	#else
 	const Glyph *gp, *last;
+	#endif // COLUMNS_REFLOW_PATCH
 
 	#if COLUMNS_REFLOW_PATCH
 	if (sel.ob.x == -1 || sel.alt != IS_SET(MODE_ALTSCREEN))
@@ -974,8 +970,8 @@ getsel(void)
 			#endif // VIM_BROWSE_PATCH
 		}
 		#if COLUMNS_REFLOW_PATCH
-		last = &line[MIN(lastx, linelen-1)];
-		ptr = tgetline(ptr, gp, last, sel.type != SEL_RECTANGULAR);
+		lgp = &line[MIN(lastx, linelen-1)];
+		ptr = tgetglyphs(ptr, gp, lgp);
 		#elif VIM_BROWSE_PATCH
 		last = &cbuf[yy][lastx];
 		#elif SCROLLBACK_PATCH
@@ -1016,7 +1012,7 @@ getsel(void)
 		#else
 			(y < sel.ne.y || lastx >= linelen)
 		#endif //
-		    && (!(last->mode & ATTR_WRAP) || sel.type == SEL_RECTANGULAR))
+		    && (!(lgp->mode & ATTR_WRAP) || sel.type == SEL_RECTANGULAR))
 			*ptr++ = '\n';
 	}
 	#if COLUMNS_REFLOW_PATCH
@@ -1477,6 +1473,9 @@ void
 treset(void)
 {
 	uint i;
+	#if COLUMNS_REFLOW_PATCH
+	int x, y;
+	#endif // COLUMNS_REFLOW_PATCH
 	#if SIXEL_PATCH
 	ImageList *im;
 	#endif // SIXEL_PATCH
@@ -1504,10 +1503,15 @@ treset(void)
 	memset(term.trantbl, CS_USA, sizeof(term.trantbl));
 	term.charset = 0;
 
+	#if COLUMNS_REFLOW_PATCH
+	selremove();
+	#endif // COLUMNS_REFLOW_PATCH
 	for (i = 0; i < 2; i++) {
 		#if COLUMNS_REFLOW_PATCH
 		tcursor(CURSOR_SAVE);
-		tclearregion(0, 0, term.col-1, term.row-1, 0);
+		for (y = 0; y < term.row; y++)
+			for (x = 0; x < term.col; x++)
+				tclearglyph(&term.line[y][x], 0);
 		tswapscreen();
 		#else
 		tmoveto(0, 0);
@@ -1516,6 +1520,9 @@ treset(void)
 		tswapscreen();
 		#endif // COLUMNS_REFLOW_PATCH
 	}
+	#if COLUMNS_REFLOW_PATCH
+	tfulldirt();
+	#endif // COLUMNS_REFLOW_PATCH
 	#if SIXEL_PATCH
 	for (im = term.images; im; im = im->next)
 		im->should_delete = 1;
@@ -1752,6 +1759,7 @@ selscroll(int top, int bot, int n)
 {
 	/* turn absolute coordinates into relative */
 	top += term.scr, bot += term.scr;
+
 	if (BETWEEN(sel.nb.y, top, bot) != BETWEEN(sel.ne.y, top, bot)) {
 		selclear();
 	} else if (BETWEEN(sel.nb.y, top, bot)) {
@@ -1917,7 +1925,7 @@ tsetchar(Rune u, const Glyph *attr, int x, int y)
 	term.line[y][x] = *attr;
 	term.line[y][x].u = u;
 	#if COLUMNS_REFLOW_PATCH
-	term.line[y][x].state = GLYPH_SET;
+	term.line[y][x].mode |= ATTR_SET;
 	#endif // COLUMNS_REFLOW_PATCH
 
 	#if BOXDRAW_PATCH
@@ -3162,19 +3170,8 @@ void
 tdumpline(int n)
 {
 	char str[(term.col + 1) * UTF_SIZ];
-	char *ptr;
-	const Glyph *gp, *last;
 
-	gp = &term.line[n][0];
-	last = &gp[term.col - 1];
-	while (last > gp && last->state == GLYPH_EMPTY)
-		last--;
-
-	ptr = tgetline(str, gp, last, 1);
-	if (!(last->mode & ATTR_WRAP))
-		*(ptr++) = '\n';
-
-	tprinter(str, ptr-str);
+	tprinter(str, tgetline(str, &term.line[n][0]));
 }
 #else
 void
@@ -3291,11 +3288,7 @@ tcontrolcode(uchar ascii)
 {
 	switch (ascii) {
 	case '\t':   /* HT */
-		#if COLUMNS_REFLOW_PATCH
-		twritetab();
-		#else
 		tputtab(1);
-		#endif // COLUMNS_REFLOW_PATCH
 		return;
 	case '\b':   /* BS */
 		tmoveto(term.c.x-1, term.c.y);
@@ -3633,9 +3626,6 @@ check_control_code:
 
 	gp = &term.line[term.c.y][term.c.x];
 	if (IS_SET(MODE_WRAP) && (term.c.state & CURSOR_WRAPNEXT)) {
-		#if COLUMNS_REFLOW_PATCH
-		gp->state = GLYPH_SET;
-		#endif // COLUMNS_REFLOW_PATCH
 		gp->mode |= ATTR_WRAP;
 		tnewline(1);
 		gp = &term.line[term.c.y][term.c.x];

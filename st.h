@@ -55,6 +55,7 @@ enum glyph_attribute {
 	ATTR_WRAP       = 1 << 8,
 	ATTR_WIDE       = 1 << 9,
 	ATTR_WDUMMY     = 1 << 10,
+	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 	#if BOXDRAW_PATCH
 	ATTR_BOXDRAW    = 1 << 11,
 	#endif // BOXDRAW_PATCH
@@ -64,12 +65,11 @@ enum glyph_attribute {
 	#if SIXEL_PATCH
 	ATTR_SIXEL      = 1 << 13,
 	#endif // SIXEL_PATCH
-	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
 	#if UNDERCURL_PATCH
-	ATTR_DIRTYUNDERLINE = 1 << 15,
+	ATTR_DIRTYUNDERLINE = 1 << 14,
 	#endif // UNDERCURL_PATCH
 	#if COLUMNS_REFLOW_PATCH
-	ATTR_SELECTED   = 1 << 16,
+	ATTR_SET        = 1 << 15, // max value
 	#endif // COLUMNS_REFLOW_PATCH
 };
 
@@ -93,15 +93,6 @@ enum drawing_mode {
 	DRAW_FG   = 1 << 1,
 };
 #endif // WIDE_GLYPHS_PATCH
-
-#if COLUMNS_REFLOW_PATCH
-enum glyph_state {
-	GLYPH_EMPTY,
-	GLYPH_SET,
-	GLYPH_TAB,
-	GLYPH_TDUMMY
-};
-#endif // COLUMNS_REFLOW_PATCH
 
 enum selection_mode {
 	SEL_IDLE = 0,
@@ -134,9 +125,6 @@ typedef XftGlyphFontSpec GlyphFontSpec;
 typedef struct {
 	Rune u;           /* character code */
 	ushort mode;      /* attribute flags */
-	#if COLUMNS_REFLOW_PATCH
-	ushort state;     /* state flags */
-	#endif // COLUMNS_REFLOW_PATCH
 	uint32_t fg;      /* foreground  */
 	uint32_t bg;      /* background  */
 	#if UNDERCURL_PATCH

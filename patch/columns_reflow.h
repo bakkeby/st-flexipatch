@@ -1,9 +1,9 @@
 static int tiswrapped(Line line);
-static char *tgetline(char *, const Glyph *, const Glyph *, int);
+static char *tgetglyphs(char *buf, const Glyph *gp, const Glyph *lgp);
+static size_t tgetline(char *buf, const Glyph *fgp);
 
 static void tclearglyph(Glyph *, int);
 static void tresetcursor(void);
-static void twritetab(void);
 
 static void tloaddefscreen(int, int);
 static void tloadaltscreen(int, int);
