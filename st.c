@@ -1731,10 +1731,6 @@ tscrollup(int orig, int n)
 		term.line[i+n] = temp;
 	}
 
-	#if SIXEL_PATCH
-	scroll_images(-1 * n);
-	#endif // SIXEL_PATCH
-
 	#if COLUMNS_REFLOW_PATCH
 	if (sel.ob.x != -1 && sel.alt == alt) {
 		if (!savehist) {
@@ -1744,12 +1740,22 @@ tscrollup(int orig, int n)
 			if (-term.scr + sel.nb.y < -term.histf)
 				selremove();
 		}
+	} else {
+		#if SIXEL_PATCH
+		scroll_images(-1 * n);
+		#endif // SIXEL_PATCH
 	}
 	#elif SCROLLBACK_PATCH
 	if (term.scr == 0)
 		selscroll(orig, -n);
+	#if SIXEL_PATCH
+	scroll_images(-1 * n);
+	#endif // SIXEL_PATCH
 	#else
 	selscroll(orig, -n);
+	#if SIXEL_PATCH
+	scroll_images(-1 * n);
+	#endif // SIXEL_PATCH
 	#endif // SCROLLBACK_PATCH
 }
 

@@ -132,7 +132,6 @@ treflow(int col, int row)
 	/* y coordinate of cursor line end */
 	for (oce = term.c.y; oce < term.row - 1 &&
 	                     tiswrapped(term.line[oce]); oce++);
-
 	nlines = term.histf + oce + 1;
 	if (col < term.col) {
 		/* each line can take this many lines after reflow */
@@ -233,6 +232,11 @@ treflow(int col, int row)
 		term.hist[j] = xrealloc(term.hist[j], col * sizeof(Glyph));
 	}
 	free(buf);
+
+	#if SIXEL_PATCH
+	int n = row - term.row;
+	scroll_images(n);
+	#endif // SIXEL_PATCH
 }
 
 void
@@ -303,6 +307,12 @@ tresizedef(int col, int row)
 		}
 		/* scroll down as much as height has increased */
 		rscrolldown(row - term.row);
+		#if SIXEL_PATCH
+		int n = row - term.row;
+		if (n < 0)
+			n++;
+		scroll_images(n);
+		#endif // SIXEL_PATCH
 	}
 	/* update terminal size */
 	term.col = col, term.row = row;

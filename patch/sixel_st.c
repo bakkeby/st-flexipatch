@@ -18,7 +18,8 @@ dcshandle(void)
 }
 
 void
-scroll_images(int n) {
+scroll_images(int n)
+{
 	ImageList *im;
 	int tmp;
 

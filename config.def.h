@@ -390,10 +390,10 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Home,        zoomreset,       {.f =  0} },
 	{ TERMMOD,              XK_C,           clipcopy,        {.i =  0} },
 	{ TERMMOD,              XK_V,           clippaste,       {.i =  0} },
-	#if SCROLLBACK_PATCH
+	#if SCROLLBACK_PATCH || COLUMNS_REFLOW_PATCH
 	{ ShiftMask,            XK_Page_Up,     kscrollup,       {.i = -1} },
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,     {.i = -1} },
-	#endif // SCROLLBACK_PATCH
+	#endif // SCROLLBACK_PATCH | COLUMNS_REFLOW_PATCH
 	#if CLIPBOARD_PATCH
 	{ TERMMOD,              XK_Y,           clippaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      clippaste,       {.i =  0} },
