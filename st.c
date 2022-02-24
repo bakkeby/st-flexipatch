@@ -2525,7 +2525,7 @@ strhandle(void)
 				break;
 			p = strescseq.args[((par == 4) ? 2 : 1)];
 			/* FALLTHROUGH */
-		case 104: /* color reset, here p = NULL */
+		case 104: /* color reset */
 			if (par == 10)
 				j = defaultfg;
 			else if (par == 11)
@@ -2535,7 +2535,7 @@ strhandle(void)
 			else
 				j = (narg > 1) ? atoi(strescseq.args[1]) : -1;
 
-			if (!strcmp(p, "?"))
+			if (p && !strcmp(p, "?"))
 				osc4_color_response(j);
 			else if (xsetcolorname(j, p)) {
 				if (par == 104 && narg <= 1)
