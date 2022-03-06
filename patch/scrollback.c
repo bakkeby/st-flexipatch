@@ -33,7 +33,13 @@ kscrollup(const Arg* a)
 		tfulldirt();
 	}
 
-	#if SIXEL_PATCH
-	scroll_images(n);
-	#endif // SIXEL_PATCH
+	if (term.scr > term.histi) {
+		term.scr = term.histi;
+	}
+	else
+	{
+		#if SIXEL_PATCH
+		scroll_images(n);
+		#endif // SIXEL_PATCH
+	}
 }
