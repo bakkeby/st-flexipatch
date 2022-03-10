@@ -14,6 +14,16 @@ static char *font2[] = {
 };
 #endif // FONT2_PATCH
 
+#if BACKGROUND_IMAGE_PATCH
+/*
+ * background image
+ * expects farbfeld format
+ * pseudo transparency fixes coordinates to the screen origin
+ */
+static const char *bgfile = "/path/to/image.ff";
+static const int pseudotransparency = 0;
+#endif // BACKGROUND_IMAGE_PATCH
+
 #if RELATIVEBORDER_PATCH
 /* borderperc: percentage of cell width to use as a border
  *             0 = no border, 100 = border width is same as cell width */

@@ -48,6 +48,12 @@
  */
 #define ANYSIZE_SIMPLE_PATCH 0
 
+/* Draws a background image in farbfeld format in place of the defaultbg color allowing for pseudo
+ * transparency.
+ * https://st.suckless.org/patches/background_image/
+ */
+#define BACKGROUND_IMAGE_PATCH 0
+
 /* This patch allows the use of a blinking cursor.
  * Only cursor styles 0, 1, 3, 5, and 7 blink. Set cursorstyle accordingly.
  * Cursor styles are defined here:

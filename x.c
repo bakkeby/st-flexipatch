@@ -548,6 +548,14 @@ propnotify(XEvent *e)
 			 xpev->atom == clipboard)) {
 		selnotify(e);
 	}
+
+	#if BACKGROUND_IMAGE_PATCH
+	if (pseudotransparency &&
+		!strncmp(XGetAtomName(xw.dpy, e->xproperty.atom), "_NET_WM_STATE", 13)) {
+		updatexy();
+		redraw();
+	}
+	#endif // BACKGROUND_IMAGE_PATCH
 }
 
 void
@@ -578,7 +586,12 @@ selnotify(XEvent *e)
 			return;
 		}
 
-		if (e->type == PropertyNotify && nitems == 0 && rem == 0) {
+		#if BACKGROUND_IMAGE_PATCH
+		if (e->type == PropertyNotify && nitems == 0 && rem == 0 && !pseudotransparency)
+		#else
+		if (e->type == PropertyNotify && nitems == 0 && rem == 0)
+		#endif // BACKGROUND_IMAGE_PATCH
+		{
 			/*
 			 * If there is some PropertyNotify with no data, then
 			 * this is the signal of the selection owner that all
@@ -596,9 +609,15 @@ selnotify(XEvent *e)
 			 * when the selection owner does send us the next
 			 * chunk of data.
 			 */
+			#if BACKGROUND_IMAGE_PATCH
+			if (!pseudotransparency) {
+			#endif // BACKGROUND_IMAGE_PATCH
 			MODBIT(xw.attrs.event_mask, 1, PropertyChangeMask);
 			XChangeWindowAttributes(xw.dpy, xw.win, CWEventMask,
 					&xw.attrs);
+			#if BACKGROUND_IMAGE_PATCH
+			}
+			#endif // BACKGROUND_IMAGE_PATCH
 
 			/*
 			 * Deleting the property is the transfer start signal.
@@ -997,7 +1016,11 @@ xsetcolorname(int x, const char *name)
 void
 xclear(int x1, int y1, int x2, int y2)
 {
-	#if INVERT_PATCH
+	#if BACKGROUND_IMAGE_PATCH
+	if (pseudotransparency)
+		XSetTSOrigin(xw.dpy, xw.bggc, -win.x, -win.y);
+	XFillRectangle(xw.dpy, xw.buf, xw.bggc, x1, y1, x2-x1, y2-y1);
+	#elif INVERT_PATCH
 	Color c;
 	c = dc.col[IS_SET(MODE_REVERSE)? defaultfg : defaultbg];
 	if (invertcolors) {
@@ -1911,6 +1934,11 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	#endif // ANYSIZE_PATCH
 
 	/* Clean up the region we want to draw to. */
+	#if BACKGROUND_IMAGE_PATCH
+	if (bg == &dc.col[defaultbg])
+		xclear(winx, winy, winx + width, winy + win.ch);
+	else
+	#endif // BACKGROUND_IMAGE_PATCH
 	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
 	#if WIDE_GLYPHS_PATCH
 	}
@@ -3094,6 +3122,15 @@ resize(XEvent *e)
 	XWindowChanges wc;
 	#endif // ST_EMBEDDER_PATCH
 
+	#if BACKGROUND_IMAGE_PATCH
+	if (pseudotransparency) {
+		if (e->xconfigure.width == win.w &&
+			e->xconfigure.height == win.h &&
+			e->xconfigure.x == win.x && e->xconfigure.y == win.y)
+			return;
+		updatexy();
+	} else
+	#endif // BACKGROUND_IMAGE_PATCH
 	if (e->xconfigure.width == win.w && e->xconfigure.height == win.h)
 		return;
 
@@ -3379,6 +3416,9 @@ run:
 	#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 	tnew(cols, rows);
 	xinit(cols, rows);
+	#if BACKGROUND_IMAGE_PATCH
+	bginit();
+	#endif // BACKGROUND_IMAGE_PATCH
 	xsetenv();
 	selinit();
 	#if WORKINGDIR_PATCH

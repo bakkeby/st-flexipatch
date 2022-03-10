@@ -1,4 +1,7 @@
 /* Patches */
+#if BACKGROUND_IMAGE_PATCH
+#include "background_image_x.h"
+#endif
 #if BOXDRAW_PATCH
 #include "boxdraw.h"
 #endif

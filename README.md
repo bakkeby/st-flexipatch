@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2022-03-10 - Added the background image patch
+
 2022-02-24 - Upgraded to st 0.8.5 e823e23, 2022-02-17 - removing osc_10_11_12_2 patch as no longer relevant
 
 2021-08-18 - Added the CSI 22 & 23 patch
@@ -94,6 +96,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [anysize_nobar](https://github.com/connor-brooks/st-anysize-nobar)
       - a patch that aims to prevent black bars being drawn on the edges of st terminals using the
         anysize patch
+
+   - [background-image](https://st.suckless.org/patches/background_image/)
+      - draws a background image in farbfeld format in place of the defaultbg color allowing for
+        pseudo transparency
 
    - [blinking-cursor](https://st.suckless.org/patches/blinking_cursor/)
       - allows the use of a blinking cursor
