@@ -35,7 +35,7 @@ loadff(const char *filename)
 	w = ntohl(hdr[2]);
 	h = ntohl(hdr[3]);
 	size = w * h;
-	data = malloc(size * sizeof(uint64_t));
+	data = xmalloc(size * sizeof(uint64_t));
 
 	if (fread(data, sizeof(uint64_t), size, f) != size) {
 		fprintf(stderr, "fread: %s\n", ferror(f) ? "" : "Unexpected end of file reading data");
