@@ -16,23 +16,20 @@ loadff(const char *filename)
 	FILE *f = fopen(filename, "rb");
 
 	if (f == NULL) {
-		 fprintf(stderr, "could not load background image.\n");
-		 return NULL;
+		fprintf(stderr, "could not load background image.\n");
+		return NULL;
 	}
 
-	if (fread(hdr, sizeof(*hdr), LEN(hdr), f) != LEN(hdr))
-		 if (ferror(f)) {
-			  fprintf(stderr, "fread:");
-			  return NULL;
-		 }
-		 else {
-			  fprintf(stderr, "fread: Unexpected end of file\n");
-			  return NULL;
-		 }
+	if (fread(hdr, sizeof(*hdr), LEN(hdr), f) != LEN(hdr)) {
+		fprintf(stderr, "fread: %s\n", ferror(f) ? "" : "Unexpected end of file reading header");
+		fclose(f);
+		return NULL;
+	}
 
 	if (memcmp("farbfeld", hdr, sizeof("farbfeld") - 1)) {
-		 fprintf(stderr, "Invalid magic value");
-		 return NULL;
+		fprintf(stderr, "Invalid magic value\n");
+		fclose(f);
+		return NULL;
 	}
 
 	w = ntohl(hdr[2]);
@@ -40,15 +37,11 @@ loadff(const char *filename)
 	size = w * h;
 	data = malloc(size * sizeof(uint64_t));
 
-	if (fread(data, sizeof(uint64_t), size, f) != size)
-		 if (ferror(f)) {
-			  fprintf(stderr, "fread:");
-			  return NULL;
-		 }
-		 else {
-			  fprintf(stderr, "fread: Unexpected end of file");
-			  return NULL;
-		 }
+	if (fread(data, sizeof(uint64_t), size, f) != size) {
+		fprintf(stderr, "fread: %s\n", ferror(f) ? "" : "Unexpected end of file reading data");
+		fclose(f);
+		return NULL;
+	}
 
 	fclose(f);
 
@@ -91,8 +84,7 @@ bginit()
 	bgimg = XCreatePixmap(xw.dpy, xw.win, bgxi->width, bgxi->height,
 		DefaultDepth(xw.dpy, xw.scr));
 	#endif // ALPHA_PATCH
-	XPutImage(xw.dpy, bgimg, dc.gc, bgxi, 0, 0, 0, 0, bgxi->width,
-				 bgxi->height);
+	XPutImage(xw.dpy, bgimg, dc.gc, bgxi, 0, 0, 0, 0, bgxi->width, bgxi->height);
 	XDestroyImage(bgxi);
 	XSetTile(xw.dpy, xw.bggc, bgimg);
 	XSetFillStyle(xw.dpy, xw.bggc, FillTiled);
