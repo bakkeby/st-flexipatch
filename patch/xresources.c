@@ -73,6 +73,9 @@ reload_config(int sig)
 		/* Called due to a SIGUSR1 */
 		xloadcols();
 		redraw();
+		#if BACKGROUND_IMAGE_RELOAD_PATCH
+		reload_image();
+		#endif // BACKGROUND_IMAGE_RELOAD_PATCH
 	}
 	signal(SIGUSR1, reload_config);
 }

@@ -3417,9 +3417,6 @@ run:
 	xinit(cols, rows);
 	#if BACKGROUND_IMAGE_PATCH
 	bginit();
-	#if BACKGROUND_IMAGE_RELOAD_PATCH
-	signal(SIGUSR1, reload_image);
-	#endif // BACKGROUND_IMAGE_RELOAD_PATCH
 	#endif // BACKGROUND_IMAGE_PATCH
 	xsetenv();
 	selinit();
