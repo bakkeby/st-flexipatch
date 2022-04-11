@@ -94,3 +94,13 @@ bginit()
 		XChangeWindowAttributes(xw.dpy, xw.win, CWEventMask, &xw.attrs);
 	}
 }
+
+#if BACKGROUND_IMAGE_RELOAD_PATCH
+void
+reload_image()
+{
+	XFreeGC(xw.dpy, xw.bggc);
+	bginit();
+	redraw();
+}
+#endif // XRESOURCES_RELOAD_PATCH
