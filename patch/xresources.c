@@ -35,22 +35,14 @@ resource_load(XrmDatabase db, char *name, enum resource_type rtype, void *dst)
 }
 
 void
-#if XRESOURCES_RELOAD_PATCH
 config_init(Display *dpy)
-#else
-config_init(void)
-#endif // XRESOURCES_RELOAD_PATCH
 {
 	char *resm;
 	XrmDatabase db;
 	ResourcePref *p;
 
 	XrmInitialize();
-	#if XRESOURCES_RELOAD_PATCH
 	resm = XResourceManagerString(dpy);
-	#else
-	resm = XResourceManagerString(xw.dpy);
-	#endif // XRESOURCES_RELOAD_PATCH
 	if (!resm)
 		return;
 
@@ -69,11 +61,7 @@ reload_config(int sig)
 		die("Can't open display\n");
 
 	config_init(dpy);
-	if (sig != -1) {
-		/* Called due to a SIGUSR1 */
-		xloadcols();
-		redraw();
-	}
-	signal(SIGUSR1, reload_config);
+	xloadcols();
+	redraw();
 }
 #endif // XRESOURCES_RELOAD_PATCH

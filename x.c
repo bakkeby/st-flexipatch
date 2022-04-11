@@ -117,6 +117,9 @@ static void selnotify(XEvent *);
 static void selclear_(XEvent *);
 static void selrequest(XEvent *);
 static void setsel(char *, Time);
+#if XRESOURCES_PATCH && XRESOURCES_RELOAD_PATCH || BACKGROUND_IMAGE_PATCH && BACKGROUND_IMAGE_RELOAD_PATCH
+static void sigusr1_reload(int sig);
+#endif // XRESOURCES_RELOAD_PATCH | BACKGROUND_IMAGE_RELOAD_PATCH
 static int mouseaction(XEvent *, uint);
 static void mousesel(XEvent *, int);
 static void mousereport(XEvent *);
@@ -744,6 +747,20 @@ setsel(char *str, Time t)
 	#endif // CLIPBOARD_PATCH
 }
 
+#if XRESOURCES_PATCH && XRESOURCES_RELOAD_PATCH || BACKGROUND_IMAGE_PATCH && BACKGROUND_IMAGE_RELOAD_PATCH
+void
+sigusr1_reload(int sig)
+{
+	#if XRESOURCES_PATCH && XRESOURCES_RELOAD_PATCH
+	reload_config(sig);
+	#endif // XRESOURCES_RELOAD_PATCH
+	#if BACKGROUND_IMAGE_PATCH && BACKGROUND_IMAGE_RELOAD_PATCH
+	reload_image();
+	#endif // BACKGROUND_IMAGE_RELOAD_PATCH
+	signal(SIGUSR1, sigusr1_reload);
+}
+#endif // XRESOURCES_RELOAD_PATCH | BACKGROUND_IMAGE_RELOAD_PATCH
+
 void
 xsetsel(char *str)
 {
@@ -1360,8 +1377,10 @@ xinit(int cols, int rows)
 	XVisualInfo vis;
 	#endif // ALPHA_PATCH
 
+	#if !XRESOURCES_PATCH
 	if (!(xw.dpy = XOpenDisplay(NULL)))
 		die("can't open display\n");
+	#endif // XRESOURCES_PATCH
 	xw.scr = XDefaultScreen(xw.dpy);
 
 	#if ALPHA_PATCH
@@ -3400,14 +3419,15 @@ run:
 
 	setlocale(LC_CTYPE, "");
 	XSetLocaleModifiers("");
-	#if XRESOURCES_RELOAD_PATCH && XRESOURCES_PATCH
-	reload_config(-1);
-	#elif XRESOURCES_PATCH
+	#if XRESOURCES_PATCH && XRESOURCES_RELOAD_PATCH || BACKGROUND_IMAGE_PATCH && BACKGROUND_IMAGE_RELOAD_PATCH
+	signal(SIGUSR1, sigusr1_reload);
+	#endif // XRESOURCES_RELOAD_PATCH | BACKGROUND_IMAGE_RELOAD_PATCH
+	#if XRESOURCES_PATCH
 	if (!(xw.dpy = XOpenDisplay(NULL)))
 		die("Can't open display\n");
 
-	config_init();
-	#endif // XRESOURCES_RELOAD_PATCH
+	config_init(xw.dpy);
+	#endif // XRESOURCES_PATCH
 	cols = MAX(cols, 1);
 	rows = MAX(rows, 1);
 	#if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
