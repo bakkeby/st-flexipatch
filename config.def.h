@@ -161,7 +161,7 @@ float alphaUnfocused = 0.6;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-#if SOLARIZED_DARK_PATCH
+#if SOLARIZED_DARK_PATCH || SOLARIZED_BOTH_PATCH
 	/* solarized dark */
 	"#073642",  /*  0: black    */
 	"#dc322f",  /*  1: red      */
@@ -232,24 +232,47 @@ static const char *colorname[] = {
 	"#555555", /* 257 -> rev cursor*/
 	"#000000", /* 258 -> bg */
 	"#e5e5e5", /* 259 -> fg */
-#endif // SOLARIZED_DARK_PATCH, SOLARIZED_LIGHT_PATCH
+#endif // SOLARIZED_[DARK|BOTH]_PATCH, SOLARIZED_LIGHT_PATCH
 };
+
+#if SOLARIZED_BOTH_PATCH
+/* Terminal colors for alternate (light) palette */
+static const char *altcolorname[] = {
+	/* solarized light */
+	"#eee8d5",  /*  0: black    */
+	"#dc322f",  /*  1: red      */
+	"#859900",  /*  2: green    */
+	"#b58900",  /*  3: yellow   */
+	"#268bd2",  /*  4: blue     */
+	"#d33682",  /*  5: magenta  */
+	"#2aa198",  /*  6: cyan     */
+	"#073642",  /*  7: white    */
+	"#fdf6e3",  /*  8: brblack  */
+	"#cb4b16",  /*  9: brred    */
+	"#93a1a1",  /* 10: brgreen  */
+	"#839496",  /* 11: bryellow */
+	"#657b83",  /* 12: brblue   */
+	"#6c71c4",  /* 13: brmagenta*/
+	"#586e75",  /* 14: brcyan   */
+	"#002b36",  /* 15: brwhite  */
+};
+#endif // SOLARIZED_BOTH_PATCH
 
 
 /*
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-#if SOLARIZED_DARK_PATCH || SOLARIZED_LIGHT_PATCH
+#if SOLARIZED_DARK_PATCH || SOLARIZED_LIGHT_PATCH || SOLARIZED_BOTH_PATCH
 unsigned int defaultbg = 8;
 #elif ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 unsigned int defaultbg = 0;
 unsigned int bg = 17, bgUnfocused = 16;
 #else
 unsigned int defaultbg = 258;
-#endif // SOLARIZED_DARK_PATCH, ALPHA_FOCUS_HIGHLIGHT_PATCH
+#endif // SOLARIZED_*_PATCH, ALPHA_FOCUS_HIGHLIGHT_PATCH
 
-#if SOLARIZED_DARK_PATCH || SOLARIZED_LIGHT_PATCH
+#if SOLARIZED_DARK_PATCH || SOLARIZED_LIGHT_PATCH || SOLARIZED_BOTH_PATCH
 unsigned int defaultfg = 12;
 unsigned int defaultcs = 14;
 unsigned int defaultrcs = 15;
@@ -257,7 +280,7 @@ unsigned int defaultrcs = 15;
 unsigned int defaultfg = 259;
 unsigned int defaultcs = 256;
 unsigned int defaultrcs = 257;
-#endif // SOLARIZED_DARK_PATCH
+#endif // SOLARIZED_*_PATCH
 
 #if VIM_BROWSE_PATCH
 unsigned int const currentBg = 6, buffSize = 2048;
@@ -466,6 +489,9 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Insert,      selpaste,        {.i =  0} },
 	#endif // CLIPBOARD_PATCH
 	{ TERMMOD,              XK_Num_Lock,    numlock,         {.i =  0} },
+	#if SOLARIZED_BOTH_PATCH
+	{ XK_ANY_MOD,           XK_F6,          swapcolors,     {.i =  0} },
+	#endif
 	#if COPYURL_PATCH || COPYURL_HIGHLIGHT_SELECTED_URLS_PATCH
 	{ MODKEY,               XK_l,           copyurl,         {.i =  0} },
 	#endif // COPYURL_PATCH

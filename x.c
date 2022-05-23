@@ -47,6 +47,9 @@ static void clipcopy(const Arg *);
 static void clippaste(const Arg *);
 static void numlock(const Arg *);
 static void selpaste(const Arg *);
+#if SOLARIZED_BOTH_PATCH
+static void swapcolors(const Arg *);
+#endif // SOLARIZED_BOTH_PATCH
 static void ttysend(const Arg *);
 static void zoom(const Arg *);
 static void zoomabs(const Arg *);
@@ -208,6 +211,10 @@ static char *opt_title = NULL;
 static char *opt_dir   = NULL;
 #endif // WORKINGDIR_PATCH
 
+#if SOLARIZED_BOTH_PATCH
+int usealtcolors = 0; /* 1 to use alternate palette */
+#endif // SOLARIZED_BOTH_PATCH
+
 #if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 static int focused = 0;
 #endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
@@ -259,6 +266,16 @@ numlock(const Arg *dummy)
 {
 	win.mode ^= MODE_NUMLOCK;
 }
+
+#if SOLARIZED_BOTH_PATCH
+void
+swapcolors(const Arg *dummy)
+{
+	usealtcolors = !usealtcolors;
+	xloadcols();
+	redraw();
+}
+#endif // SOLARIZED_BOTH_PATCH
 
 void
 selpaste(const Arg *dummy)
@@ -884,6 +901,13 @@ sixd_to_16bit(int x)
 	return x == 0 ? 0 : 0x3737 + 0x2828 * x;
 }
 
+#if SOLARIZED_BOTH_PATCH
+const char* getcolorname(int i)
+{
+	return (usealtcolors) ?  altcolorname[i] : colorname[i];
+}
+#endif // SOLARIZED_BOTH_PATCH
+
 int
 xloadcolor(int i, const char *name, Color *ncolor)
 {
@@ -902,7 +926,11 @@ xloadcolor(int i, const char *name, Color *ncolor)
 			return XftColorAllocValue(xw.dpy, xw.vis,
 			                          xw.cmap, &color, ncolor);
 		} else
+#if SOLARIZED_BOTH_PATCH
+			name = getcolorname(i);
+#else
 			name = colorname[i];
+#endif // SOLARIZED_BOTH_PATCH
 	}
 
 	return XftColorAllocName(xw.dpy, xw.vis, xw.cmap, name, ncolor);
@@ -941,8 +969,13 @@ xloadcols(void)
 
 	for (int i = 0; i+1 < dc.collen; ++i)
 		if (!xloadcolor(i, NULL, &dc.col[i])) {
+#if SOLARIZED_BOTH_PATCH
+			if (getcolorname(i))
+				die("could not allocate color '%s'\n", getcolorname(i));
+#else
 			if (colorname[i])
 				die("could not allocate color '%s'\n", colorname[i]);
+#endif // SOLARIZED_BOTH_PATCH
 			else
 				die("could not allocate color %d\n", i);
 		}
@@ -1510,13 +1543,21 @@ xinit(int cols, int rows)
 	#endif // HIDECURSOR_PATCH
 
 	#if !THEMED_CURSOR_PATCH
+	#if SOLARIZED_BOTH_PATCH
+	if (XParseColor(xw.dpy, xw.cmap, getcolorname(mousefg), &xmousefg) == 0) {
+	#else
 	if (XParseColor(xw.dpy, xw.cmap, colorname[mousefg], &xmousefg) == 0) {
+	#endif // SOLARIZED_BOTH_PATCH
 		xmousefg.red   = 0xffff;
 		xmousefg.green = 0xffff;
 		xmousefg.blue  = 0xffff;
 	}
 
+	#if SOLARIZED_BOTH_PATCH
+	if (XParseColor(xw.dpy, xw.cmap, getcolorname(mousebg), &xmousebg) == 0) {
+	#else
 	if (XParseColor(xw.dpy, xw.cmap, colorname[mousebg], &xmousebg) == 0) {
+	#endif // SOLARIZED_BOTH_PATCH
 		xmousebg.red   = 0x0000;
 		xmousebg.green = 0x0000;
 		xmousebg.blue  = 0x0000;

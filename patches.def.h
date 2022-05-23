@@ -308,8 +308,16 @@
  */
 #define SIXEL_PATCH 0
 
+/* This patch sets the color scheme to the solarized dark & light scheme by
+ * Ethan Schoonover. Note that this patch will override
+ * ALPHA_FOCUS_HIGHLIGHT_PATCH and SOLARIZED_LIGHT_PATCH
+ * http://st.suckless.org/patches/solarized/
+ */
+#define SOLARIZED_BOTH_PATCH 0
+
 /* This patch sets the color scheme to the solarized dark scheme by Ethan
  * Schoonover. Note that this patch will override ALPHA_FOCUS_HIGHLIGHT_PATCH
+ * and SOLARIZED_LIGHT_PATCH
  * http://st.suckless.org/patches/solarized/
  */
 #define SOLARIZED_DARK_PATCH 0

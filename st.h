@@ -353,6 +353,9 @@ extern wchar_t *worddelimiters;
 extern int allowaltscreen;
 extern int allowwindowops;
 extern char *termname;
+#if SOLARIZED_BOTH_PATCH
+extern int usealtcolors;
+#endif // SOLARIZED_BOTH_PATCH
 extern unsigned int tabspaces;
 extern unsigned int defaultfg;
 extern unsigned int defaultbg;
