@@ -161,7 +161,7 @@ float alphaUnfocused = 0.6;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-#if SOLARIZED_DARK
+#if SOLARIZED_DARK_PATCH
 	/* solarized dark */
 	"#073642",  /*  0: black    */
 	"#dc322f",  /*  1: red      */
@@ -179,7 +179,7 @@ static const char *colorname[] = {
 	"#6c71c4",  /* 13: brmagenta*/
 	"#93a1a1",  /* 14: brcyan   */
 	"#fdf6e3",  /* 15: brwhite  */
-#elif SOLARIZED_LIGHT
+#elif SOLARIZED_LIGHT_PATCH
 	/* solarized light */
 	"#eee8d5",  /*  0: black    */
 	"#dc322f",  /*  1: red      */
@@ -232,7 +232,7 @@ static const char *colorname[] = {
 	"#555555", /* 257 -> rev cursor*/
 	"#000000", /* 258 -> bg */
 	"#e5e5e5", /* 259 -> fg */
-#endif // SOLARIZED_DARK, SOLARIZED_LIGHT
+#endif // SOLARIZED_DARK_PATCH, SOLARIZED_LIGHT_PATCH
 };
 
 
@@ -240,16 +240,16 @@ static const char *colorname[] = {
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
  */
-#if SOLARIZED_DARK || SOLARIZED_LIGHT
+#if SOLARIZED_DARK_PATCH || SOLARIZED_LIGHT_PATCH
 unsigned int defaultbg = 8;
 #elif ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 unsigned int defaultbg = 0;
 unsigned int bg = 17, bgUnfocused = 16;
 #else
 unsigned int defaultbg = 258;
-#endif // SOLARIZED_DARK, ALPHA_FOCUS_HIGHLIGHT_PATCH
+#endif // SOLARIZED_DARK_PATCH, ALPHA_FOCUS_HIGHLIGHT_PATCH
 
-#if SOLARIZED_DARK || SOLARIZED_LIGHT
+#if SOLARIZED_DARK_PATCH || SOLARIZED_LIGHT_PATCH
 unsigned int defaultfg = 12;
 unsigned int defaultcs = 14;
 unsigned int defaultrcs = 15;
@@ -257,7 +257,7 @@ unsigned int defaultrcs = 15;
 unsigned int defaultfg = 259;
 unsigned int defaultcs = 256;
 unsigned int defaultrcs = 257;
-#endif // SOLARIZED_DARK
+#endif // SOLARIZED_DARK_PATCH
 
 #if VIM_BROWSE_PATCH
 unsigned int const currentBg = 6, buffSize = 2048;
