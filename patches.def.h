@@ -314,6 +314,12 @@
  */
 #define SOLARIZED_DARK 0
 
+/* This patch sets the color scheme to the solarized light scheme by Ethan
+ * Schoonover. Note that this patch will override ALPHA_FOCUS_HIGHLIGHT_PATCH
+ * http://st.suckless.org/patches/solarized/
+ */
+#define SOLARIZED_LIGHT 1
+
 /* This patch allows clients to embed into the st window and is useful if you tend to
  * start X applications from the terminal. For example:
  *
