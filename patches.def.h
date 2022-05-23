@@ -318,7 +318,7 @@
  * Schoonover. Note that this patch will override ALPHA_FOCUS_HIGHLIGHT_PATCH
  * http://st.suckless.org/patches/solarized/
  */
-#define SOLARIZED_LIGHT 1
+#define SOLARIZED_LIGHT 0
 
 /* This patch allows clients to embed into the st window and is useful if you tend to
  * start X applications from the terminal. For example:
