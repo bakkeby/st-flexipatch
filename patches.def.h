@@ -308,6 +308,10 @@
  */
 #define SIXEL_PATCH 0
 
+/* This patch sets the color scheme to the solarized dark scheme by Ethan
+ * Schoonover. Note that this patch will override ALPHA_FOCUS_HIGHLIGHT_PATCH
+ * http://st.suckless.org/patches/solarized/
+ */
 #define SOLARIZED_DARK 0
 
 /* This patch allows clients to embed into the st window and is useful if you tend to
