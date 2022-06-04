@@ -150,7 +150,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
       - this patch makes the cursor color the inverse of the current cell color
 
    - [externalpipe](https://st.suckless.org/patches/externalpipe/)
-      - this patch allows for eading and writing st's screen through a pipe, e.g. to pass info to dmenu
+      - this patch allows for reading and writing st's screen through a pipe, e.g. to pass info to dmenu
 
    - [externalpipein](https://lists.suckless.org/hackers/2004/17218.html)
       - this patch prevents the reset of the signal handler set on SIGCHILD, when the forked process that executes the external process exits
