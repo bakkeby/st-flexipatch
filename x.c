@@ -2744,21 +2744,9 @@ xfinishdraw(void)
 {
 	#if SIXEL_PATCH
 	ImageList *im;
-	int x, y;
-	int n = 0;
-	int nlimit = 256;
-	XRectangle *rects = NULL;
 	XGCValues gcvalues;
 	GC gc;
 	#endif // SIXEL_PATCH
-
-	#if !SINGLE_DRAWABLE_BUFFER_PATCH
-	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w,
-			win.h, 0, 0);
-	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
-	XSetForeground(xw.dpy, dc.gc,
-			dc.col[IS_SET(MODE_REVERSE)?
-				defaultfg : defaultbg].pixel);
 
 	#if SIXEL_PATCH
 	for (im = term.images; im; im = im->next) {
@@ -2810,7 +2798,6 @@ xfinishdraw(void)
 			im->pixels = NULL;
 		}
 
-		n = 0;
 		memset(&gcvalues, 0, sizeof(gcvalues));
 		gc = XCreateGC(xw.dpy, xw.win, 0, &gcvalues);
 
@@ -2822,10 +2809,14 @@ xfinishdraw(void)
 		XFreeGC(xw.dpy, gc);
 
 	}
-
-	free(rects);
-	drawregion(0, 0, term.col, term.row);
 	#endif // SIXEL_PATCH
+
+	#if !SINGLE_DRAWABLE_BUFFER_PATCH
+	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w, win.h, 0, 0);
+	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
+	XSetForeground(xw.dpy, dc.gc,
+			dc.col[IS_SET(MODE_REVERSE)?
+				defaultfg : defaultbg].pixel);
 }
 
 void
