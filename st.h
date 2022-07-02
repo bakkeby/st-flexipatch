@@ -148,6 +148,7 @@ typedef struct {
 	#if SCROLLBACK_PATCH
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
+	int histn;    /* number of history entries */
 	int scr;      /* scroll back */
 	#endif // SCROLLBACK_PATCH
 	int *dirty;   /* dirtyness of lines */
