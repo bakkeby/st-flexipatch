@@ -1073,8 +1073,6 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 		dup2(s, 2);
 		if (ioctl(s, TIOCSCTTY, NULL) < 0)
 			die("ioctl TIOCSCTTY failed: %s\n", strerror(errno));
-		close(s);
-		close(m);
 		if (s > 2)
 				close(s);
 #ifdef __OpenBSD__
