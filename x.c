@@ -3291,13 +3291,6 @@ run(void)
 			}
 		}
 
-		#if ANYSIZE_NOBAR_PATCH
-		/* Refresh before drawing */
-		cresize(0, 0);
-		redraw();
-		xhints();
-		#endif // ANYSIZE_NOBAR_PATCH
-
 		#if VISUALBELL_1_PATCH
 		if (bellon) {
 			bellon++;

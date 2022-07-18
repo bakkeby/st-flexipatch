@@ -34,15 +34,6 @@
  */
 #define ANYSIZE_PATCH 0
 
-/* This patch aims to prevent black bars being drawn on the edges of st terminals using the anysize
- * patch. This generally only occurs when the terminal background color doesn't match the colors
- * set in st's config.h file, for example when using terminal theming scripts such as base16.
- * (I have not found this to be working, but adding for reference. May reduce flickering on
- * terminal resizes.)
- * https://github.com/connor-brooks/st-anysize-nobar
- */
-#define ANYSIZE_NOBAR_PATCH 0
-
 /* A simple variant of the anysize patch that only changes the resize hints to allow the window to
  * be resized to any size.
  */

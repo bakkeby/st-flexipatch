@@ -95,9 +95,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [anysize](https://st.suckless.org/patches/anysize/)
       - allows st to reize to any pixel size rather than snapping to character width / height
 
-   - [anysize_nobar](https://github.com/connor-brooks/st-anysize-nobar)
-      - a patch that aims to prevent black bars being drawn on the edges of st terminals using the
-        anysize patch
+   - [~anysize_nobar~](https://github.com/connor-brooks/st-anysize-nobar)
+      - ~a patch that aims to prevent black bars being drawn on the edges of st terminals using the
+        anysize patch~
 
    - [background-image](https://st.suckless.org/patches/background_image/)
       - draws a background image in farbfeld format in place of the defaultbg color allowing for
