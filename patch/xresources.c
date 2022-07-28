@@ -63,5 +63,6 @@ reload_config(int sig)
 	config_init(dpy);
 	xloadcols();
 	redraw();
+	XCloseDisplay(dpy);
 }
 #endif // XRESOURCES_RELOAD_PATCH
