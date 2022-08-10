@@ -219,13 +219,16 @@ typedef struct {
 	#endif // BACKGROUND_IMAGE_PATCH
 	Visual *vis;
 	XSetWindowAttributes attrs;
-	#if HIDECURSOR_PATCH
+	#if HIDECURSOR_PATCH || OPENURLONCLICK_PATCH
 	/* Here, we use the term *pointer* to differentiate the cursor
 	 * one sees when hovering the mouse over the terminal from, e.g.,
 	 * a green rectangle where text would be entered. */
 	Cursor vpointer, bpointer; /* visible and hidden pointers */
 	int pointerisvisible;
 	#endif // HIDECURSOR_PATCH
+	#if OPENURLONCLICK_PATCH
+	Cursor upointer;
+	#endif // OPENURLONCLICK_PATCH
 	int scr;
 	int isfixed; /* is fixed geometry? */
 	#if ALPHA_PATCH

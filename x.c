@@ -536,6 +536,11 @@ bpress(XEvent *e)
 		#if !VIM_BROWSE_PATCH
 		selstart(evcol(e), evrow(e), snap);
 		#endif // VIM_BROWSE_PATCH
+
+		#if OPENURLONCLICK_PATCH
+		clearurl();
+		url_click = 1;
+		#endif // OPENURLONCLICK_PATCH
 	}
 }
 
@@ -786,14 +791,16 @@ brelease(XEvent *e)
 	if (btn == Button1 && !IS_SET(MODE_NORMAL)) {
 		mousesel(e, 1);
 		#if OPENURLONCLICK_PATCH
-		openUrlOnClick(evcol(e), evrow(e), url_opener);
+		if (url_click && e->xkey.state & url_opener_modkey)
+			openUrlOnClick(evcol(e), evrow(e), url_opener);
 		#endif // OPENURLONCLICK_PATCH
 	}
 	#else
 	if (btn == Button1) {
 		mousesel(e, 1);
 		#if OPENURLONCLICK_PATCH
-		openUrlOnClick(evcol(e), evrow(e), url_opener);
+		if (url_click && e->xkey.state & url_opener_modkey)
+			openUrlOnClick(evcol(e), evrow(e), url_opener);
 		#endif // OPENURLONCLICK_PATCH
 	}
 	#endif // VIM_BROWSE_PATCH
@@ -821,6 +828,18 @@ bmotion(XEvent *e)
 			xsetpointermotion(0);
 	}
 	#endif // HIDECURSOR_PATCH
+	#if OPENURLONCLICK_PATCH
+	#if VIM_BROWSE_PATCH
+	if (!IS_SET(MODE_NORMAL))
+	#endif // VIM_BROWSE_PATCH
+	if (!IS_SET(MODE_MOUSE)) {
+		if (!(e->xbutton.state & Button1Mask) && detecturl(evcol(e), evrow(e), 1))
+			XDefineCursor(xw.dpy, xw.win, xw.upointer);
+		else
+			XDefineCursor(xw.dpy, xw.win, xw.vpointer);
+	}
+	url_click = 0;
+	#endif // OPENURLONCLICK_PATCH
 
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forcemousemod)) {
 		mousereport(e);
@@ -911,6 +930,10 @@ xloadcolor(int i, const char *name, Color *ncolor)
 #if VIM_BROWSE_PATCH
 void normalMode()
 {
+	#if OPENURLONCLICK_PATCH
+	clearurl();
+	restoremousecursor();
+	#endif // OPENURLONCLICK_PATCH
 	historyModeToggle((win.mode ^=MODE_NORMAL) & MODE_NORMAL);
 }
 #endif // VIM_BROWSE_PATCH
@@ -1443,6 +1466,9 @@ xinit(int cols, int rows)
 		#endif // ST_EMBEDDER_PATCH
 		;
 	xw.attrs.colormap = xw.cmap;
+	#if OPENURLONCLICK_PATCH
+	xw.attrs.event_mask |= PointerMotionMask;
+	#endif // OPENURLONCLICK_PATCH
 
 	#if !ALPHA_PATCH
 	if (!(opt_embed && (parent = strtol(opt_embed, NULL, 0))))
@@ -1533,6 +1559,14 @@ xinit(int cols, int rows)
 	#elif !THEMED_CURSOR_PATCH
 	XRecolorCursor(xw.dpy, cursor, &xmousefg, &xmousebg);
 	#endif // HIDECURSOR_PATCH
+
+	#if OPENURLONCLICK_PATCH
+	xw.upointer = XCreateFontCursor(xw.dpy, XC_hand2);
+	#if !HIDECURSOR_PATCH
+	xw.vpointer = cursor;
+	xw.pointerisvisible = 1;
+	#endif // HIDECURSOR_PATCH
+	#endif // OPENURLONCLICK_PATCH
 
 	xw.xembed = XInternAtom(xw.dpy, "_XEMBED", False);
 	xw.wmdeletewin = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
@@ -2365,6 +2399,28 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 	#endif // WIDE_GLYPHS_PATCH
 
+	#if OPENURLONCLICK_PATCH
+	if (url_draw && y >= url_y1 && y <= url_y2) {
+		int x1 = (y == url_y1) ? url_x1 : 0;
+		int x2 = (y == url_y2) ? MIN(url_x2, term.col-1) : url_maxcol;
+		if (x + charlen > x1 && x <= x2) {
+			int xu = MAX(x, x1);
+			int wu = (x2 - xu + 1) * win.cw;
+			#if ANYSIZE_PATCH
+			xu = win.hborderpx + xu * win.cw;
+			#else
+			xu = borderpx + xu * win.cw;
+			#endif // ANYSIZE_PATCH
+			#if VERTCENTER_PATCH
+			XftDrawRect(xw.draw, fg, xu, winy + win.cyo + dc.font.ascent * chscale + 2, wu, 1);
+			#else
+			XftDrawRect(xw.draw, fg, xu, winy + dc.font.ascent * chscale + 2, wu, 1);
+			#endif // VERTCENTER_PATCH
+			url_draw = (y != url_y2 || x + charlen <= x2);
+		}
+	}
+	#endif // OPENURLONCLICK_PATCH
+
 	#if !WIDE_GLYPHS_PATCH
 	/* Reset clip to none. */
 	XftDrawSetClip(xw.draw, 0);
@@ -2865,6 +2921,9 @@ xsetpointermotion(int set)
 	if (!set && !xw.pointerisvisible)
 		return;
 	#endif // HIDECURSOR_PATCH
+	#if OPENURLONCLICK_PATCH
+	set = 1; /* keep MotionNotify event enabled */
+	#endif // OPENURLONCLICK_PATCH
 	MODBIT(xw.attrs.event_mask, set, PointerMotionMask);
 	XChangeWindowAttributes(xw.dpy, xw.win, CWEventMask, &xw.attrs);
 }
@@ -2883,8 +2942,15 @@ xsetmode(int set, unsigned int flags)
 		if (win.mode & MODE_MOUSE)
 			XUndefineCursor(xw.dpy, xw.win);
 		else
+			#if HIDECURSOR_PATCH
+			XDefineCursor(xw.dpy, xw.win, xw.vpointer);
+			#else
 			XDefineCursor(xw.dpy, xw.win, cursor);
+			#endif // HIDECURSOR_PATCH
 	}
+	#elif OPENURLONCLICK_PATCH
+	if (win.mode & MODE_MOUSE && xw.pointerisvisible)
+		XDefineCursor(xw.dpy, xw.win, xw.vpointer);
 	#endif // SWAPMOUSE_PATCH
 	if ((win.mode & MODE_REVERSE) != (mode & MODE_REVERSE))
 		redraw();
@@ -3042,9 +3108,26 @@ kpress(XEvent *ev)
 
 	#if HIDECURSOR_PATCH
 	if (xw.pointerisvisible) {
+		#if OPENURLONCLICK_PATCH
+		#if ANYSIZE_PATCH
+		int x = e->x - win.hborderpx;
+		int y = e->y - win.vborderpx;
+		#else
+		int x = e->x - borderpx;
+		int y = e->y - borderpx;
+		#endif // ANYSIZE_PATCH
+		LIMIT(x, 0, win.tw - 1);
+		LIMIT(y, 0, win.th - 1);
+		if (!detecturl(x / win.cw, y / win.ch, 0)) {
+			XDefineCursor(xw.dpy, xw.win, xw.bpointer);
+			xsetpointermotion(1);
+			xw.pointerisvisible = 0;
+		}
+		#else
 		XDefineCursor(xw.dpy, xw.win, xw.bpointer);
 		xsetpointermotion(1);
 		xw.pointerisvisible = 0;
+		#endif // OPENURLONCLICK_PATCH
 	}
 	#endif // HIDECURSOR_PATCH
 

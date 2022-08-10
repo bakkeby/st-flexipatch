@@ -1387,6 +1387,10 @@ tswapscreen(void)
 void
 tscrolldown(int orig, int n)
 {
+	#if OPENURLONCLICK_PATCH
+	restoremousecursor();
+	#endif //OPENURLONCLICK_PATCH
+
 	#if VIM_BROWSE_PATCH
 	if (!orig && historyBufferScroll(-n))
 		return;
@@ -1435,6 +1439,10 @@ tscrollup(int orig, int n, int copyhist)
 tscrollup(int orig, int n)
 #endif // SCROLLBACK_PATCH
 {
+	#if OPENURLONCLICK_PATCH
+	restoremousecursor();
+	#endif //OPENURLONCLICK_PATCH
+
 	#if VIM_BROWSE_PATCH
 	if (!orig && historyBufferScroll(n))
 		return;
