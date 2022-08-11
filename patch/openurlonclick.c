@@ -45,7 +45,7 @@ findeowl(int row)
 void
 clearurl(void)
 {
-	while (url_y1 <= url_y2)
+	while (url_y1 <= url_y2 && url_y1 < term.row)
 		term.dirty[url_y1++] = 1;
 	url_y2 = -1;
 }
