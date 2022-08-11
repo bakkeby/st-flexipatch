@@ -1837,9 +1837,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	int width = charlen * win.cw;
 	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg;
 	XRenderColor colfg, colbg;
-	#if !WIDE_GLYPHS_PATCH
 	XRectangle r;
-	#endif // WIDE_GLYPHS_PATCH
 
 	/* Fallback on color display for attributes not supported by the font */
 	if (base.mode & ATTR_ITALIC && base.mode & ATTR_BOLD) {
@@ -1992,18 +1990,22 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 		xclear(winx, winy, winx + width, winy + win.ch);
 	else
 	#endif // BACKGROUND_IMAGE_PATCH
-	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
-	#if WIDE_GLYPHS_PATCH
-	}
-	#endif // WIDE_GLYPHS_PATCH
 
 	#if !WIDE_GLYPHS_PATCH
+	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
+	#endif // WIDE_GLYPHS_PATCH
+
 	/* Set the clip region because Xft is sometimes dirty. */
 	r.x = 0;
 	r.y = 0;
 	r.height = win.ch;
 	r.width = width;
 	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
+
+	#if WIDE_GLYPHS_PATCH
+		/* Fill the background */
+		XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
+	}
 	#endif // WIDE_GLYPHS_PATCH
 
 	#if WIDE_GLYPHS_PATCH
@@ -2421,10 +2423,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 	#endif // OPENURLONCLICK_PATCH
 
-	#if !WIDE_GLYPHS_PATCH
 	/* Reset clip to none. */
 	XftDrawSetClip(xw.draw, 0);
-	#endif // WIDE_GLYPHS_PATCH
 }
 
 void
