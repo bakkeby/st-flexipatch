@@ -133,8 +133,9 @@ openUrlOnClick(int col, int row, char* url_opener)
 {
 	char *url = detecturl(col, row, 1);
 	if (url) {
-		char command[strlen(url_opener) + strlen(url) + 5];
-		sprintf(command, "%s \"%s\"&", url_opener, url);
-		system(command);
+		extern char **environ;
+		pid_t junk;
+		char *argv[] = { url_opener, url, NULL };
+		posix_spawnp(&junk, argv[0], NULL, NULL, argv, environ);
 	}
 }
