@@ -389,6 +389,12 @@ static MouseShortcut maltshortcuts[] = {
 static char *openurlcmd[] = { "/bin/sh", "-c",
 	"xurls | dmenu -l 10 -w $WINDOWID | xargs -r open",
 	"externalpipe", NULL };
+
+#if EXTERNALPIPEIN_PATCH // example command
+static char *setbgcolorcmd[] = { "/bin/sh", "-c",
+	"printf '\033]11;#008000\007'",
+	"externalpipein", NULL };
+#endif // EXTERNALPIPEIN_PATCH
 #endif // EXTERNALPIPE_PATCH
 
 static Shortcut shortcuts[] = {
@@ -425,6 +431,9 @@ static Shortcut shortcuts[] = {
 	#endif // NEWTERM_PATCH
 	#if EXTERNALPIPE_PATCH
 	{ TERMMOD,              XK_U,           externalpipe,    { .v = openurlcmd } },
+	#if EXTERNALPIPEIN_PATCH
+	{ TERMMOD,              XK_M,           externalpipein,  { .v = setbgcolorcmd } },
+	#endif // EXTERNALPIPEIN_PATCH
 	#endif // EXTERNALPIPE_PATCH
 	#if KEYBOARDSELECT_PATCH
 	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },

@@ -1090,15 +1090,16 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 		#endif // RIGHTCLICKTOPLUMB_PATCH
 			die("pledge\n");
 #endif
-		close(s);
-		cmdfd = m;
 		#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
 		csdfd = s;
+		cmdfd = m;
 		memset(&sa, 0, sizeof(sa));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_handler = sigchld;
 		sigaction(SIGCHLD, &sa, NULL);
 		#else
+		close(s);
+		cmdfd = m;
 		signal(SIGCHLD, sigchld);
 		#endif // EXTERNALPIPEIN_PATCH
 		break;
