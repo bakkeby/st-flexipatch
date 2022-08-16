@@ -391,6 +391,12 @@ static char *openurlcmd[] = { "/bin/sh", "-c",
 	"externalpipe", NULL };
 #endif // EXTERNALPIPE_PATCH
 
+#if EXTERNALPIPEIN_PATCH // example command
+static char *setbgcolorcmd[] = { "/bin/sh", "-c",
+	"printf '\033]11;#008000\007'",
+	"externalpipein", NULL };
+#endif // EXTERNALPIPEIN_PATCH
+
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function         argument */
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,       {.i =  0} },
@@ -426,6 +432,9 @@ static Shortcut shortcuts[] = {
 	#if EXTERNALPIPE_PATCH
 	{ TERMMOD,              XK_U,           externalpipe,    { .v = openurlcmd } },
 	#endif // EXTERNALPIPE_PATCH
+	#if EXTERNALPIPEIN_PATCH
+	{ TERMMOD,              XK_M,           externalpipein,  { .v = setbgcolorcmd } },
+	#endif // EXTERNALPIPEIN_PATCH
 	#if KEYBOARDSELECT_PATCH
 	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
 	#endif // KEYBOARDSELECT_PATCH
