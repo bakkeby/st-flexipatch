@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2022-08-24 - Added the no window decorations patch
+
 2022-04-11 - Added the background image reload patch
 
 2022-03-10 - Added the background image patch
@@ -202,6 +204,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [newterm](https://st.suckless.org/patches/newterm/)
       - allows you to spawn a new st terminal using Ctrl-Shift-Return
       - it will have the same CWD (current working directory) as the original st instance
+
+   - no-window-decorations
+      - makes st show without window decorations if the WM supports it
 
    - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
       - open contents of the clipboard in a user-defined browser

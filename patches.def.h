@@ -237,6 +237,14 @@
  */
 #define NEWTERM_PATCH 0
 
+/* This patch will set the _MOTIF_WM_HINTS property for the st window which, if the window manager
+ * respects it, will show the st window without window decorations.
+ *
+ * In dwm, if the decoration hints patch is applied, then the st window will start out without a
+ * border. In GNOME and KDE the window should start without a window title.
+ */
+#define NO_WINDOW_DECORATIONS_PATCH 0
+
 /* Open contents of the clipboard in a user-defined browser.
  * https://st.suckless.org/patches/open_copied_url/
  */
