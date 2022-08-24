@@ -97,7 +97,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [anysize](https://st.suckless.org/patches/anysize/)
       - allows st to reize to any pixel size rather than snapping to character width / height
 
-   - [~anysize_nobar~](https://github.com/connor-brooks/st-anysize-nobar)
+   - [~anysize\_nobar~](https://github.com/connor-brooks/st-anysize-nobar)
       - ~a patch that aims to prevent black bars being drawn on the edges of st terminals using the
         anysize patch~
 
@@ -130,7 +130,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
       - this patch allows you to select and copy the last URL displayed with Mod+l
       - multiple invocations cycle through the available URLs
 
-   - [csi_23_23](https://st.suckless.org/patches/csi_22_23/)
+   - [csi\_23\_23](https://st.suckless.org/patches/csi_22_23/)
       - adds support for CSI escape sequences 22 and 23, which save and restores the window title
         (for instance nvim does this when opening and closing)
 
@@ -205,7 +205,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
       - allows you to spawn a new st terminal using Ctrl-Shift-Return
       - it will have the same CWD (current working directory) as the original st instance
 
-   - no-window-decorations
+   - [no-window-decorations](https://github.com/bakkeby/patches/wiki/no_window_decorations)
       - makes st show without window decorations if the WM supports it
 
    - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
@@ -214,7 +214,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [openurlonclick](https://www.reddit.com/r/suckless/comments/cc83om/st_open_url/)
       - allows for URLs to be opened directly when you click on them
 
-   - [~osc_10_11_12_2~](https://st.suckless.org/patches/osc_10_11_12_2/)
+   - [~osc\_10\_11\_12\_2~](https://st.suckless.org/patches/osc_10_11_12_2/)
       - ~this patch adds support for OSC escape sequences 10, 11, and 12 in the way they are~
         ~implemented in most other terminals (e.g libvte, kitty)~
       - ~specifically it differs from~ [~osc_10_11_12~](https://st.suckless.org/patches/osc_10_11_12/)
