@@ -1216,7 +1216,11 @@ xloadfont(Font *f, FcPattern *pattern)
 	FcConfigSubstitute(NULL, configured, FcMatchPattern);
 	XftDefaultSubstitute(xw.dpy, xw.scr, configured);
 
+	#if USE_XFTFONTMATCH_PATCH
+	match = XftFontMatch(xw.dpy, xw.scr, pattern, &result);
+	#else
 	match = FcFontMatch(NULL, configured, &result);
+	#endif // USE_XFTFONTMATCH_PATCH
 	if (!match) {
 		FcPatternDestroy(configured);
 		return 1;
@@ -1735,12 +1739,12 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 					fccharset);
 			FcPatternAddBool(fcpattern, FC_SCALABLE, 1);
 
-			FcConfigSubstitute(0, fcpattern,
-					FcMatchPattern);
+			#if !USE_XFTFONTMATCH_PATCH
+			FcConfigSubstitute(0, fcpattern, FcMatchPattern);
 			FcDefaultSubstitute(fcpattern);
+			#endif // USE_XFTFONTMATCH_PATCH
 
-			fontpattern = FcFontSetMatch(0, fcsets, 1,
-					fcpattern, &fcres);
+			fontpattern = FcFontSetMatch(0, fcsets, 1, fcpattern, &fcres);
 
 			/* Allocate memory for the new cache entry. */
 			if (frclen >= frccap) {

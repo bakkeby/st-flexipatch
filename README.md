@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2022-08-28 - Added the use XftFontMatch patch
+
 2022-08-24 - Added the no window decorations patch
 
 2022-04-11 - Added the background image reload patch
@@ -263,6 +265,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [universcroll](https://st.suckless.org/patches/universcroll/)
       - allows mouse scroll without modifier keys for regardless of alt screen using the external
         scroll program
+
+   - [use-XftFontMatch](https://git.suckless.org/st/commit/528241aa3835e2f1f052abeeaf891737712955a0.html)
+      - use XftFontMatch in place of FcFontMatch to allow font to scale with Xft.dpi resource
+        setting
 
    - [vertcenter](https://st.suckless.org/patches/vertcenter/)
       - vertically center lines in the space available if you have set a larger chscale in config.h
