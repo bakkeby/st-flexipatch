@@ -4,7 +4,11 @@ xloadsparefont(FcPattern *pattern, int flags)
 	FcPattern *match;
 	FcResult result;
 
+	#if USE_XFTFONTMATCH_PATCH
+	match = XftFontMatch(xw.dpy, xw.scr, pattern, &result);
+	#else
 	match = FcFontMatch(NULL, pattern, &result);
+	#endif // USE_XFTFONTMATCH_PATCH
 	if (!match) {
 		return 1;
 	}
@@ -26,7 +30,7 @@ void
 xloadsparefonts(void)
 {
 	FcPattern *pattern;
-	double sizeshift, fontval;
+	double fontval;
 	int fc;
 	char **fp;
 
@@ -54,22 +58,28 @@ xloadsparefonts(void)
 		if (!pattern)
 			die("can't open spare font %s\n", *fp);
 
-		if (defaultfontsize > 0) {
-			sizeshift = usedfontsize - defaultfontsize;
-			if (sizeshift != 0 &&
-					FcPatternGetDouble(pattern, FC_PIXEL_SIZE, 0, &fontval) ==
+		if (defaultfontsize > 0 && defaultfontsize != usedfontsize) {
+			if (FcPatternGetDouble(pattern, FC_PIXEL_SIZE, 0, &fontval) ==
 					FcResultMatch) {
-				fontval += sizeshift;
+				fontval *= usedfontsize / defaultfontsize;
 				FcPatternDel(pattern, FC_PIXEL_SIZE);
 				FcPatternDel(pattern, FC_SIZE);
 				FcPatternAddDouble(pattern, FC_PIXEL_SIZE, fontval);
+			} else if (FcPatternGetDouble(pattern, FC_SIZE, 0, &fontval) ==
+					FcResultMatch) {
+				fontval *= usedfontsize / defaultfontsize;
+				FcPatternDel(pattern, FC_PIXEL_SIZE);
+				FcPatternDel(pattern, FC_SIZE);
+				FcPatternAddDouble(pattern, FC_SIZE, fontval);
 			}
 		}
 
 		FcPatternAddBool(pattern, FC_SCALABLE, 1);
 
+		#if !USE_XFTFONTMATCH_PATCH
 		FcConfigSubstitute(NULL, pattern, FcMatchPattern);
 		XftDefaultSubstitute(xw.dpy, xw.scr, pattern);
+		#endif // USE_XFTFONTMATCH_PATCH
 
 		if (xloadsparefont(pattern, FRC_NORMAL))
 			die("can't open spare font %s\n", *fp);
