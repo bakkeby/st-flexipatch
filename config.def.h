@@ -385,6 +385,14 @@ static MouseShortcut maltshortcuts[] = {
 #define MODKEY Mod1Mask
 #define TERMMOD (ControlMask|ShiftMask)
 
+#if SCROLLBACK_PATCH
+/* Disable scrollback keys on the alternative screen so they won't conflict
+ * with other programs like vim and tmux. If you need access to the scrollback
+ * buffer, you can just suspend a running program.
+ */
+static int disable_scrollback_keys_on_altscreen = 0;
+#endif // SCROLLBACK_PATCH
+
 #if EXTERNALPIPE_PATCH // example command
 static char *openurlcmd[] = { "/bin/sh", "-c",
 	"xurls | dmenu -l 10 -w $WINDOWID | xargs -r open",

@@ -3168,6 +3168,11 @@ kpress(XEvent *ev)
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
 		if (ksym == bp->keysym && match(bp->mod, e->state)) {
+			#if SCROLLBACK_PATCH
+			if (disable_scrollback_keys_on_altscreen &&
+				    (bp->func == kscrollup || bp->func == kscrolldown) && tisaltscr())
+				continue;
+			#endif // SCROLLBACK_PATCH
 			bp->func(&(bp->arg));
 			return;
 		}
