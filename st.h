@@ -88,6 +88,13 @@ enum drawing_mode {
 };
 #endif // WIDE_GLYPHS_PATCH
 
+/* Used to control which screen(s) keybindings and mouse shortcuts apply to. */
+enum screen {
+	S_PRI = -1, /* primary screen */
+	S_ALL = 0,  /* both primary and alt screen */
+	S_ALT = 1   /* alternate screen */
+};
+
 enum selection_mode {
 	SEL_IDLE = 0,
 	SEL_EMPTY = 1,
@@ -251,6 +258,7 @@ typedef struct {
 	KeySym keysym;
 	void (*func)(const Arg *);
 	const Arg arg;
+	int screen;
 } Shortcut;
 
 typedef struct {
@@ -258,10 +266,8 @@ typedef struct {
 	uint button;
 	void (*func)(const Arg *);
 	const Arg arg;
-	uint  release;
-	#if UNIVERSCROLL_PATCH
-	int  altscrn;  /* 0: don't care, -1: not alt screen, 1: alt screen */
-	#endif // UNIVERSCROLL_PATCH
+	uint release;
+	int screen;
 } MouseShortcut;
 
 typedef struct {
@@ -309,6 +315,7 @@ void sendbreak(const Arg *);
 void toggleprinter(const Arg *);
 
 int tattrset(int);
+int tisaltscr(void);
 void tnew(int, int);
 void tresize(int, int);
 #if VIM_BROWSE_PATCH

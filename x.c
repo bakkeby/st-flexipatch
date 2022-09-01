@@ -345,29 +345,15 @@ int
 mouseaction(XEvent *e, uint release)
 {
 	MouseShortcut *ms;
+	int screen = tisaltscr() ? S_ALT : S_PRI;
 
 	/* ignore Button<N>mask for Button<N> - it's set on release */
 	uint state = e->xbutton.state & ~buttonmask(e->xbutton.button);
 
-	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	if (tisaltscr())
-		for (ms = maltshortcuts; ms < maltshortcuts + LEN(maltshortcuts); ms++) {
-			if (ms->release == release &&
-					ms->button == e->xbutton.button &&
-					(match(ms->mod, state) ||  /* exact or forced */
-					 match(ms->mod, state & ~forcemousemod))) {
-				ms->func(&(ms->arg));
-				return 1;
-			}
-		}
-	else
-	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
 		if (ms->release == release &&
 				ms->button == e->xbutton.button &&
-				#if UNIVERSCROLL_PATCH
-				(!ms->altscrn || (ms->altscrn == (tisaltscr() ? 1 : -1))) &&
-				#endif // UNIVERSCROLL_PATCH
+				(!ms->screen || (ms->screen == screen)) &&
 				(match(ms->mod, state) ||  /* exact or forced */
 				 match(ms->mod, state & ~forcemousemod))) {
 			ms->func(&(ms->arg));
@@ -3112,7 +3098,7 @@ kpress(XEvent *ev)
 	XKeyEvent *e = &ev->xkey;
 	KeySym ksym;
 	char buf[64], *customkey;
-	int len;
+	int len, screen;
 	Rune c;
 	Status status;
 	Shortcut *bp;
@@ -3165,9 +3151,12 @@ kpress(XEvent *ev)
 	}
 	#endif // VIM_BROWSE_PATCH
 
+	screen = tisaltscr() ? S_ALT : S_PRI;
+
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
-		if (ksym == bp->keysym && match(bp->mod, e->state)) {
+		if (ksym == bp->keysym && match(bp->mod, e->state) &&
+				(!bp->screen || bp->screen == screen)) {
 			bp->func(&(bp->arg));
 			return;
 		}

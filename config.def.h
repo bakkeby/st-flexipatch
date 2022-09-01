@@ -339,47 +339,32 @@ static uint forcemousemod = ShiftMask;
  * Beware that overloading Button1 will disable the selection.
  */
 static MouseShortcut mshortcuts[] = {
-	#if UNIVERSCROLL_PATCH
-	/* mask                 button   function        argument       release   alt */
-	#else
-	/* mask                 button   function        argument       release */
-	#endif // UNIVERSCROLL_PATCH
+	/* mask                 button   function        argument       release  screen */
 	#if CLIPBOARD_PATCH
 	{ XK_ANY_MOD,           Button2, clippaste,      {.i = 0},      1 },
 	#else
 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
 	#endif // CLIPBOARD_PATCH
 	#if SCROLLBACK_MOUSE_PATCH
-	{ ShiftMask,            Button4, kscrollup,      {.i = 1} },
-	{ ShiftMask,            Button5, kscrolldown,    {.i = 1} },
+	{ ShiftMask,            Button4, kscrollup,      {.i = 1},      0, S_PRI},
+	{ ShiftMask,            Button5, kscrolldown,    {.i = 1},      0, S_PRI},
 	#elif UNIVERSCROLL_PATCH
-	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\033[5;2~"}, 0, -1 },
-	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\033[6;2~"}, 0, -1 },
+	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\033[5;2~"}, 0, S_PRI },
+	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\033[6;2~"}, 0, S_PRI },
 	#else
 	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
 	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
 	#endif // SCROLLBACK_MOUSE_PATCH
 	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1} },
-	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1} },
+	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1},      0, S_PRI },
+	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1},      0, S_PRI },
+	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"}, 0, S_ALT },
+	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"}, 0, S_ALT },
 	#else
 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
 	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
 	#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 };
-
-#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-static MouseShortcut maltshortcuts[] = {
-	/* mask                 button   function        argument       release */
-	#if CLIPBOARD_PATCH
-	{ XK_ANY_MOD,           Button2, clippaste,      {.i = 0},      1 },
-	#else
-	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
-	#endif // CLIPBOARD_PATCH
-	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
-	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
-};
-#endif // SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 
 /* Internal keyboard shortcuts. */
 #define MODKEY Mod1Mask
@@ -398,7 +383,7 @@ static char *setbgcolorcmd[] = { "/bin/sh", "-c",
 #endif // EXTERNALPIPE_PATCH
 
 static Shortcut shortcuts[] = {
-	/* mask                 keysym          function         argument */
+	/* mask                 keysym          function         argument   screen */
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,       {.i =  0} },
 	{ ControlMask,          XK_Print,       toggleprinter,   {.i =  0} },
 	{ ShiftMask,            XK_Print,       printscreen,     {.i =  0} },
@@ -409,8 +394,8 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_C,           clipcopy,        {.i =  0} },
 	{ TERMMOD,              XK_V,           clippaste,       {.i =  0} },
 	#if SCROLLBACK_PATCH
-	{ ShiftMask,            XK_Page_Up,     kscrollup,       {.i = -1} },
-	{ ShiftMask,            XK_Page_Down,   kscrolldown,     {.i = -1} },
+	{ ShiftMask,            XK_Page_Up,     kscrollup,       {.i = -1}, S_PRI },
+	{ ShiftMask,            XK_Page_Down,   kscrolldown,     {.i = -1}, S_PRI },
 	#endif // SCROLLBACK_PATCH
 	#if CLIPBOARD_PATCH
 	{ TERMMOD,              XK_Y,           clippaste,       {.i =  0} },
