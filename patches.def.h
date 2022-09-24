@@ -34,19 +34,22 @@
  */
 #define ANYSIZE_PATCH 0
 
-/* This patch aims to prevent black bars being drawn on the edges of st terminals using the anysize
- * patch. This generally only occurs when the terminal background color doesn't match the colors
- * set in st's config.h file, for example when using terminal theming scripts such as base16.
- * (I have not found this to be working, but adding for reference. May reduce flickering on
- * terminal resizes.)
- * https://github.com/connor-brooks/st-anysize-nobar
- */
-#define ANYSIZE_NOBAR_PATCH 0
-
 /* A simple variant of the anysize patch that only changes the resize hints to allow the window to
  * be resized to any size.
  */
 #define ANYSIZE_SIMPLE_PATCH 0
+
+/* Draws a background image in farbfeld format in place of the defaultbg color allowing for pseudo
+ * transparency.
+ * https://st.suckless.org/patches/background_image/
+ */
+#define BACKGROUND_IMAGE_PATCH 0
+
+/* This patch adds the ability to reload the background image config when a SIGUSR1 signal is
+ * received, e.g.: killall -USR1 st
+ * Depends on the BACKGROUND_IMAGE_PATCH.
+ */
+#define BACKGROUND_IMAGE_RELOAD_PATCH 0
 
 /* This patch allows the use of a blinking cursor.
  * Only cursor styles 0, 1, 3, 5, and 7 blink. Set cursorstyle accordingly.
@@ -234,6 +237,14 @@
  */
 #define NEWTERM_PATCH 0
 
+/* This patch will set the _MOTIF_WM_HINTS property for the st window which, if the window manager
+ * respects it, will show the st window without window decorations.
+ *
+ * In dwm, if the decoration hints patch is applied, then the st window will start out without a
+ * border. In GNOME and KDE the window should start without a window title.
+ */
+#define NO_WINDOW_DECORATIONS_PATCH 0
+
 /* Open contents of the clipboard in a user-defined browser.
  * https://st.suckless.org/patches/open_copied_url/
  */
@@ -245,16 +256,6 @@
  * https://www.reddit.com/r/suckless/comments/cc83om/st_open_url/
  */
 #define OPENURLONCLICK_PATCH 0
-
-/* This patch adds support for OSC escape sequences 10, 11 and 12 that modify the background,
- * foreground and cursor colors in the way they are implemented in most other terminals
- * (e.g libvte, kitty). Specifically it differs from https://st.suckless.org/patches/osc_10_11_12/
- * in that it treats the background and foreground colors as distinct from palette colours
- * 01 and 07 in order to facilitate the use of theme setting scripts like theme.sh
- * (https://github.com/lemnos/theme.sh) which expect these colours to be distinct.
- * https://st.suckless.org/patches/osc_10_11_12_2/
- */
-#define OSC_10_11_12_2_PATCH 0
 
 /* This patch allows you to specify a border that is relative in size to the width of a cell
  * in the terminal.
@@ -298,13 +299,9 @@
  *      not specific to this variant of st - the same issue is present in
  *      the xterm implementation. This is likely an issue of sixel height
  *      not being detected correctly.
- *    - If combined with the alpha patch sixel graphics disappear (become white)
- *      when transparent and rendered against a white background. This is believed
- *      to be related to how the sixel graphics use RGB colors instead of RGBA.
- *      A pull request or instructions for how to properly add alpha support for
- *      sixel graphics would be very welcome.
  *
  * Note that you need to uncomment the corresponding lines in config.mk when including this patch.
+ * This patch is incompatible with the W3M patch.
  *
  * https://gist.github.com/saitoha/70e0fdf22e3e8f63ce937c7f7da71809
  */
@@ -375,6 +372,20 @@
  * https://st.suckless.org/patches/universcroll/
  */
 #define UNIVERSCROLL_PATCH 0
+
+/* Use XftFontMatch in place of FcFontMatch.
+ *
+ * XftFontMatch calls XftDefaultSubstitute which configures various match properties according
+ * to the user's configured Xft defaults (xrdb) as well as according to the current display and
+ * screen. Most importantly, the screen DPI is computed [1]. Without this, st uses a "default"
+ * DPI of 75 [2].
+ *
+ * [1]: https://cgit.freedesktop.org/xorg/lib/libXft/tree/src/xftdpy.c?id=libXft-2.3.2#n535
+ * [2]: https://cgit.freedesktop.org/fontconfig/tree/src/fcdefault.c?id=2.11.1#n255
+ *
+ * https://git.suckless.org/st/commit/528241aa3835e2f1f052abeeaf891737712955a0.html
+ */
+#define USE_XFTFONTMATCH_PATCH 0
 
 /* Vertically center lines in the space available if you have set a larger chscale in config.h
  * https://st.suckless.org/patches/vertcenter/

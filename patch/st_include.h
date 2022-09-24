@@ -11,6 +11,9 @@
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_st.h"
 #endif
+#if OPENURLONCLICK_PATCH
+#include "openurlonclick.h"
+#endif
 #if RIGHTCLICKTOPLUMB_PATCH
 #include "rightclicktoplumb_st.h"
 #endif
@@ -19,9 +22,6 @@
 #endif
 #if SCROLLBACK_PATCH || SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 #include "scrollback.h"
-#endif
-#if UNIVERSCROLL_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
-#include "universcroll.h"
 #endif
 #if SIXEL_PATCH
 #include "sixel_st.h"

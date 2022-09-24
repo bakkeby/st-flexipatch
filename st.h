@@ -88,6 +88,13 @@ enum drawing_mode {
 };
 #endif // WIDE_GLYPHS_PATCH
 
+/* Used to control which screen(s) keybindings and mouse shortcuts apply to. */
+enum screen {
+	S_PRI = -1, /* primary screen */
+	S_ALL = 0,  /* both primary and alt screen */
+	S_ALT = 1   /* alternate screen */
+};
+
 enum selection_mode {
 	SEL_IDLE = 0,
 	SEL_EMPTY = 1,
@@ -148,6 +155,7 @@ typedef struct {
 	#if SCROLLBACK_PATCH
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
+	int histn;    /* number of history entries */
 	int scr;      /* scroll back */
 	#endif // SCROLLBACK_PATCH
 	int *dirty;   /* dirtyness of lines */
@@ -181,6 +189,9 @@ typedef union {
 typedef struct {
 	int tw, th; /* tty width and height */
 	int w, h; /* window width and height */
+	#if BACKGROUND_IMAGE_PATCH
+	int x, y; /* window location */
+	#endif // BACKGROUND_IMAGE_PATCH
 	#if ANYSIZE_PATCH
 	int hborderpx, vborderpx;
 	#endif // ANYSIZE_PATCH
@@ -210,15 +221,21 @@ typedef struct {
 		XVaNestedList spotlist;
 	} ime;
 	Draw draw;
+	#if BACKGROUND_IMAGE_PATCH
+	GC bggc;          /* Graphics Context for background */
+	#endif // BACKGROUND_IMAGE_PATCH
 	Visual *vis;
 	XSetWindowAttributes attrs;
-	#if HIDECURSOR_PATCH
+	#if HIDECURSOR_PATCH || OPENURLONCLICK_PATCH
 	/* Here, we use the term *pointer* to differentiate the cursor
 	 * one sees when hovering the mouse over the terminal from, e.g.,
 	 * a green rectangle where text would be entered. */
 	Cursor vpointer, bpointer; /* visible and hidden pointers */
 	int pointerisvisible;
 	#endif // HIDECURSOR_PATCH
+	#if OPENURLONCLICK_PATCH
+	Cursor upointer;
+	#endif // OPENURLONCLICK_PATCH
 	int scr;
 	int isfixed; /* is fixed geometry? */
 	#if ALPHA_PATCH
@@ -241,6 +258,7 @@ typedef struct {
 	KeySym keysym;
 	void (*func)(const Arg *);
 	const Arg arg;
+	int screen;
 } Shortcut;
 
 typedef struct {
@@ -248,10 +266,8 @@ typedef struct {
 	uint button;
 	void (*func)(const Arg *);
 	const Arg arg;
-	uint  release;
-	#if UNIVERSCROLL_PATCH
-	int  altscrn;  /* 0: don't care, -1: not alt screen, 1: alt screen */
-	#endif // UNIVERSCROLL_PATCH
+	uint release;
+	int screen;
 } MouseShortcut;
 
 typedef struct {
@@ -299,6 +315,7 @@ void sendbreak(const Arg *);
 void toggleprinter(const Arg *);
 
 int tattrset(int);
+int tisaltscr(void);
 void tnew(int, int);
 void tresize(int, int);
 #if VIM_BROWSE_PATCH
@@ -325,6 +342,9 @@ size_t utf8encode(Rune, char *);
 void *xmalloc(size_t);
 void *xrealloc(void *, size_t);
 char *xstrdup(const char *);
+
+int xgetcolor(int x, unsigned char *r, unsigned char *g, unsigned char *b);
+
 #if BOXDRAW_PATCH
 int isboxdraw(Rune);
 ushort boxdrawindex(const Glyph *);

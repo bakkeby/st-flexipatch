@@ -35,22 +35,14 @@ resource_load(XrmDatabase db, char *name, enum resource_type rtype, void *dst)
 }
 
 void
-#if XRESOURCES_RELOAD_PATCH
 config_init(Display *dpy)
-#else
-config_init(void)
-#endif // XRESOURCES_RELOAD_PATCH
 {
 	char *resm;
 	XrmDatabase db;
 	ResourcePref *p;
 
 	XrmInitialize();
-	#if XRESOURCES_RELOAD_PATCH
 	resm = XResourceManagerString(dpy);
-	#else
-	resm = XResourceManagerString(xw.dpy);
-	#endif // XRESOURCES_RELOAD_PATCH
 	if (!resm)
 		return;
 
@@ -69,11 +61,22 @@ reload_config(int sig)
 		die("Can't open display\n");
 
 	config_init(dpy);
-	if (sig != -1) {
-		/* Called due to a SIGUSR1 */
-		xloadcols();
-		redraw();
-	}
-	signal(SIGUSR1, reload_config);
+	xloadcols();
+
+	/* nearly like zoomabs() */
+	xunloadfonts();
+	xloadfonts(font, 0); /* font <- config_init() */
+	#if FONT2_PATCH
+	xloadsparefonts();
+	#endif // FONT2_PATCH
+	cresize(0, 0);
+	redraw();
+	xhints();
+
+	XCloseDisplay(dpy);
+
+	/* from https://st.suckless.org/patches/xresources-with-reload-signal */
+	/* triggers re-render if we're visible */
+	ttywrite("\033[O", 3, 1);
 }
 #endif // XRESOURCES_RELOAD_PATCH

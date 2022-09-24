@@ -2,6 +2,9 @@
 #if ALPHA_PATCH
 #include "alpha.h"
 #endif
+#if BACKGROUND_IMAGE_PATCH
+#include "background_image_x.h"
+#endif
 #if BOXDRAW_PATCH
 #include "boxdraw.h"
 #endif
@@ -19,9 +22,6 @@
 #endif
 #if NETWMICON_PATCH
 #include "netwmicon.h"
-#endif
-#if OPENURLONCLICK_PATCH
-#include "openurlonclick.h"
 #endif
 #if RIGHTCLICKTOPLUMB_PATCH
 #include "rightclicktoplumb_x.h"
