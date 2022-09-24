@@ -62,7 +62,21 @@ reload_config(int sig)
 
 	config_init(dpy);
 	xloadcols();
+
+	/* nearly like zoomabs() */
+	xunloadfonts();
+	xloadfonts(font, 0); /* font <- config_init() */
+	#if FONT2_PATCH
+	xloadsparefonts();
+	#endif // FONT2_PATCH
+	cresize(0, 0);
 	redraw();
+	xhints();
+
 	XCloseDisplay(dpy);
+
+	/* from https://st.suckless.org/patches/xresources-with-reload-signal */
+	/* triggers re-render if we're visible */
+	ttywrite("\033[O", 3, 1);
 }
 #endif // XRESOURCES_RELOAD_PATCH
