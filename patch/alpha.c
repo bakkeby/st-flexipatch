@@ -15,7 +15,6 @@ changealpha(const Arg *arg)
 	alpha = clamp(alpha, 0.0, 1.0);
 	xloadcols();
 	redraw();
-	fprintf(stderr, "changealpha %f\n", arg->f);
 }
 
 #if ALPHA_FOCUS_HIGHLIGHT_PATCH
@@ -27,6 +26,5 @@ changealphaunfocused(const Arg *arg)
 	alphaUnfocused = clamp(alphaUnfocused, 0.0, 1.0);
 	xloadcols();
 	redraw();
-	fprintf(stderr, "changealphaunfocused %f\n", arg->f);
 }
 #endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
