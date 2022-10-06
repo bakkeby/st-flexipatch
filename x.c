@@ -3030,7 +3030,7 @@ focus(XEvent *ev)
 		if (!focused) {
 			focused = 1;
 			xloadcols();
-			redraw();
+			tfulldirt();
 		}
 		#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 	} else {
@@ -3043,7 +3043,7 @@ focus(XEvent *ev)
 		if (focused) {
 			focused = 0;
 			xloadcols();
-			redraw();
+			tfulldirt();
 		}
 		#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 	}
