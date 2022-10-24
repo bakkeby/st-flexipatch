@@ -14,6 +14,9 @@
 #if FONT2_PATCH
 #include "font2.h"
 #endif
+#if FULLSCREEN_PATCH
+#include "fullscreen_x.h"
+#endif
 #if INVERT_PATCH
 #include "invert.h"
 #endif

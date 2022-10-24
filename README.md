@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2022-10-24 - Added the fullscreen patch
+
 2022-08-28 - Added the use XftFontMatch patch
 
 2022-08-24 - Added the no window decorations patch
@@ -173,6 +175,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [~force-redraw-after-keypress~](https://lists.suckless.org/hackers/2004/17221.html)
       - ~this patch forces the terminal to check for new data on the tty on keypress with the aim of reducing input latency~
+
+   - [fullscreen](https://st.suckless.org/patches/fullscreen/)
+      - allows the st window to go into fullscreen mode
 
    - [gradient](https://st.suckless.org/patches/gradient/)
       - adds gradient transparency to st

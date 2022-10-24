@@ -211,6 +211,9 @@ typedef struct {
 	Drawable buf;
 	GlyphFontSpec *specbuf; /* font spec buffer used for rendering */
 	Atom xembed, wmdeletewin, netwmname, netwmiconname, netwmpid;
+	#if FULLSCREEN_PATCH
+	Atom netwmstate, netwmfullscreen;
+	#endif // FULLSCREEN_PATCH
 	#if NETWMICON_PATCH
 	Atom netwmicon;
 	#endif // NETWMICON_PATCH

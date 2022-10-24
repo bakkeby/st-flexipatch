@@ -401,6 +401,10 @@ static Shortcut shortcuts[] = {
 	//{ TERMMOD,              XK_,           changealphaunfocused, {.f = -0.05} },
 	#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 	#endif // ALPHA_PATCH
+	#if FULLSCREEN_PATCH
+	{ XK_NO_MOD,            XK_F11,         fullscreen,      {.i =  0} },
+	{ MODKEY,               XK_Return,      fullscreen,      {.i =  0} },
+	#endif // FULLSCREEN_PATCH
 	#if SCROLLBACK_PATCH
 	{ ShiftMask,            XK_Page_Up,     kscrollup,       {.i = -1}, S_PRI },
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,     {.i = -1}, S_PRI },
