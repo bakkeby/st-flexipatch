@@ -755,6 +755,13 @@ sigusr1_reload(int sig)
 }
 #endif // XRESOURCES_RELOAD_PATCH | BACKGROUND_IMAGE_RELOAD_PATCH
 
+#if FULLSCREEN_PATCH
+void sigusr2_fullscreen(int sig) {
+    set_fullscreen();
+    signal(SIGUSR2, sigusr2_fullscreen);
+}
+#endif // FULLSCREEN_PATCH
+
 void
 xsetsel(char *str)
 {
@@ -3514,6 +3521,11 @@ run:
 
 	config_init(xw.dpy);
 	#endif // XRESOURCES_PATCH
+
+    #if FULLSCREEN_PATCH
+        signal(SIGUSR2, sigusr2_fullscreen);
+    #endif // FULLSCREEN_PATCH
+
 	cols = MAX(cols, 1);
 	rows = MAX(rows, 1);
 	#if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
