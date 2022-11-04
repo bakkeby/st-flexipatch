@@ -3424,9 +3424,9 @@ usage(void)
 		#if WORKINGDIR_PATCH
 		" [-d path]"
 		#endif // WORKINGDIR_PATCH
-	    #if FULLSCREEN_PATCH
-	    " [-F]",
-	    #endif // FULLSCREEN_PATCH
+		#if FULLSCREEN_PATCH
+		" [-F]",
+		#endif // FULLSCREEN_PATCH
 		" [-f font] [-g geometry]"
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid] -l line"
