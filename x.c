@@ -3545,7 +3545,7 @@ run:
 
     #if FULLSCREEN_PATCH
     if (opt_fullscreen)
-        set_fullscreen(NULL);
+        set_fullscreen();
     #endif // FULLSCREEN_PATCH
 
 	run();
