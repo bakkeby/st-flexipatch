@@ -757,8 +757,8 @@ sigusr1_reload(int sig)
 
 #if FULLSCREEN_PATCH
 void sigusr2_fullscreen(int sig) {
-    set_fullscreen();
-    signal(SIGUSR2, sigusr2_fullscreen);
+	set_fullscreen();
+	signal(SIGUSR2, sigusr2_fullscreen);
 }
 #endif // FULLSCREEN_PATCH
 
@@ -3424,9 +3424,9 @@ usage(void)
 		#if WORKINGDIR_PATCH
 		" [-d path]"
 		#endif // WORKINGDIR_PATCH
-        #if FULLSCREEN_PATCH
-        " [-F]",
-        #endif // FULLSCREEN_PATCH
+	    #if FULLSCREEN_PATCH
+	    " [-F]",
+	    #endif // FULLSCREEN_PATCH
 		" [-f font] [-g geometry]"
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid] -l line"
@@ -3461,11 +3461,11 @@ main(int argc, char *argv[])
 		opt_dir = EARGF(usage());
 		break;
 	#endif // WORKINGDIR_PATCH
-    #if FULLSCREEN_PATCH
-    case 'F':
-        opt_fullscreen = 1;
-        break;
-    #endif // FULLSCREEN_PATCH
+	#if FULLSCREEN_PATCH
+	case 'F':
+		opt_fullscreen = 1;
+		break;
+	#endif // FULLSCREEN_PATCH
 	case 'e':
 		if (argc > 0)
 			--argc, ++argv;
@@ -3522,9 +3522,9 @@ run:
 	config_init(xw.dpy);
 	#endif // XRESOURCES_PATCH
 
-    #if FULLSCREEN_PATCH
-        signal(SIGUSR2, sigusr2_fullscreen);
-    #endif // FULLSCREEN_PATCH
+	#if FULLSCREEN_PATCH
+		signal(SIGUSR2, sigusr2_fullscreen);
+	#endif // FULLSCREEN_PATCH
 
 	cols = MAX(cols, 1);
 	rows = MAX(rows, 1);
@@ -3543,10 +3543,10 @@ run:
 		die("Can't change to working directory %s\n", opt_dir);
 	#endif // WORKINGDIR_PATCH
 
-    #if FULLSCREEN_PATCH
-    if (opt_fullscreen)
-        set_fullscreen();
-    #endif // FULLSCREEN_PATCH
+	#if FULLSCREEN_PATCH
+	if (opt_fullscreen)
+		set_fullscreen();
+	#endif // FULLSCREEN_PATCH
 
 	run();
 
