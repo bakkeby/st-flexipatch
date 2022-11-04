@@ -207,6 +207,9 @@ static char *opt_title = NULL;
 #if WORKINGDIR_PATCH
 static char *opt_dir   = NULL;
 #endif // WORKINGDIR_PATCH
+#if FULLSCREEN_PATCH
+static int opt_fullscreen = 0;
+#endif // FULLSCREEN_PATCH
 
 #if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 static int focused = 0;
@@ -3414,6 +3417,9 @@ usage(void)
 		#if WORKINGDIR_PATCH
 		" [-d path]"
 		#endif // WORKINGDIR_PATCH
+        #if FULLSCREEN_PATCH
+        " [-F]",
+        #endif // FULLSCREEN_PATCH
 		" [-f font] [-g geometry]"
 	    " [-n name] [-o file]\n"
 	    "          [-T title] [-t title] [-w windowid] -l line"
@@ -3448,6 +3454,11 @@ main(int argc, char *argv[])
 		opt_dir = EARGF(usage());
 		break;
 	#endif // WORKINGDIR_PATCH
+    #if FULLSCREEN_PATCH
+    case 'F':
+        opt_fullscreen = 1;
+        break;
+    #endif // FULLSCREEN_PATCH
 	case 'e':
 		if (argc > 0)
 			--argc, ++argv;
@@ -3519,6 +3530,12 @@ run:
 	if (opt_dir && chdir(opt_dir))
 		die("Can't change to working directory %s\n", opt_dir);
 	#endif // WORKINGDIR_PATCH
+
+    #if FULLSCREEN_PATCH
+    if (opt_fullscreen)
+        set_fullscreen(NULL);
+    #endif // FULLSCREEN_PATCH
+
 	run();
 
 	return 0;
