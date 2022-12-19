@@ -80,6 +80,9 @@ static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int, 
 #else
 static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int);
 #endif // WIDE_GLYPHS_PATCH
+#if LIGATURES_PATCH
+static void xresetfontsettings(ushort mode, Font **font, int *frcflags);
+#endif // LIGATURES_PATCH
 static void xdrawglyph(Glyph, int, int);
 static void xclear(int, int, int, int);
 static int xgeommasktogravity(int);
@@ -1605,6 +1608,24 @@ xinit(int cols, int rows)
 	#endif // BOXDRAW_PATCH
 }
 
+#if LIGATURES_PATCH
+void
+xresetfontsettings(ushort mode, Font **font, int *frcflags)
+{
+	*font = &dc.font;
+	if ((mode & ATTR_ITALIC) && (mode & ATTR_BOLD)) {
+		*font = &dc.ibfont;
+		*frcflags = FRC_ITALICBOLD;
+	} else if (mode & ATTR_ITALIC) {
+		*font = &dc.ifont;
+		*frcflags = FRC_ITALIC;
+	} else if (mode & ATTR_BOLD) {
+		*font = &dc.bfont;
+		*frcflags = FRC_BOLD;
+	}
+}
+#endif // LIGATURES_PATCH
+
 int
 xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x, int y)
 {
@@ -1624,6 +1645,14 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	FcFontSet *fcsets[] = { NULL };
 	FcCharSet *fccharset;
 	int i, f, numspecs = 0;
+	#if LIGATURES_PATCH
+	int length = 0, start = 0;
+	HbTransformData shaped = { 0 };
+
+	/* Initial values. */
+	mode = prevmode = glyphs[0].mode;
+	xresetfontsettings(mode, &font, &frcflags);
+	#endif // LIGATURES_PATCH
 
 	#if VERTCENTER_PATCH
 	for (i = 0, xp = winx, yp = winy + font->ascent + win.cyo; i < len; ++i)
@@ -1637,17 +1666,143 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 		historyOverlay(x+i, y, &g);
 		rune = g.u;
 		mode = g.mode;
+		#elif LIGATURES_PATCH
+		mode = glyphs[i].mode;
 		#else
 		rune = glyphs[i].u;
 		mode = glyphs[i].mode;
-		#endif // VIM_BROWSE_PATCH
+		#endif // VIM_BROWSE_PATCH | LIGATURES_PATCH
 
 		/* Skip dummy wide-character spacing. */
 		#if LIGATURES_PATCH
 		if (mode & ATTR_WDUMMY)
-		#else
+			continue;
+
+		if (
+			prevmode != mode
+			|| ATTRCMP(glyphs[start], glyphs[i])
+			|| selected(x + i, y) != selected(x + start, y)
+			|| i == (len - 1)
+		) {
+			/* Handle 1-character wide segments and end of line */
+			length = i - start;
+			if (i == start) {
+				length = 1;
+			} else if (i == (len - 1)) {
+				length = (i - start + 1);
+			}
+
+			/* Shape the segment. */
+			hbtransform(&shaped, font->match, glyphs, start, length);
+			for (int code_idx = 0; code_idx < shaped.count; code_idx++) {
+				rune = glyphs[start + code_idx].u;
+				runewidth = win.cw * ((glyphs[start + code_idx].mode & ATTR_WIDE) ? 2.0f : 1.0f);
+
+				if (glyphs[start + code_idx].mode & ATTR_WDUMMY)
+					continue;
+
+				#if BOXDRAW_PATCH
+				if (glyphs[start + code_idx].mode & ATTR_BOXDRAW) {
+					/* minor shoehorning: boxdraw uses only this ushort */
+					specs[numspecs].font = font->match;
+					specs[numspecs].glyph = boxdrawindex(&glyphs[start + code_idx]);
+					specs[numspecs].x = xp;
+					specs[numspecs].y = yp;
+					xp += runewidth;
+					numspecs++;
+				} else
+				#endif // BOXDRAW_PATCH
+				if (shaped.glyphs[code_idx].codepoint != 0) {
+					/* If symbol is found, put it into the specs. */
+					specs[numspecs].font = font->match;
+					specs[numspecs].glyph = shaped.glyphs[code_idx].codepoint;
+					specs[numspecs].x = xp + (short)shaped.positions[code_idx].x_offset;
+					specs[numspecs].y = yp + (short)shaped.positions[code_idx].y_offset;
+					xp += runewidth;
+					numspecs++;
+				} else {
+					/* If it's not found, try to fetch it through the font cache. */
+					for (f = 0; f < frclen; f++) {
+						glyphidx = XftCharIndex(xw.dpy, frc[f].font, rune);
+						/* Everything correct. */
+						if (glyphidx && frc[f].flags == frcflags)
+							break;
+						/* We got a default font for a not found glyph. */
+						if (!glyphidx && frc[f].flags == frcflags
+								&& frc[f].unicodep == rune) {
+							break;
+						}
+					}
+
+					/* Nothing was found. Use fontconfig to find matching font. */
+					if (f >= frclen) {
+						if (!font->set)
+							font->set = FcFontSort(0, font->pattern, 1, 0, &fcres);
+						fcsets[0] = font->set;
+
+						/*
+						 * Nothing was found in the cache. Now use
+						 * some dozen of Fontconfig calls to get the
+						 * font for one single character.
+						 *
+						 * Xft and fontconfig are design failures.
+						 */
+						fcpattern = FcPatternDuplicate(font->pattern);
+						fccharset = FcCharSetCreate();
+
+						FcCharSetAddChar(fccharset, rune);
+						FcPatternAddCharSet(fcpattern, FC_CHARSET, fccharset);
+						FcPatternAddBool(fcpattern, FC_SCALABLE, 1);
+
+						FcConfigSubstitute(0, fcpattern, FcMatchPattern);
+						FcDefaultSubstitute(fcpattern);
+
+						fontpattern = FcFontSetMatch(0, fcsets, 1, fcpattern, &fcres);
+
+						/* Allocate memory for the new cache entry. */
+						if (frclen >= frccap) {
+							frccap += 16;
+							frc = xrealloc(frc, frccap * sizeof(Fontcache));
+						}
+
+						frc[frclen].font = XftFontOpenPattern(xw.dpy, fontpattern);
+						if (!frc[frclen].font)
+							die("XftFontOpenPattern failed seeking fallback font: %s\n",
+								strerror(errno));
+						frc[frclen].flags = frcflags;
+						frc[frclen].unicodep = rune;
+
+						glyphidx = XftCharIndex(xw.dpy, frc[frclen].font, rune);
+
+						f = frclen;
+						frclen++;
+
+						FcPatternDestroy(fcpattern);
+						FcCharSetDestroy(fccharset);
+					}
+
+					specs[numspecs].font = frc[f].font;
+					specs[numspecs].glyph = glyphidx;
+					specs[numspecs].x = (short)xp;
+					specs[numspecs].y = (short)yp;
+					xp += runewidth;
+					numspecs++;
+				}
+			}
+
+			/* Cleanup and get ready for next segment. */
+			hbcleanup(&shaped);
+			start = i;
+
+			/* Determine font for glyph if different from previous glyph. */
+			if (prevmode != mode) {
+				prevmode = mode;
+				xresetfontsettings(mode, &font, &frcflags);
+				yp = winy + font->ascent;
+			}
+		}
+		#else // !LIGATURES_PATCH
 		if (mode == ATTR_WDUMMY)
-		#endif // LIGATURES_PATCH
 			continue;
 
 		/* Determine font for glyph if different from previous glyph. */
@@ -1711,8 +1866,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 		/* Nothing was found. Use fontconfig to find matching font. */
 		if (f >= frclen) {
 			if (!font->set)
-				font->set = FcFontSort(0, font->pattern,
-				                       1, 0, &fcres);
+				font->set = FcFontSort(0, font->pattern, 1, 0, &fcres);
 			fcsets[0] = font->set;
 
 			/*
@@ -1726,8 +1880,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 			fccharset = FcCharSetCreate();
 
 			FcCharSetAddChar(fccharset, rune);
-			FcPatternAddCharSet(fcpattern, FC_CHARSET,
-					fccharset);
+			FcPatternAddCharSet(fcpattern, FC_CHARSET, fccharset);
 			FcPatternAddBool(fcpattern, FC_SCALABLE, 1);
 
 			#if !USE_XFTFONTMATCH_PATCH
@@ -1743,8 +1896,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 				frc = xrealloc(frc, frccap * sizeof(Fontcache));
 			}
 
-			frc[frclen].font = XftFontOpenPattern(xw.dpy,
-					fontpattern);
+			frc[frclen].font = XftFontOpenPattern(xw.dpy, fontpattern);
 			if (!frc[frclen].font)
 				die("XftFontOpenPattern failed seeking fallback font: %s\n",
 					strerror(errno));
@@ -1766,12 +1918,8 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 		specs[numspecs].y = (short)yp;
 		xp += runewidth;
 		numspecs++;
+		#endif // LIGATURES_PATCH
 	}
-
-	#if LIGATURES_PATCH
-	/* Harfbuzz transformation for ligatures. */
-	hbtransform(specs, glyphs, len, x, y);
-	#endif // LIGATURES_PATCH
 
 	return numspecs;
 }
