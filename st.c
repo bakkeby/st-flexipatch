@@ -2363,11 +2363,18 @@ csihandle(void)
 	case 'm': /* SGR -- Terminal attribute (color) */
 		tsetattr(csiescseq.arg, csiescseq.narg);
 		break;
-	case 'n': /* DSR – Device Status Report (cursor position) */
-		if (csiescseq.arg[0] == 6) {
+	case 'n': /* DSR -- Device Status Report */
+		switch (csiescseq.arg[0]) {
+		case 5: /* Status Report "OK" `0n` */
+			ttywrite("\033[0n", sizeof("\033[0n") - 1, 0);
+			break;
+		case 6: /* Report Cursor Position (CPR) "<row>;<column>R" */
 			len = snprintf(buffer, sizeof(buffer), "\033[%i;%iR",
-					term.c.y+1, term.c.x+1);
+			               term.c.y+1, term.c.x+1);
 			ttywrite(buffer, len, 0);
+			break;
+		default:
+			goto unknown;
 		}
 		break;
 	case 'r': /* DECSTBM -- Set Scrolling Region */
