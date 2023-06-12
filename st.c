@@ -2297,6 +2297,12 @@ csihandle(void)
 			}
 			#endif // SIXEL_PATCH
 			break;
+		#if SIXEL_PATCH
+		case 6: /* sixels */
+			for (im = term.images; im; im = im->next)
+				im->should_delete = 1;
+			break;
+		#endif // SIXEL_PATCH
 		default:
 			goto unknown;
 		}
@@ -2658,10 +2664,10 @@ strhandle(void)
 			}
 			for (i = 0; i < (sixel_st.image.height + win.ch-1)/win.ch; ++i) {
 				int x;
-				tclearregion(term.c.x, term.c.y, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw, term.c.y);
+				tclearregion(term.c.x, term.c.y, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw-1, term.c.y);
 				for (x = term.c.x; x < MIN(term.col, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw); x++)
 					term.line[term.c.y][x].mode |= ATTR_SIXEL;
-				tnewline(1);
+				tnewline(0);
 			}
 		}
 		#endif // SIXEL_PATCH
