@@ -24,7 +24,7 @@
 #include "keyboardselect_x.h"
 #endif
 #if NETWMICON_PATCH
-#include "netwmicon.h"
+#include <gd.h>
 #endif
 #if RIGHTCLICKTOPLUMB_PATCH
 #include "rightclicktoplumb_x.h"
