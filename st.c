@@ -2341,6 +2341,10 @@ csihandle(void)
 		break;
 	case 'l': /* RM -- Reset Mode */
 		tsetmode(csiescseq.priv, 0, csiescseq.arg, csiescseq.narg);
+		#if SIXEL_PATCH
+		for (im = term.images; im; im = im->next)
+			im->should_delete = 1;
+		#endif // SIXEL_PATCH
 		break;
 	case 'M': /* DL -- Delete <n> lines */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -2557,6 +2561,8 @@ strhandle(void)
 					fprintf(stderr, "erresc: invalid base64\n");
 				}
 			}
+			return;
+		case 8: /* Clear Hyperlinks */
 			return;
 		case 10:
 			if (narg < 2)
