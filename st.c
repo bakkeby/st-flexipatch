@@ -3077,6 +3077,13 @@ eschandle(uchar ascii)
 		#endif // CSI_22_23_PATCH
 		resettitle();
 		xloadcols();
+		#if SCROLLBACK_PATCH
+		if (!IS_SET(MODE_ALTSCREEN)) {
+			term.scr = 0;
+			term.histi = 0;
+			term.histn = 0;
+		}
+		#endif // SCROLLBACK_PATCH
 		break;
 	case '=': /* DECPAM -- Application keypad */
 		xsetmode(1, MODE_APPKEYPAD);
