@@ -59,6 +59,11 @@ char *vtiden = "\033[?12;4c";
 char *vtiden = "\033[?6c";
 #endif
 
+/* remove black bars from sixel images */
+#if SIXEL_PATCH
+int const sixelremovebars = 1;
+#endif // SIXEL_PATCH
+
 /* Kerning / character bounding-box multipliers */
 static float cwscale = 1.0;
 static float chscale = 1.0;
