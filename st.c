@@ -3079,6 +3079,7 @@ eschandle(uchar ascii)
 		#endif // CSI_22_23_PATCH
 		resettitle();
 		xloadcols();
+		xsetmode(0, MODE_HIDE);
 		#if SCROLLBACK_PATCH
 		if (!IS_SET(MODE_ALTSCREEN)) {
 			term.scr = 0;
