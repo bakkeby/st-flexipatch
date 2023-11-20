@@ -8,7 +8,7 @@
 #include "sixel.h"
 #include "sixel_hls.h"
 
-#define SIXEL_RGB(r, g, b) ((r) + ((g) << 8) +  ((b) << 16))
+#define SIXEL_RGB(r, g, b) ((r) + ((g) << 8) + ((b) << 16) + (255 << 24))
 #define SIXEL_PALVAL(n,a,m) (((n) * (a) + ((m) / 2)) / (m))
 #define SIXEL_XRGB(r,g,b) SIXEL_RGB(SIXEL_PALVAL(r, 255, 100), SIXEL_PALVAL(g, 255, 100), SIXEL_PALVAL(b, 255, 100))
 
@@ -252,7 +252,7 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels)
 			*dst++ = color >> 16 & 0xff;   /* b */
 			*dst++ = color >> 8 & 0xff;    /* g */
 			*dst++ = color >> 0 & 0xff;    /* r */
-			*dst++ = 255;                  /* a */
+			*dst++ = color >> 24 & 0xff;   /* a */
 		}
 		/* fill right padding with bgcolor */
 		for (; x < st->image.width; ++x) {
@@ -260,7 +260,7 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels)
 			*dst++ = color >> 16 & 0xff;   /* b */
 			*dst++ = color >> 8 & 0xff;    /* g */
 			*dst++ = color >> 0 & 0xff;    /* r */
-			dst++;                         /* a */
+			*dst++ = color >> 24 & 0xff;   /* a */
 		}
 	}
 	/* fill bottom padding with bgcolor */
@@ -270,7 +270,7 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels)
 			*dst++ = color >> 16 & 0xff;   /* b */
 			*dst++ = color >> 8 & 0xff;    /* g */
 			*dst++ = color >> 0 & 0xff;    /* r */
-			dst++;                         /* a */
+			*dst++ = color >> 24 & 0xff;   /* a */
 		}
 	}
 
