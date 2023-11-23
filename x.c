@@ -1650,7 +1650,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	HbTransformData shaped = { 0 };
 
 	/* Initial values. */
-	mode = prevmode = glyphs[0].mode;
+	mode = prevmode = glyphs[0].mode & ~ATTR_WRAP;
 	xresetfontsettings(mode, &font, &frcflags);
 	#endif // LIGATURES_PATCH
 
@@ -1667,7 +1667,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 		rune = g.u;
 		mode = g.mode;
 		#elif LIGATURES_PATCH
-		mode = glyphs[i].mode;
+		mode = glyphs[i].mode & ~ATTR_WRAP;
 		#else
 		rune = glyphs[i].u;
 		mode = glyphs[i].mode;
