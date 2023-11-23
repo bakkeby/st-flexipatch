@@ -30,7 +30,7 @@
 // sale, use or other dealings in this Software without prior written
 // authorization.
 
-#define SIXEL_RGB(r, g, b) (((r) << 16) + ((g) << 8) +  (b))
+#define SIXEL_RGB(r, g, b) ((r) + ((g) << 8) + ((b) << 16) + (255 << 24))
 
 int
 hls_to_rgb(int hue, int lum, int sat)
