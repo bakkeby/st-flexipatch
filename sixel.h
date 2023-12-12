@@ -52,7 +52,7 @@ typedef struct parser_context {
 int sixel_parser_init(sixel_state_t *st, sixel_color_t fgcolor, sixel_color_t bgcolor, unsigned char use_private_register, int cell_width, int cell_height);
 int sixel_parser_parse(sixel_state_t *st, unsigned char *p, size_t len);
 int sixel_parser_set_default_color(sixel_state_t *st);
-int sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels);
+int sixel_parser_finalize(sixel_state_t *st, unsigned char **pixels);
 void sixel_parser_deinit(sixel_state_t *st);
 
 #endif

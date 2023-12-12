@@ -212,16 +212,15 @@ sixel_parser_set_default_color(sixel_state_t *st)
 }
 
 int
-sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels)
+sixel_parser_finalize(sixel_state_t *st, unsigned char **pixels)
 {
 	int status = (-1);
-	int sx;
-	int sy;
 	sixel_image_t *image = &st->image;
 	int x, y;
 	sixel_color_no_t *src;
 	unsigned char *dst;
 	int color;
+	int w, h;
 
 	if (++st->max_x < st->attributed_ph)
 		st->max_x = st->attributed_ph;
@@ -229,50 +228,34 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char *pixels)
 	if (++st->max_y < st->attributed_pv)
 		st->max_y = st->attributed_pv;
 
-	sx = (st->max_x + st->grid_width - 1) / st->grid_width * st->grid_width;
-	sy = (st->max_y + st->grid_height - 1) / st->grid_height * st->grid_height;
-
-	if (image->width > sx || image->height > sy) {
-		status = image_buffer_resize(image, sx, sy);
-		if (status < 0)
-			goto end;
-	}
-
 	if (image->use_private_register && image->ncolors > 2 && !image->palette_modified) {
 		status = set_default_color(image);
 		if (status < 0)
 			goto end;
 	}
 
+	w = st->max_x < image->width ? st->max_x : image->width;
+	h = st->max_y < image->height ? st->max_y : image->height;
+
+	*pixels = malloc(w * h * 4);
+	if (*pixels == NULL)
+		goto end;
+
 	src = st->image.data;
-	dst = pixels;
-	for (y = 0; y < st->image.height; ++y) {
-		for (x = 0; x < st->image.width; ++x) {
+	dst = *pixels;
+	for (y = 0; y < h; y++) {
+		src = st->image.data + image->width * y;
+		for (x = 0; x < w; ++x) {
 			color = st->image.palette[*src++];
 			*dst++ = color >> 16 & 0xff;   /* b */
 			*dst++ = color >> 8 & 0xff;    /* g */
 			*dst++ = color >> 0 & 0xff;    /* r */
 			*dst++ = color >> 24 & 0xff;   /* a */
 		}
-		/* fill right padding with bgcolor */
-		for (; x < st->image.width; ++x) {
-			color = st->image.palette[0];  /* bgcolor */
-			*dst++ = color >> 16 & 0xff;   /* b */
-			*dst++ = color >> 8 & 0xff;    /* g */
-			*dst++ = color >> 0 & 0xff;    /* r */
-			*dst++ = color >> 24 & 0xff;   /* a */
-		}
 	}
-	/* fill bottom padding with bgcolor */
-	for (; y < st->image.height; ++y) {
-		for (x = 0; x < st->image.width; ++x) {
-			color = st->image.palette[0];  /* bgcolor */
-			*dst++ = color >> 16 & 0xff;   /* b */
-			*dst++ = color >> 8 & 0xff;    /* g */
-			*dst++ = color >> 0 & 0xff;    /* r */
-			*dst++ = color >> 24 & 0xff;   /* a */
-		}
-	}
+
+	image->width = w;
+	image->height = h;
 
 	status = (0);
 
@@ -371,7 +354,7 @@ sixel_parser_parse(sixel_state_t *st, unsigned char *p, size_t len)
 					if (st->pos_x + st->repeat_count > image->width)
 						st->repeat_count = image->width - st->pos_x;
 
-					if (st->repeat_count > 0 && st->pos_y - 5 < image->height) {
+					if (st->repeat_count > 0 && st->pos_y + 5 < image->height) {
 						bits = *p - '?';
 						if (bits != 0) {
 							sixel_vertical_mask = 0x01;
@@ -477,8 +460,10 @@ sixel_parser_parse(sixel_state_t *st, unsigned char *p, size_t len)
 					if (image->height > st->attributed_pv)
 						sy = image->height;
 
-					sx = (sx + st->grid_width - 1) / st->grid_width * st->grid_width;
-					sy = (sy + st->grid_height - 1) / st->grid_height * st->grid_height;
+					/* the height of the image buffer must be divisible by 6
+					 * to avoid unnecessary resizing of the image buffer in
+					 * sixel_parser_parse() */
+					sy = (sy + 5) / 6 * 6;
 
 					if (sx > DECSIXEL_WIDTH_MAX)
 						sx = DECSIXEL_WIDTH_MAX;
