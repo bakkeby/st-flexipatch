@@ -2322,6 +2322,8 @@ csihandle(void)
 		}
 		break;
 	case 'S': /* SU -- Scroll <n> line up */
+		if (csiescseq.priv)
+			break;
 		DEFAULT(csiescseq.arg[0], 1);
 		#if SIXEL_PATCH && SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 1);
