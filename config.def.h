@@ -206,6 +206,13 @@ unsigned int defaultbg = 258;
 unsigned int defaultfg = 259;
 unsigned int defaultcs = 256;
 unsigned int defaultrcs = 257;
+#if SELECTION_COLORS_PATCH
+unsigned int selectionfg = 258;
+unsigned int selectionbg = 259;
+/* If 0 use selectionfg as foreground in order to have a uniform foreground-color */
+/* Else if 1 keep original foreground-color of each cell => more colors :) */
+static int ignoreselfg = 1;
+#endif // SELECTION_COLORS_PATCH
 
 #if VIM_BROWSE_PATCH
 unsigned int const currentBg = 6, buffSize = 2048;

@@ -2078,6 +2078,14 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 		#endif // SPOILER_PATCH
 	}
 
+	#if SELECTION_COLORS_PATCH
+	if (base.mode & ATTR_SELECTED) {
+		bg = &dc.col[selectionbg];
+		if (!ignoreselfg)
+			fg = &dc.col[selectionfg];
+	}
+	#endif // SELECTION_COLORS_PATCH
+
 	if (base.mode & ATTR_BLINK && win.mode & MODE_BLINK)
 		fg = bg;
 
@@ -2605,7 +2613,11 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 
 	/* remove the old cursor */
 	if (selected(ox, oy))
+		#if SELECTION_COLORS_PATCH
+		og.mode |= ATTR_SELECTED;
+		#else
 		og.mode ^= ATTR_REVERSE;
+		#endif // SELECTION_COLORS_PATCH
 	#if LIGATURES_PATCH
 	/* Redraw the line where cursor was previously.
 	 * It will restore the ligatures broken by the cursor. */
@@ -2634,6 +2646,10 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	if (IS_SET(MODE_REVERSE)) {
 		g.mode |= ATTR_REVERSE;
 		g.bg = defaultfg;
+		#if SELECTION_COLORS_PATCH
+		g.fg = defaultcs;
+		drawcol = dc.col[defaultrcs];
+		#else
 		if (selected(cx, cy)) {
 			drawcol = dc.col[defaultcs];
 			g.fg = defaultrcs;
@@ -2641,7 +2657,13 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			drawcol = dc.col[defaultrcs];
 			g.fg = defaultcs;
 		}
+		#endif // SELECTION_COLORS_PATCH
 	} else {
+		#if SELECTION_COLORS_PATCH
+		g.fg = defaultbg;
+		g.bg = defaultcs;
+		drawcol = dc.col[defaultcs];
+		#else
 		if (selected(cx, cy)) {
 			g.fg = defaultfg;
 			g.bg = defaultrcs;
@@ -2669,6 +2691,7 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		} else
 			drawcol = dc.col[g.bg];
 		#endif // DYNAMIC_CURSOR_COLOR_PATCH
+		#endif // SELECTION_COLORS_PATCH
 	}
 
 	/* draw the new one */
@@ -2898,7 +2921,11 @@ xdrawline(Line line, int x1, int y1, int x2)
 			if (new.mode == ATTR_WDUMMY)
 				continue;
 			if (selected(x, y1))
+				#if SELECTION_COLORS_PATCH
+				new.mode |= ATTR_SELECTED;
+				#else
 				new.mode ^= ATTR_REVERSE;
+				#endif // SELECTION_COLORS_PATCH
 			if (i > 0 && ATTRCMP(base, new)) {
 				xdrawglyphfontspecs(specs, base, i, ox, y1, dmode);
 				specs += i;
@@ -2927,7 +2954,11 @@ xdrawline(Line line, int x1, int y1, int x2)
 		if (new.mode == ATTR_WDUMMY)
 			continue;
 		if (selected(x, y1))
+			#if SELECTION_COLORS_PATCH
+			new.mode |= ATTR_SELECTED;
+			#else
 			new.mode ^= ATTR_REVERSE;
+			#endif // SELECTION_COLORS_PATCH
 		if (i > 0 && ATTRCMP(base, new)) {
 			xdrawglyphfontspecs(specs, base, i, ox, y1);
 			specs += i;
