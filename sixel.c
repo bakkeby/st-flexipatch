@@ -31,6 +31,8 @@ static sixel_color_t const sixel_default_color_table[] = {
 	SIXEL_XRGB(80, 80, 80),  /* 15 Gray 75% */
 };
 
+extern int const sixelremovebars;
+
 static int
 set_default_color(sixel_image_t *image)
 {
@@ -241,7 +243,14 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char **pixels)
 	if (*pixels == NULL)
 		goto end;
 
-	src = st->image.data;
+	if (sixelremovebars) {
+		w = st->max_x < image->width ? st->max_x : image->width;
+		h = st->max_y < image->height ? st->max_y : image->height;
+	} else {
+		w = image->width;
+		h = image->height;
+	}
+
 	dst = *pixels;
 	for (y = 0; y < h; y++) {
 		src = st->image.data + image->width * y;
