@@ -850,7 +850,7 @@ cresize(int width, int height)
 
 	col = (win.w - 2 * borderpx) / win.cw;
 	row = (win.h - 2 * borderpx) / win.ch;
-	col = MAX(1, col);
+	col = MAX(2, col);
 	row = MAX(1, row);
 
 	#if ANYSIZE_PATCH

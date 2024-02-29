@@ -35,21 +35,14 @@ dcshandle(void)
 void
 scroll_images(int n) {
 	ImageList *im;
-	int tmp;
-
-	/* maximum sixel distance in lines from current view before
-	 * deallocation
-	 * TODO: should be in config.h */
-	int max_sixel_distance = 10000;
+	int top = IS_SET(MODE_ALTSCREEN) ? 0 : -HISTSIZE;
 
 	for (im = term.images; im; im = im->next) {
 		im->y += n;
 
 		/* check if the current sixel has exceeded the maximum
 		 * draw distance, and should therefore be deleted */
-		tmp = im->y;
-		if (tmp < 0) { tmp = tmp * -1; }
-		if (tmp > max_sixel_distance) {
+		if (im->y + (im->height + win.ch-1)/win.ch - 1 < top) {
 			fprintf(stderr, "im@0x%08x exceeded maximum distance\n");
 			im->should_delete = 1;
 		}
