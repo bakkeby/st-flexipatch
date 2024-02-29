@@ -2523,7 +2523,8 @@ strhandle(void)
 	int j, narg, par;
 	#if SIXEL_PATCH
 	ImageList *new_image;
-	int i;
+	int i, x;
+	Line line;
 	#endif // SIXEL_PATCH
 
 	term.esc &= ~(ESC_STR_END|ESC_STR);
@@ -2652,16 +2653,14 @@ strhandle(void)
 			term.mode &= ~MODE_SIXEL;
 			new_image = malloc(sizeof(ImageList));
 			memset(new_image, 0, sizeof(ImageList));
-			new_image->x = term.c.x;
-			new_image->y = term.c.y + term.scr;
-			new_image->pixels = malloc(sixel_st.image.width * sixel_st.image.height * 4);
 			if (sixel_parser_finalize(&sixel_st, &new_image->pixels) != 0) {
 				perror("sixel_parser_finalize() failed");
 				sixel_parser_deinit(&sixel_st);
 				free(new_image);
 				return;
 			}
-			/* set width and height here because sixel_parser_finalize() above can change them */
+			new_image->x = term.c.x;
+			new_image->y = term.c.y + term.scr;
 			new_image->width = sixel_st.image.width;
 			new_image->height = sixel_st.image.height;
 			sixel_parser_deinit(&sixel_st);
@@ -2674,12 +2673,19 @@ strhandle(void)
 			} else {
 				term.images = new_image;
 			}
-			for (i = 0; i < (sixel_st.image.height + win.ch-1)/win.ch; ++i) {
-				int x;
-				tclearregion(term.c.x, term.c.y, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw-1, term.c.y);
-				for (x = term.c.x; x < MIN(term.col, term.c.x+(sixel_st.image.width+win.cw-1)/win.cw); x++)
-					term.line[term.c.y][x].mode |= ATTR_SIXEL;
-				tnewline(0);
+			int x2 = MIN(term.col, term.c.x + (sixel_st.image.width + win.cw-1)/win.cw);
+			int height = (sixel_st.image.height + win.ch-1)/win.ch;
+			for (i = 0; i < height; ++i) {
+				line = TLINE(term.c.y + term.scr);
+				for (x = term.c.x; x < x2; x++) {
+					line[x].fg = defaultfg;
+					line[x].bg = defaultbg;
+					line[x].mode = ATTR_SIXEL;
+					line[x].u = ' ';
+				}
+				term.dirty[MIN(term.c.y + term.scr, term.row-1)] = 1;
+				if (!IS_SET(MODE_ALTSCREEN) || (i < height-1))
+					tnewline(0);
 			}
 		}
 		#endif // SIXEL_PATCH

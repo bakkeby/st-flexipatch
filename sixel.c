@@ -236,19 +236,18 @@ sixel_parser_finalize(sixel_state_t *st, unsigned char **pixels)
 			goto end;
 	}
 
-	w = st->max_x < image->width ? st->max_x : image->width;
-	h = st->max_y < image->height ? st->max_y : image->height;
-
-	*pixels = malloc(w * h * 4);
-	if (*pixels == NULL)
-		goto end;
-
 	if (sixelremovebars) {
 		w = st->max_x < image->width ? st->max_x : image->width;
 		h = st->max_y < image->height ? st->max_y : image->height;
 	} else {
 		w = image->width;
 		h = image->height;
+	}
+
+	*pixels = malloc(w * h * 4);
+	if (*pixels == NULL) {
+		status = (-1);
+		goto end;
 	}
 
 	dst = *pixels;
