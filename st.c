@@ -2665,9 +2665,15 @@ strhandle(void)
 			new_image->height = sixel_st.image.height;
 			sixel_parser_deinit(&sixel_st);
 			if (term.images) {
-				ImageList *im;
-				for (im = term.images; im->next;)
-					im = im->next;
+				ImageList *im = term.images;
+				int right = new_image->x * win.cw + new_image->width;
+				int bottom = new_image->y * win.ch + new_image->height;
+				do {
+					if (im->x >= new_image->x && im->x * win.cw + im->width <= right &&
+					    im->y >= new_image->y && im->y * win.ch + im->height <= bottom) {
+						im->should_delete = 1;
+					}
+				} while (im->next && (im = im->next));
 				im->next = new_image;
 				new_image->prev = im;
 			} else {
