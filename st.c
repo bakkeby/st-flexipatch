@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 #include <wchar.h>
 
@@ -64,15 +65,17 @@ static inline int min(int a, int b) { return a < b ? a : b; }
 #endif // VIM_BROWSE_PATCH
 
 enum term_mode {
-	MODE_WRAP        = 1 << 0,
-	MODE_INSERT      = 1 << 1,
-	MODE_ALTSCREEN   = 1 << 2,
-	MODE_CRLF        = 1 << 3,
-	MODE_ECHO        = 1 << 4,
-	MODE_PRINT       = 1 << 5,
-	MODE_UTF8        = 1 << 6,
+	MODE_WRAP         = 1 << 0,
+	MODE_INSERT       = 1 << 1,
+	MODE_ALTSCREEN    = 1 << 2,
+	MODE_CRLF         = 1 << 3,
+	MODE_ECHO         = 1 << 4,
+	MODE_PRINT        = 1 << 5,
+	MODE_UTF8         = 1 << 6,
 	#if SIXEL_PATCH
-	MODE_SIXEL       = 1 << 7,
+	MODE_SIXEL        = 1 << 7,
+	MODE_SIXEL_CUR_RT = 1 << 8,
+	MODE_SIXEL_SDM    = 1 << 9
 	#endif // SIXEL_PATCH
 };
 
@@ -163,6 +166,9 @@ static void ttywriteraw(const char *, size_t);
 
 static void csidump(void);
 static void csihandle(void);
+#if SIXEL_PATCH
+static void dcshandle(void);
+#endif // SIXEL_PATCH
 #if UNDERCURL_PATCH
 static void readcolonargs(char **, int, int[][CAR_PER_ARG]);
 #endif // UNDERCURL_PATCH
@@ -183,6 +189,9 @@ static void tdump(void);
 static void tclearregion(int, int, int, int);
 static void tcursor(int);
 static void tdeletechar(int);
+#if SIXEL_PATCH
+static void tdeleteimages(void);
+#endif // SIXEL_PATCH
 static void tdeleteline(int);
 static void tinsertblank(int);
 static void tinsertblankline(int);
@@ -1358,12 +1367,11 @@ treset(void)
 		#else
 		tclearregion(0, 0, term.col-1, term.row-1);
 		#endif // COLUMNS_PATCH
+		#if SIXEL_PATCH
+		tdeleteimages();
+		#endif // SIXEL_PATCH
 		tswapscreen();
 	}
-	#if SIXEL_PATCH
-	for (im = term.images; im; im = im->next)
-		im->should_delete = 1;
-	#endif // SIXEL_PATCH
 }
 
 void
@@ -1405,6 +1413,12 @@ tscrolldown(int orig, int n)
 	#endif // VIM_BROWSE_PATCH
 	int i;
 	Line temp;
+	#if SIXEL_PATCH
+	int bot = term.bot;
+	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
+	int itop = orig + scr, ibot = bot + scr;
+	ImageList *im, *next;
+	#endif // SIXEL_PATCH
 
 	LIMIT(n, 0, term.bot-orig+1);
 
@@ -1423,11 +1437,12 @@ tscrolldown(int orig, int n)
 
 	#if SIXEL_PATCH
 	/* move images, if they are inside the scrolling region */
-	ImageList *im;
-	for (im = term.images; im; im = im->next) {
-		if (im->y * win.ch + im->height > orig * win.ch && im->y <= term.bot) {
+	for (im = term.images; im; im = next) {
+		next = im->next;
+		if (im->y >= itop && im->y <= ibot) {
 			im->y += n;
-			im->should_delete |= (im->y >= term.row);
+			if (im->y > ibot)
+				delete_image(im);
 		}
 	}
 	#endif // SIXEL_PATCH
@@ -1742,6 +1757,19 @@ tinsertblankline(int n)
 	if (BETWEEN(term.c.y, term.top, term.bot))
 		tscrolldown(term.c.y, n);
 }
+
+#if SIXEL_PATCH
+void
+tdeleteimages(void)
+{
+	ImageList *im, *next;
+
+	for (im = term.images; im; im = next) {
+		next = im->next;
+		delete_image(im);
+	}
+}
+#endif // SIXEL_PATCH
 
 void
 tdeleteline(int n)
@@ -2117,7 +2145,7 @@ csihandle(void)
 	char buffer[40];
 	int len;
 	#if SIXEL_PATCH
-	ImageList *im;
+	ImageList *im, *next;
 	#endif // SIXEL_PATCH
 	#if COLUMNS_PATCH && !VIM_BROWSE_PATCH
 	int maxcol = term.maxcol;
@@ -2259,10 +2287,8 @@ csihandle(void)
 			#endif // SCROLLBACK_PATCH
 
 			tclearregion(0, 0, maxcol-1, term.row-1);
-
 			#if SIXEL_PATCH
-			for (im = term.images; im; im = im->next)
-				im->should_delete = 1;
+			tdeleteimages();
 			#endif // SIXEL_PATCH
 			break;
 		case 3: /* scrollback */
@@ -2291,16 +2317,17 @@ csihandle(void)
 			}
 			#endif // SCROLLBACK_PATCH
 			#if SIXEL_PATCH
-			if (!IS_SET(MODE_ALTSCREEN)) {
-				for (im = term.images; im; im = im->next)
-					im->should_delete |= (im->y * win.ch + im->height <= 0);
+			for (im = term.images; im; im = next) {
+				next = im->next;
+				if (im->y < 0)
+					delete_image(im);
 			}
 			#endif // SIXEL_PATCH
 			break;
 		#if SIXEL_PATCH
 		case 6: /* sixels */
-			for (im = term.images; im; im = im->next)
-				im->should_delete = 1;
+			tdeleteimages();
+			tfulldirt();
 			break;
 		#endif // SIXEL_PATCH
 		default:
@@ -2343,12 +2370,6 @@ csihandle(void)
 		break;
 	case 'l': /* RM -- Reset Mode */
 		tsetmode(csiescseq.priv, 0, csiescseq.arg, csiescseq.narg);
-		#if SIXEL_PATCH
-		if (IS_SET(MODE_ALTSCREEN)) {
-			for (im = term.images; im; im = im->next)
-				im->should_delete = 1;
-		}
-		#endif // SIXEL_PATCH
 		break;
 	case 'M': /* DL -- Delete <n> lines */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -2522,8 +2543,9 @@ strhandle(void)
 	char *p = NULL, *dec;
 	int j, narg, par;
 	#if SIXEL_PATCH
-	ImageList *new_image;
-	int i, x;
+	ImageList *im, *newimages, *next, *tail;
+	int i, x, y, x1, y1, x2, y2, numimages;
+	int cx, cy;
 	Line line;
 	#endif // SIXEL_PATCH
 
@@ -2651,50 +2673,66 @@ strhandle(void)
 		#if SIXEL_PATCH
 		if (IS_SET(MODE_SIXEL)) {
 			term.mode &= ~MODE_SIXEL;
-			new_image = malloc(sizeof(ImageList));
-			memset(new_image, 0, sizeof(ImageList));
-			if (sixel_parser_finalize(&sixel_st, &new_image->pixels) != 0) {
-				perror("sixel_parser_finalize() failed");
+			if (!sixel_st.image.data) {
 				sixel_parser_deinit(&sixel_st);
-				free(new_image);
 				return;
 			}
-			new_image->x = term.c.x;
-			new_image->y = term.c.y + term.scr;
-			new_image->cw = win.cw;
-			new_image->ch = win.ch;
-			new_image->width = sixel_st.image.width;
-			new_image->height = sixel_st.image.height;
+			cx = IS_SET(MODE_SIXEL_SDM) ? 0 : term.c.x;
+			cy = IS_SET(MODE_SIXEL_SDM) ? 0 : term.c.y;
+			if ((numimages = sixel_parser_finalize(&sixel_st, &newimages,
+					cx, cy + term.scr, win.cw, win.ch)) <= 0) {
+				sixel_parser_deinit(&sixel_st);
+				perror("sixel_parser_finalize() failed");
+				return;
+			}
 			sixel_parser_deinit(&sixel_st);
-			if (term.images) {
-				ImageList *im = term.images;
-				int right = new_image->x * win.cw + new_image->width;
-				int bottom = new_image->y * win.ch + new_image->height;
-				do {
-					if (im->x >= new_image->x && im->x * win.cw + im->width <= right &&
-					    im->y >= new_image->y && im->y * win.ch + im->height <= bottom) {
-						im->should_delete = 1;
-					}
-				} while (im->next && (im = im->next));
-				im->next = new_image;
-				new_image->prev = im;
-			} else {
-				term.images = new_image;
-			}
-			int x2 = MIN(term.col, term.c.x + (sixel_st.image.width + win.cw-1)/win.cw);
-			int height = (sixel_st.image.height + win.ch-1)/win.ch;
-			for (i = 0; i < height; ++i) {
-				line = TLINE(term.c.y + term.scr);
-				for (x = term.c.x; x < x2; x++) {
-					line[x].fg = defaultfg;
-					line[x].bg = defaultbg;
-					line[x].mode = ATTR_SIXEL;
-					line[x].u = ' ';
+			x1 = newimages->x;
+			y1 = newimages->y;
+			x2 = x1 + newimages->cols;
+			y2 = y1 + numimages;
+			for (tail = NULL, im = term.images; im; im = next) {
+				next = im->next;
+				if (im->x >= x1 && im->x + im->cols <= x2 &&
+					im->y >= y1 && im->y <= y2) {
+					delete_image(im);
+					continue;
 				}
-				term.dirty[MIN(term.c.y + term.scr, term.row-1)] = 1;
-				if (!IS_SET(MODE_ALTSCREEN) || (i < height-1))
-					tnewline(0);
+				tail = im;
 			}
+			if (tail) {
+				tail->next = newimages;
+				newimages->prev = tail;
+			} else {
+				term.images = newimages;
+			}
+			x2 = MIN(x2, term.col);
+			for (i = 0, im = newimages; im; im = next, i++) {
+				next = im->next;
+				if (IS_SET(MODE_SIXEL_SDM)) {
+					if (i >= term.row) {
+						delete_image(im);
+						continue;
+					}
+					im->y = i + term.scr;
+					line = term.line[i];
+				} else {
+					im->y = term.c.y + term.scr;
+					line = term.line[term.c.y];
+				}
+				for (x = im->x; x < x2; x++) {
+					line[x].u = ' ';
+					line[x].mode = ATTR_SIXEL;
+				}
+				term.dirty[MIN(im->y, term.row-1)] = 1;
+				if (!IS_SET(MODE_SIXEL_SDM) && i < numimages-1) {
+					im->next = NULL;
+					tnewline(0);
+					im->next = next;
+				}
+			}
+			/* if mode 8452 is set, sixel scrolling leaves cursor to right of graphic */
+			if (!IS_SET(MODE_SIXEL_SDM) && IS_SET(MODE_SIXEL_CUR_RT))
+				term.c.x = MIN(term.c.x + newimages->cols, term.col-1);
 		}
 		#endif // SIXEL_PATCH
 		#if SYNC_PATCH
@@ -3024,6 +3062,48 @@ tcontrolcode(uchar ascii)
 	/* only CAN, SUB, \a and C1 chars interrupt a sequence */
 	term.esc &= ~(ESC_STR_END|ESC_STR);
 }
+
+#if SIXEL_PATCH
+void
+dcshandle(void)
+{
+	int bgcolor;
+	unsigned char r, g, b, a = 255;
+
+	switch (csiescseq.mode[0]) {
+	default:
+	unknown:
+		fprintf(stderr, "erresc: unknown csi ");
+		csidump();
+		/* die(""); */
+		break;
+	case '=':
+		/* https://gitlab.com/gnachman/iterm2/-/wikis/synchronized-updates-spec */
+		if (csiescseq.buf[2] == 's' && csiescseq.buf[1] == '1')
+			tsync_begin();  /* BSU */
+		else if (csiescseq.buf[2] == 's' && csiescseq.buf[1] == '2')
+			tsync_end();  /* ESU */
+		else
+			goto unknown;
+		break;
+	case 'q': /* DECSIXEL */
+		if (IS_TRUECOL(term.c.attr.bg)) {
+			r = term.c.attr.bg >> 16 & 255;
+			g = term.c.attr.bg >> 8 & 255;
+			b = term.c.attr.bg >> 0 & 255;
+		} else {
+			xgetcolor(term.c.attr.bg, &r, &g, &b);
+			if (term.c.attr.bg == defaultbg)
+				a = dc.col[defaultbg].pixel >> 24 & 255;
+		}
+		bgcolor = a << 24 | r << 16 | g << 8 | b;
+		if (sixel_parser_init(&sixel_st, (255 << 24), bgcolor, 1, win.cw, win.ch) != 0)
+			perror("sixel_parser_init() failed");
+		term.mode |= MODE_SIXEL;
+		break;
+	}
+}
+#endif // SIXEL_PATCH
 
 /*
  * returns 1 when the sequence is finished and it hasn't to read

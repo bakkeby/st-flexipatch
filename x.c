@@ -29,6 +29,7 @@ char *argv0;
 
 #if SIXEL_PATCH
 #include <Imlib2.h>
+#include "sixel.h"
 #endif // SIXEL_PATCH
 
 #if UNDERCURL_PATCH
@@ -3007,27 +3008,22 @@ xfinishdraw(void)
 	Imlib_Image origin, scaled;
 	XGCValues gcvalues;
 	GC gc;
-	int srcy, dstx, dsty, width, height;
+	int width, height;
+	int x, x2, del;
+	Line line;
 	#endif // SIXEL_PATCH
 
 	#if SIXEL_PATCH
 	for (im = term.images; im; im = next) {
-		/* get the next image here, because delete_image() will delete the current image */
 		next = im->next;
 
-		if (im->should_delete) {
-			delete_image(im);
+		/* do not draw or process the image, if it is not visible */
+		if (im->x >= term.col || im->y >= term.row || im->y < 0)
 			continue;
-		}
 
-		/* scale the image size */
+		/* scale the image */
 		width = im->width * win.cw / im->cw;
 		height = im->height * win.ch / im->ch;
-
-		/* do not draw or process the image, if it is not visible */
-		if (im->x >= term.col || im->y >= term.row || im->y * win.ch + height <= 0)
-			continue;
-
 		if (!im->pixmap) {
 			im->pixmap = (void *)XCreatePixmap(xw.dpy, xw.win, width, height,
 				#if ALPHA_PATCH
@@ -3043,7 +3039,7 @@ xfinishdraw(void)
 					.width = im->width,
 					.height = im->height,
 					.xoffset = 0,
-					.byte_order = LSBFirst,
+					.byte_order = sixelbyteorder,
 					.bitmap_bit_order = MSBFirst,
 					.bits_per_pixel = 32,
 					.bytes_per_line = im->width * 4,
@@ -3074,7 +3070,7 @@ xfinishdraw(void)
 					.width = width,
 					.height = height,
 					.xoffset = 0,
-					.byte_order = LSBFirst,
+					.byte_order = sixelbyteorder,
 					.bitmap_bit_order = MSBFirst,
 					.bits_per_pixel = 32,
 					.bytes_per_line = width * 4,
@@ -3091,35 +3087,35 @@ xfinishdraw(void)
 			}
 		}
 
-		/* clip the image */
-		dstx = borderpx + im->x * win.cw;
-		dsty = (im->y < 0) ? borderpx : borderpx + im->y * win.ch;
-		srcy = (im->y < 0) ? -im->y * win.ch : 0;
-		height = (im->y < 0) ? height - srcy : height;
-		height = MIN(height, (term.row - (im->y > 0 ? im->y : 0)) * win.ch);
-		width = MIN(width, (term.col - im->x) * win.cw);
+		/* clip the image so it does not go over to borders */
+		x2 = MIN(im->x + im->cols, term.col);
+		width = MIN(width, (x2 - im->x) * win.cw);
+
+		/* delete the image if the text cells behind it have been changed */
+		line = TLINE(im->y);
+		for (del = 0, x = im->x; x < x2; x++) {
+			if ((del = !(line[x].mode & ATTR_SIXEL)))
+				break;
+		}
+		if (del) {
+			delete_image(im);
+			continue;
+		}
 
 		/* draw the image */
 		memset(&gcvalues, 0, sizeof(gcvalues));
 		gcvalues.graphics_exposures = False;
 		gc = XCreateGC(xw.dpy, xw.win, GCGraphicsExposures, &gcvalues);
-
-		#if ANYSIZE_PATCH
-		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, srcy, width, height, win.hborderpx + dstx, win.vborderpx + dsty);
-		#else
-		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, srcy, width, height, dstx, dsty);
-		#endif // ANYSIZE_PATCH
+		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0,
+		    width, height, borderpx + im->x * win.cw, borderpx + im->y * win.ch);
 		XFreeGC(xw.dpy, gc);
-
 	}
 	#endif // SIXEL_PATCH
 
 	#if !SINGLE_DRAWABLE_BUFFER_PATCH
 	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w, win.h, 0, 0);
 	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
-	XSetForeground(xw.dpy, dc.gc,
-			dc.col[IS_SET(MODE_REVERSE)?
-				defaultfg : defaultbg].pixel);
+	XSetForeground(xw.dpy, dc.gc, dc.col[IS_SET(MODE_REVERSE) ? defaultfg : defaultbg].pixel);
 }
 
 void

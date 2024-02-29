@@ -56,8 +56,8 @@ char *stty_args = "stty raw pass8 nl -echo -iexten -cstopb 38400";
 #if SIXEL_PATCH
 char *vtiden = "\033[?12;4c";
 
-/* remove black bars from sixel images */
-int const sixelremovebars = 1;
+/* sixel rgb byte order: LSBFirst or MSBFirst */
+int const sixelbyteorder = LSBFirst;
 #else
 char *vtiden = "\033[?6c";
 #endif
