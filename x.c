@@ -27,6 +27,10 @@ char *argv0;
 #include <X11/Xcursor/Xcursor.h>
 #endif // THEMED_CURSOR_PATCH
 
+#if SIXEL_PATCH
+#include <Imlib2.h>
+#endif // SIXEL_PATCH
+
 #if UNDERCURL_PATCH
 /* Undercurl slope types */
 enum undercurl_slope_type {
@@ -282,17 +286,36 @@ zoom(const Arg *arg)
 	Arg larg;
 
 	larg.f = usedfontsize + arg->f;
+	#if SIXEL_PATCH
+	if (larg.f >= 1.0)
+		zoomabs(&larg);
+	#else
 	zoomabs(&larg);
+	#endif // SIXEL_PATCH
 }
 
 void
 zoomabs(const Arg *arg)
 {
+	#if SIXEL_PATCH
+	ImageList *im;
+	#endif // SIXEL_PATCH
+
 	xunloadfonts();
 	xloadfonts(usedfont, arg->f);
 	#if FONT2_PATCH
 	xloadsparefonts();
 	#endif // FONT2_PATCH
+
+	#if SIXEL_PATCH
+	/* deleting old pixmaps forces the new scaled pixmaps to be created */
+	for (im = term.images; im; im = im->next) {
+		if (im->pixmap)
+			XFreePixmap(xw.dpy, (Drawable)im->pixmap);
+		im->pixmap = NULL;
+	}
+	#endif // SIXEL_PATCH
+
 	cresize(0, 0);
 	redraw();
 	xhints();
@@ -2981,8 +3004,10 @@ xfinishdraw(void)
 {
 	#if SIXEL_PATCH
 	ImageList *im, *next;
+	Imlib_Image origin, scaled;
 	XGCValues gcvalues;
 	GC gc;
+	int srcy, dstx, dsty, width, height;
 	#endif // SIXEL_PATCH
 
 	#if SIXEL_PATCH
@@ -2995,45 +3020,94 @@ xfinishdraw(void)
 			continue;
 		}
 
+		/* scale the image size */
+		width = im->width * win.cw / im->cw;
+		height = im->height * win.ch / im->ch;
+
+		/* do not draw or process the image, if it is not visible */
+		if (im->x >= term.col || im->y >= term.row || im->y * win.ch + height <= 0)
+			continue;
+
 		if (!im->pixmap) {
-			im->pixmap = (void *)XCreatePixmap(xw.dpy, xw.win, im->width, im->height,
+			im->pixmap = (void *)XCreatePixmap(xw.dpy, xw.win, width, height,
 				#if ALPHA_PATCH
 				xw.depth
 				#else
 				DefaultDepth(xw.dpy, xw.scr)
 				#endif // ALPHA_PATCH
 			);
-			XImage ximage = {
-				.format = ZPixmap,
-				.data = (char *)im->pixels,
-				.width = im->width,
-				.height = im->height,
-				.xoffset = 0,
-				.byte_order = LSBFirst,
-				.bitmap_bit_order = MSBFirst,
-				.bits_per_pixel = 32,
-				.bytes_per_line = im->width * 4,
-				.bitmap_unit = 32,
-				.bitmap_pad = 32,
-				#if ALPHA_PATCH
-				.depth = xw.depth
-				#else
-				.depth = 24
-				#endif // ALPHA_PATCH
-			};
-			XPutImage(xw.dpy, (Drawable)im->pixmap, dc.gc, &ximage, 0, 0, 0, 0, im->width, im->height);
-			free(im->pixels);
-			im->pixels = NULL;
+			if (win.cw == im->cw && win.ch == im->ch) {
+				XImage ximage = {
+					.format = ZPixmap,
+					.data = (char *)im->pixels,
+					.width = im->width,
+					.height = im->height,
+					.xoffset = 0,
+					.byte_order = LSBFirst,
+					.bitmap_bit_order = MSBFirst,
+					.bits_per_pixel = 32,
+					.bytes_per_line = im->width * 4,
+					.bitmap_unit = 32,
+					.bitmap_pad = 32,
+					#if ALPHA_PATCH
+					.depth = xw.depth
+					#else
+					.depth = 24
+					#endif // ALPHA_PATCH
+				};
+				XPutImage(xw.dpy, (Drawable)im->pixmap, dc.gc, &ximage, 0, 0, 0, 0, width, height);
+			} else {
+				origin = imlib_create_image_using_data(im->width, im->height, (DATA32 *)im->pixels);
+				if (!origin)
+					continue;
+				imlib_context_set_image(origin);
+				imlib_image_set_has_alpha(1);
+				scaled = imlib_create_cropped_scaled_image(0, 0, im->width, im->height, width, height);
+				imlib_free_image_and_decache();
+				if (!scaled)
+					continue;
+				imlib_context_set_image(scaled);
+				imlib_image_set_has_alpha(1);
+				XImage ximage = {
+					.format = ZPixmap,
+					.data = (char *)imlib_image_get_data_for_reading_only(),
+					.width = width,
+					.height = height,
+					.xoffset = 0,
+					.byte_order = LSBFirst,
+					.bitmap_bit_order = MSBFirst,
+					.bits_per_pixel = 32,
+					.bytes_per_line = width * 4,
+					.bitmap_unit = 32,
+					.bitmap_pad = 32,
+					#if ALPHA_PATCH
+					.depth = xw.depth
+					#else
+					.depth = 24
+					#endif // ALPHA_PATCH
+				};
+				XPutImage(xw.dpy, (Drawable)im->pixmap, dc.gc, &ximage, 0, 0, 0, 0, width, height);
+				imlib_free_image_and_decache();
+			}
 		}
 
+		/* clip the image */
+		dstx = borderpx + im->x * win.cw;
+		dsty = (im->y < 0) ? borderpx : borderpx + im->y * win.ch;
+		srcy = (im->y < 0) ? -im->y * win.ch : 0;
+		height = (im->y < 0) ? height - srcy : height;
+		height = MIN(height, (term.row - (im->y > 0 ? im->y : 0)) * win.ch);
+		width = MIN(width, (term.col - im->x) * win.cw);
+
+		/* draw the image */
 		memset(&gcvalues, 0, sizeof(gcvalues));
 		gcvalues.graphics_exposures = False;
 		gc = XCreateGC(xw.dpy, xw.win, GCGraphicsExposures, &gcvalues);
 
 		#if ANYSIZE_PATCH
-		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0, im->width, im->height, win.hborderpx + im->x * win.cw, win.vborderpx + im->y * win.ch);
+		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, srcy, width, height, win.hborderpx + dstx, win.vborderpx + dsty);
 		#else
-		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0, im->width, im->height, borderpx + im->x * win.cw, borderpx + im->y * win.ch);
+		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, srcy, width, height, dstx, dsty);
 		#endif // ANYSIZE_PATCH
 		XFreeGC(xw.dpy, gc);
 

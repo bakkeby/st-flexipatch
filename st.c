@@ -2661,6 +2661,8 @@ strhandle(void)
 			}
 			new_image->x = term.c.x;
 			new_image->y = term.c.y + term.scr;
+			new_image->cw = win.cw;
+			new_image->ch = win.ch;
 			new_image->width = sixel_st.image.width;
 			new_image->height = sixel_st.image.height;
 			sixel_parser_deinit(&sixel_st);
