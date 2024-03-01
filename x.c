@@ -3092,7 +3092,11 @@ xfinishdraw(void)
 		width = MIN(width, (x2 - im->x) * win.cw);
 
 		/* delete the image if the text cells behind it have been changed */
+		#if SCROLLBACK_PATCH
 		line = TLINE(im->y);
+		#else
+		line = term.line[im->y];
+		#endif // SCROLLBACK_PATCH
 		for (del = 0, x = im->x; x < x2; x++) {
 			if ((del = !(line[x].mode & ATTR_SIXEL)))
 				break;
