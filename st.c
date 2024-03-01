@@ -1415,7 +1415,11 @@ tscrolldown(int orig, int n)
 	Line temp;
 	#if SIXEL_PATCH
 	int bot = term.bot;
+	#if SCROLLBACK_PATCH
 	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
+	#else
+	int scr = 0;
+	#endif // SCROLLBACK_PATCH
 	int itop = orig + scr, ibot = bot + scr;
 	ImageList *im, *next;
 	#endif // SIXEL_PATCH
@@ -2107,6 +2111,14 @@ tsetmode(int priv, int set, const int *args, int narg)
 				      and can be mistaken for other control
 				      codes. */
 				break;
+			#if SIXEL_PATCH
+			case 80: /* DECSDM -- Sixel Display Mode */
+				MODBIT(term.mode, set, MODE_SIXEL_SDM);
+				break;
+			case 8452: /* sixel scrolling leaves cursor to right of graphic */
+				MODBIT(term.mode, set, MODE_SIXEL_CUR_RT);
+				break;
+			#endif // SIXEL_PATCH
 			default:
 				fprintf(stderr,
 					"erresc: unknown private set/reset mode %d\n",
@@ -2146,6 +2158,7 @@ csihandle(void)
 	int len;
 	#if SIXEL_PATCH
 	ImageList *im, *next;
+	int n, pi, pa;
 	#endif // SIXEL_PATCH
 	#if COLUMNS_PATCH && !VIM_BROWSE_PATCH
 	int maxcol = term.maxcol;
@@ -2348,9 +2361,35 @@ csihandle(void)
 			break;
 		}
 		break;
-	case 'S': /* SU -- Scroll <n> line up */
-		if (csiescseq.priv)
-			break;
+	case 'S': /* SU -- Scroll <n> line up ; XTSMGRAPHICS */
+		if (csiescseq.priv) {
+			#if SIXEL_PATCH
+			if (csiescseq.narg > 1) {
+				/* XTSMGRAPHICS */
+				pi = csiescseq.arg[0];
+				pa = csiescseq.arg[1];
+				if (pi == 1 && (pa == 1 || pa == 2 || pa == 4)) {
+					/* number of sixel color registers */
+					/* (read, reset and read the maximum value give the same response) */
+					n = snprintf(buffer, sizeof buffer, "\033[?1;0;%dS", DECSIXEL_PALETTE_MAX);
+					ttywrite(buffer, n, 1);
+					break;
+				} else if (pi == 2 && (pa == 1 || pa == 2 || pa == 4)) {
+					/* sixel graphics geometry (in pixels) */
+					/* (read, reset and read the maximum value give the same response) */
+					n = snprintf(buffer, sizeof buffer, "\033[?2;0;%d;%dS",
+					             MIN(term.col * win.cw, DECSIXEL_WIDTH_MAX),
+					             MIN(term.row * win.ch, DECSIXEL_HEIGHT_MAX));
+					ttywrite(buffer, n, 1);
+					break;
+				}
+				/* the number of color registers and sixel geometry can't be changed */
+				n = snprintf(buffer, sizeof buffer, "\033[?%d;3;0S", pi); /* failure */
+				ttywrite(buffer, n, 1);
+			}
+			#endif // SIXEL_PATCH
+			goto unknown;
+		}
 		DEFAULT(csiescseq.arg[0], 1);
 		#if SIXEL_PATCH && SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 1);
@@ -2425,9 +2464,27 @@ csihandle(void)
 	case 's': /* DECSC -- Save cursor position (ANSI.SYS) */
 		tcursor(CURSOR_SAVE);
 		break;
-	#if CSI_22_23_PATCH
-	case 't': /* title stack operations */
+	#if CSI_22_23_PATCH | SIXEL_PATCH
+	case 't': /* title stack operations ; XTWINOPS */
 		switch (csiescseq.arg[0]) {
+		#if SIXEL_PATCH
+		case 14: /* text area size in pixels */
+			if (csiescseq.narg > 1)
+				goto unknown;
+			n = snprintf(buffer, sizeof buffer, "\033[4;%d;%dt",
+			             term.row * win.ch, term.col * win.cw);
+			ttywrite(buffer, n, 1);
+			break;
+		case 16: /* character cell size in pixels */
+			n = snprintf(buffer, sizeof buffer, "\033[6;%d;%dt", win.ch, win.cw);
+			ttywrite(buffer, n, 1);
+			break;
+		case 18: /* size of the text area in characters */
+			n = snprintf(buffer, sizeof buffer, "\033[8;%d;%dt", term.row, term.col);
+			ttywrite(buffer, n, 1);
+			break;
+		#endif // SIXEL_PATCH
+		#if CSI_22_23_PATCH
 		case 22: /* pust current title on stack */
 			switch (csiescseq.arg[1]) {
 			case 0:
@@ -2450,11 +2507,12 @@ csihandle(void)
 				goto unknown;
 			}
 			break;
+		#endif // CSI_22_23_PATCH
 		default:
 			goto unknown;
 		}
 		break;
-	#endif // CSI_22_23_PATCH
+	#endif // CSI_22_23_PATCH | SIXEL_PATCH
 	case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
 		tcursor(CURSOR_LOAD);
 		break;
@@ -2547,6 +2605,11 @@ strhandle(void)
 	int i, x, y, x1, y1, x2, y2, numimages;
 	int cx, cy;
 	Line line;
+	#if SCROLLBACK_PATCH
+	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
+	#else
+	int scr = 0;
+	#endif // SCROLLBACK_PATCH
 	#endif // SIXEL_PATCH
 
 	term.esc &= ~(ESC_STR_END|ESC_STR);
@@ -2680,7 +2743,7 @@ strhandle(void)
 			cx = IS_SET(MODE_SIXEL_SDM) ? 0 : term.c.x;
 			cy = IS_SET(MODE_SIXEL_SDM) ? 0 : term.c.y;
 			if ((numimages = sixel_parser_finalize(&sixel_st, &newimages,
-					cx, cy + term.scr, win.cw, win.ch)) <= 0) {
+					cx, cy + scr, win.cw, win.ch)) <= 0) {
 				sixel_parser_deinit(&sixel_st);
 				perror("sixel_parser_finalize() failed");
 				return;
@@ -2713,10 +2776,10 @@ strhandle(void)
 						delete_image(im);
 						continue;
 					}
-					im->y = i + term.scr;
+					im->y = i + scr;
 					line = term.line[i];
 				} else {
-					im->y = term.c.y + term.scr;
+					im->y = term.c.y + scr;
 					line = term.line[term.c.y];
 				}
 				for (x = im->x; x < x2; x++) {
@@ -3077,6 +3140,7 @@ dcshandle(void)
 		csidump();
 		/* die(""); */
 		break;
+	#if SYNC_PATCH
 	case '=':
 		/* https://gitlab.com/gnachman/iterm2/-/wikis/synchronized-updates-spec */
 		if (csiescseq.buf[2] == 's' && csiescseq.buf[1] == '1')
@@ -3086,6 +3150,7 @@ dcshandle(void)
 		else
 			goto unknown;
 		break;
+	#endif // SYNC_PATCH
 	case 'q': /* DECSIXEL */
 		if (IS_TRUECOL(term.c.attr.bg)) {
 			r = term.c.attr.bg >> 16 & 255;
@@ -3219,11 +3284,7 @@ tputc(Rune u)
 	Glyph *gp;
 
 	control = ISCONTROL(u);
-	#if SIXEL_PATCH
-	if (u < 127 || !IS_SET(MODE_UTF8 | MODE_SIXEL))
-	#else
 	if (u < 127 || !IS_SET(MODE_UTF8))
-	#endif // SIXEL_PATCH
 	{
 		c[0] = u;
 		width = len = 1;
@@ -3255,11 +3316,6 @@ tputc(Rune u)
 		}
 
 		#if SIXEL_PATCH
-		if (IS_SET(MODE_SIXEL)) {
-			if (sixel_parser_parse(&sixel_st, (unsigned char *)&u, 1) != 0)
-				perror("sixel_parser_parse() failed");
-			return;
-		}
 		if (term.esc & ESC_DCS)
 			goto check_control_code;
 		#endif // SIXEL_PATCH
@@ -3406,7 +3462,10 @@ twrite(const char *buf, int buflen, int show_ctrl)
 
 	for (n = 0; n < buflen; n += charsize) {
 		#if SIXEL_PATCH
-		if (IS_SET(MODE_UTF8) && !IS_SET(MODE_SIXEL))
+		if (IS_SET(MODE_SIXEL) && sixel_st.state != PS_ESC) {
+			charsize = sixel_parser_parse(&sixel_st, (const unsigned char*)buf + n, buflen - n);
+			continue;
+		} else if (IS_SET(MODE_UTF8))
 		#else
 		if (IS_SET(MODE_UTF8))
 		#endif // SIXEL_PATCH
