@@ -1476,6 +1476,16 @@ tscrollup(int orig, int n)
 	#endif // VIM_BROWSE_PATCH
 	int i;
 	Line temp;
+	#if SIXEL_PATCH
+	int bot = term.bot;
+	#if SCROLLBACK_PATCH
+	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
+	#else
+	int scr = 0;
+	#endif // SCROLLBACK_PATCH
+	int itop = orig + scr, ibot = bot + scr;
+	ImageList *im, *next;
+	#endif // SIXEL_PATCH
 
 	LIMIT(n, 0, term.bot-orig+1);
 
@@ -1509,11 +1519,45 @@ tscrollup(int orig, int n)
 
 	#if SIXEL_PATCH
 	#if SCROLLBACK_PATCH
-	if (term.scr == 0)
-		scroll_images(-1 * n);
+	if (IS_SET(MODE_ALTSCREEN) || !copyhist || orig != 0) {
+		/* move images, if they are inside the scrolling region */
+		for (im = term.images; im; im = next) {
+			next = im->next;
+			if (im->y >= itop && im->y <= ibot) {
+				im->y -= n;
+				if (im->y < itop)
+					delete_image(im);
+			}
+		}
+	} else {
+		/* move images, if they are inside the scrolling region or scrollback */
+		for (im = term.images; im; im = next) {
+			next = im->next;
+			im->y -= scr;
+			if (im->y < 0) {
+				im->y -= n;
+			} else if (im->y >= orig && im->y <= bot) {
+				im->y -= n;
+				if (im->y < orig)
+					im->y -= orig; // move to scrollback
+			}
+			if (im->y < -HISTSIZE)
+				delete_image(im);
+			else
+				im->y += term.scr;
+		}
+	}
 	#else
-	scroll_images(-1 * n);
-	#endif
+	/* move images, if they are inside the scrolling region */
+	for (im = term.images; im; im = next) {
+		next = im->next;
+		if (im->y >= itop && im->y <= ibot) {
+			im->y -= n;
+			if (im->y < itop)
+				delete_image(im);
+		}
+	}
+	#endif // SCROLLBACK_PATCH
 	#endif // SIXEL_PATCH
 
 	#if SCROLLBACK_PATCH
@@ -2771,6 +2815,9 @@ strhandle(void)
 			x2 = MIN(x2, term.col);
 			for (i = 0, im = newimages; im; im = next, i++) {
 				next = im->next;
+				#if SCROLLBACK_PATCH
+				scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
+				#endif // SCROLLBACK_PATCH
 				if (IS_SET(MODE_SIXEL_SDM)) {
 					if (i >= term.row) {
 						delete_image(im);
