@@ -3573,6 +3573,11 @@ tresize(int col, int row)
 	#endif // VIM_BROWSE_PATCH
 	int *bp;
 	TCursor c;
+	#if SIXEL_PATCH
+	int x, x2;
+	Line line;
+	ImageList *im, *next;
+	#endif // SIXEL_PATCH
 
 	#if KEYBOARDSELECT_PATCH
 	if ( row < term.row  || col < term.col )
@@ -3716,6 +3721,43 @@ tresize(int col, int row)
 		tcursor(CURSOR_LOAD);
 	}
 	term.c = c;
+
+	#if SIXEL_PATCH
+	/* expand images into new text cells to prevent them from being deleted in
+	 * xfinishdraw() that draws the images */
+	for (i = 0; i < 2; i++) {
+		for (im = term.images; im; im = next) {
+			next = im->next;
+			#if SCROLLBACK_PATCH
+			if (IS_SET(MODE_ALTSCREEN)) {
+				if (im->y < 0 || im->y >= term.row) {
+					delete_image(im);
+					continue;
+				}
+				line = term.line[im->y];
+			} else {
+				if (im->y - term.scr < -HISTSIZE || im->y - term.scr >= term.row) {
+					delete_image(im);
+					continue;
+				}
+				line = TLINE(im->y);
+			}
+			#else
+			if (im->y < 0 || im->y >= term.row) {
+				delete_image(im);
+				continue;
+			}
+			line = term.line[im->y];
+			#endif // SCROLLBACK_PATCH
+			x2 = MIN(im->x + im->cols, term.col);
+			for (x = im->x; x < x2; x++) {
+				line[x].u = ' ';
+				line[x].mode = ATTR_SIXEL;
+			}
+		}
+		tswapscreen();
+	}
+	#endif // SIXEL_PATCH
 }
 
 void
