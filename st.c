@@ -3808,7 +3808,7 @@ tresize(int col, int row)
 		for (i = 0; i < 2; i++) {
 			if (term.c.y >= row) {
 				#if SCROLLBACK_PATCH
-				tscrollup(0, term.c.y - row + 1, 1);
+				tscrollup(0, term.c.y - row + 1, !IS_SET(MODE_ALTSCREEN));
 				#else
 				tscrollup(0, term.c.y - row + 1);
 				#endif // SCROLLBACK_PATCH
