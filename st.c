@@ -3546,6 +3546,7 @@ twrite(const char *buf, int buflen, int show_ctrl)
 	return n;
 }
 
+#if VIM_BROWSE_PATCH
 void
 tresize(int col, int row)
 {
@@ -3759,6 +3760,175 @@ tresize(int col, int row)
 	}
 	#endif // SIXEL_PATCH
 }
+#else // !VIM_BROWSE_PATCH
+void
+tresize(int col, int row)
+{
+	int i, j;
+	#if COLUMNS_PATCH
+	int tmp = col;
+	int minrow, mincol;
+
+	if (!term.maxcol)
+		term.maxcol = term.col;
+	col = MAX(col, term.maxcol);
+	minrow = MIN(row, term.row);
+	mincol = MIN(col, term.maxcol);
+	#else
+	int minrow = MIN(row, term.row);
+	int mincol = MIN(col, term.col);
+	#endif // COLUMNS_PATCH
+	int *bp;
+	#if SIXEL_PATCH
+	int x, x2;
+	Line line;
+	ImageList *im, *next;
+	#endif // SIXEL_PATCH
+
+	#if KEYBOARDSELECT_PATCH
+	if ( row < term.row  || col < term.col )
+		toggle_winmode(trt_kbdselect(XK_Escape, NULL, 0));
+	#endif // KEYBOARDSELECT_PATCH
+
+	if (col < 1 || row < 1) {
+		fprintf(stderr,
+		        "tresize: error resizing to %dx%d\n", col, row);
+		return;
+	}
+
+	#if VIM_BROWSE_PATCH
+	if (alt)
+		tswapscreen();
+	#endif // VIM_BROWSE_PATCH
+
+	/* scroll both screens independently */
+	if (row < term.row) {
+		tcursor(CURSOR_SAVE);
+		tsetscroll(0, term.row - 1);
+		for (i = 0; i < 2; i++) {
+			if (term.c.y >= row) {
+				#if SCROLLBACK_PATCH
+				tscrollup(0, term.c.y - row + 1, 1);
+				#else
+				tscrollup(0, term.c.y - row + 1);
+				#endif // SCROLLBACK_PATCH
+			}
+			for (j = row; j < term.row; j++)
+				free(term.line[j]);
+			tswapscreen();
+			tcursor(CURSOR_LOAD);
+		}
+	}
+
+	/* resize to new height */
+	term.line = xrealloc(term.line, row * sizeof(Line));
+	term.alt  = xrealloc(term.alt,  row * sizeof(Line));
+	term.dirty = xrealloc(term.dirty, row * sizeof(*term.dirty));
+	term.tabs = xrealloc(term.tabs, col * sizeof(*term.tabs));
+
+	#if SCROLLBACK_PATCH
+	Glyph gc=(Glyph){.bg=term.c.attr.bg, .fg=term.c.attr.fg, .u=' ', .mode=0};
+	for (i = 0; i < HISTSIZE; i++) {
+		term.hist[i] = xrealloc(term.hist[i], col * sizeof(Glyph));
+		for (j = mincol; j < col; j++)
+			term.hist[i][j] = gc;
+	}
+	#endif // SCROLLBACK_PATCH
+
+	/* resize each row to new width, zero-pad if needed */
+	for (i = 0; i < minrow; i++) {
+		term.line[i] = xrealloc(term.line[i], col * sizeof(Glyph));
+		term.alt[i]  = xrealloc(term.alt[i],  col * sizeof(Glyph));
+	}
+
+	/* allocate any new rows */
+	for (/* i = minrow */; i < row; i++) {
+		term.line[i] = xmalloc(col * sizeof(Glyph));
+		term.alt[i] = xmalloc(col * sizeof(Glyph));
+	}
+	#if COLUMNS_PATCH
+	if (col > term.maxcol)
+	#else
+	if (col > term.col)
+	#endif // COLUMNS_PATCH
+	{
+		#if COLUMNS_PATCH
+		bp = term.tabs + term.maxcol;
+		memset(bp, 0, sizeof(*term.tabs) * (col - term.maxcol));
+		#else
+		bp = term.tabs + term.col;
+		memset(bp, 0, sizeof(*term.tabs) * (col - term.col));
+		#endif // COLUMNS_PATCH
+
+		while (--bp > term.tabs && !*bp)
+			/* nothing */ ;
+		for (bp += tabspaces; bp < term.tabs + col; bp += tabspaces)
+			*bp = 1;
+	}
+
+	/* update terminal size */
+	#if COLUMNS_PATCH
+	term.col = tmp;
+	term.maxcol = col;
+	#else
+	term.col = col;
+	#endif // COLUMNS_PATCH
+	term.row = row;
+
+	/* reset scrolling region */
+	tsetscroll(0, row-1);
+	/* Clearing both screens (it makes dirty all lines) */
+	for (i = 0; i < 2; i++) {
+		tmoveto(term.c.x, term.c.y);  /* make use of the LIMIT in tmoveto */
+		tcursor(CURSOR_SAVE);
+		if (mincol < col && 0 < minrow) {
+			tclearregion(mincol, 0, col - 1, minrow - 1);
+		}
+		if (0 < col && minrow < row) {
+			tclearregion(0, minrow, col - 1, row - 1);
+		}
+		tswapscreen();
+		tcursor(CURSOR_LOAD);
+	}
+
+	#if SIXEL_PATCH
+	/* expand images into new text cells to prevent them from being deleted in
+	 * xfinishdraw() that draws the images */
+	for (i = 0; i < 2; i++) {
+		for (im = term.images; im; im = next) {
+			next = im->next;
+			#if SCROLLBACK_PATCH
+			if (IS_SET(MODE_ALTSCREEN)) {
+				if (im->y < 0 || im->y >= term.row) {
+					delete_image(im);
+					continue;
+				}
+				line = term.line[im->y];
+			} else {
+				if (im->y - term.scr < -HISTSIZE || im->y - term.scr >= term.row) {
+					delete_image(im);
+					continue;
+				}
+				line = TLINE(im->y);
+			}
+			#else
+			if (im->y < 0 || im->y >= term.row) {
+				delete_image(im);
+				continue;
+			}
+			line = term.line[im->y];
+			#endif // SCROLLBACK_PATCH
+			x2 = MIN(im->x + im->cols, term.col);
+			for (x = im->x; x < x2; x++) {
+				line[x].u = ' ';
+				line[x].mode = ATTR_SIXEL;
+			}
+		}
+		tswapscreen();
+	}
+	#endif // SIXEL_PATCH
+}
+#endif // VIM_BROWSE_PATCH
 
 void
 resettitle(void)
