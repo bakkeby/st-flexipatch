@@ -1679,8 +1679,8 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	FcFontSet *fcsets[] = { NULL };
 	FcCharSet *fccharset;
 	int f, numspecs = 0;
-	#if LIGATURES_PATCH
 	int i;
+	#if LIGATURES_PATCH
 	float cluster_xp, cluster_yp;
 	HbTransformData shaped;
 
