@@ -3198,8 +3198,13 @@ xfinishdraw(void)
 		memset(&gcvalues, 0, sizeof(gcvalues));
 		gcvalues.graphics_exposures = False;
 		gc = XCreateGC(xw.dpy, xw.win, GCGraphicsExposures, &gcvalues);
+		#if ANYSIZE_PATCH
+		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0,
+			width, height, win.hborderpx + im->x * win.cw, win.vborderpx + im->y * win.ch);
+		#else
 		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0,
 			width, height, borderpx + im->x * win.cw, borderpx + im->y * win.ch);
+		#endif // ANYSIZE_PATCH
 		XFreeGC(xw.dpy, gc);
 	}
 	#endif // SIXEL_PATCH
