@@ -142,6 +142,17 @@ typedef struct {
 
 typedef Glyph *Line;
 
+#if LIGATURES_PATCH
+typedef struct {
+	int ox;
+	#if WIDE_GLYPHS_PATCH
+	int charlen;
+	#endif // WIDE_GLYPHS_PATCH
+	int numspecs;
+	Glyph base;
+} GlyphFontSeq;
+#endif // LIGATURES_PATCH
+
 typedef struct {
 	Glyph attr; /* current char attributes */
 	int x;
@@ -216,6 +227,9 @@ typedef struct {
 	Window win;
 	Drawable buf;
 	GlyphFontSpec *specbuf; /* font spec buffer used for rendering */
+	#if LIGATURES_PATCH
+	GlyphFontSeq *specseq;
+	#endif // LIGATURES_PATCH
 	Atom xembed, wmdeletewin, netwmname, netwmiconname, netwmpid;
 	#if FULLSCREEN_PATCH
 	Atom netwmstate, netwmfullscreen;
