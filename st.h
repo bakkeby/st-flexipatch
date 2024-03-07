@@ -1,6 +1,7 @@
 /* See LICENSE for license details. */
 
 #include <stdint.h>
+#include <time.h>
 #include <sys/types.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
@@ -79,7 +80,9 @@ typedef struct _ImageList {
 	int height;
 	int x;
 	int y;
-	int should_delete;
+	int cols;
+	int cw;
+	int ch;
 } ImageList;
 #endif // SIXEL_PATCH
 
