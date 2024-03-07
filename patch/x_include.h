@@ -35,6 +35,3 @@
 #if XRESOURCES_PATCH
 #include "xresources.h"
 #endif
-#if VIM_BROWSE_PATCH
-#include "normalMode.h"
-#endif

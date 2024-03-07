@@ -16,9 +16,6 @@
 #define MAX(a, b)		((a) < (b) ? (b) : (a))
 #define LEN(a)			(sizeof(a) / sizeof(a)[0])
 #define BETWEEN(x, a, b)	((a) <= (x) && (x) <= (b))
-#if VIM_BROWSE_PATCH
-#define OUT(x, a, b)		((a) <= (x) || (x) <= (b))
-#endif // VIM_BROWSE_PATCH
 #define DIVCEIL(n, d)		(((n) + ((d) - 1)) / (d))
 #define DEFAULT(a, b)		(a) = (a) ? (a) : (b)
 #define LIMIT(x, a, b)		(x) = (x) < (a) ? (a) : (x) > (b) ? (b) : (x)
@@ -164,7 +161,7 @@ typedef struct {
 typedef struct {
 	int row;      /* nb row */
 	int col;      /* nb col */
-	#if COLUMNS_PATCH && !VIM_BROWSE_PATCH
+	#if COLUMNS_PATCH
 	int maxcol;
 	#endif // COLUMNS_PATCH
 	Line *line;   /* screen */
@@ -341,9 +338,6 @@ int tattrset(int);
 int tisaltscr(void);
 void tnew(int, int);
 void tresize(int, int);
-#if VIM_BROWSE_PATCH
-void tmoveto(int x, int y);
-#endif // VIM_BROWSE_PATCH
 void tsetdirtattr(int);
 void ttyhangup(void);
 int ttynew(const char *, char *, const char *, char **);

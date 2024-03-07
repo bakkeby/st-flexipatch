@@ -486,9 +486,7 @@ bpress(XEvent *e)
 {
 	int btn = e->xbutton.button;
 	struct timespec now;
-	#if !VIM_BROWSE_PATCH
 	int snap;
-	#endif // VIM_BROWSE_PATCH
 
 	if (1 <= btn && btn <= 11)
 		buttons |= 1 << (btn-1);
@@ -507,34 +505,6 @@ bpress(XEvent *e)
 		 * snapping behaviour is exposed.
 		 */
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		#if VIM_BROWSE_PATCH
-		int const tripleClick = TIMEDIFF(now, xsel.tclick2) <= tripleclicktimeout,
-		doubleClick = TIMEDIFF(now, xsel.tclick1) <= doubleclicktimeout;
-		if ((mouseYank || mouseSelect) && (tripleClick || doubleClick)) {
-			if (!IS_SET(MODE_NORMAL)) normalMode();
-			historyOpToggle(1, 1);
-			tmoveto(evcol(e), evrow(e));
-			if (tripleClick) {
-				if (mouseYank) pressKeys("dVy", 3);
-				if (mouseSelect) pressKeys("dV", 2);
-			} else if (doubleClick) {
-				if (mouseYank) pressKeys("dyiW", 4);
-				if (mouseSelect) {
-					tmoveto(evcol(e), evrow(e));
-					pressKeys("viW", 3);
-				}
-			}
-			historyOpToggle(-1, 1);
-		} else {
-			if (!IS_SET(MODE_NORMAL)) selstart(evcol(e), evrow(e), 0);
-			else {
-				historyOpToggle(1, 1);
-				tmoveto(evcol(e), evrow(e));
-				pressKeys("v", 1);
-				historyOpToggle(-1, 1);
-			}
-		}
-		#else
 		if (TIMEDIFF(now, xsel.tclick2) <= tripleclicktimeout) {
 			snap = SNAP_LINE;
 		} else if (TIMEDIFF(now, xsel.tclick1) <= doubleclicktimeout) {
@@ -542,13 +512,10 @@ bpress(XEvent *e)
 		} else {
 			snap = 0;
 		}
-		#endif // VIM_BROWSE_PATCH
 		xsel.tclick2 = xsel.tclick1;
 		xsel.tclick1 = now;
 
-		#if !VIM_BROWSE_PATCH
 		selstart(evcol(e), evrow(e), snap);
-		#endif // VIM_BROWSE_PATCH
 
 		#if OPENURLONCLICK_PATCH
 		clearurl();
@@ -800,15 +767,7 @@ brelease(XEvent *e)
 
 	if (mouseaction(e, 1))
 		return;
-	#if VIM_BROWSE_PATCH
-	if (btn == Button1 && !IS_SET(MODE_NORMAL)) {
-		mousesel(e, 1);
-		#if OPENURLONCLICK_PATCH
-		if (url_click && e->xkey.state & url_opener_modkey)
-			openUrlOnClick(evcol(e), evrow(e), url_opener);
-		#endif // OPENURLONCLICK_PATCH
-	}
-	#else
+
 	if (btn == Button1) {
 		mousesel(e, 1);
 		#if OPENURLONCLICK_PATCH
@@ -816,7 +775,7 @@ brelease(XEvent *e)
 			openUrlOnClick(evcol(e), evrow(e), url_opener);
 		#endif // OPENURLONCLICK_PATCH
 	}
-	#endif // VIM_BROWSE_PATCH
+
 	#if RIGHTCLICKTOPLUMB_PATCH
 	else if (btn == Button3)
 		plumb(xsel.primary);
@@ -842,9 +801,6 @@ bmotion(XEvent *e)
 	}
 	#endif // HIDECURSOR_PATCH
 	#if OPENURLONCLICK_PATCH
-	#if VIM_BROWSE_PATCH
-	if (!IS_SET(MODE_NORMAL))
-	#endif // VIM_BROWSE_PATCH
 	if (!IS_SET(MODE_MOUSE)) {
 		if (!(e->xbutton.state & Button1Mask) && detecturl(evcol(e), evrow(e), 1))
 			XDefineCursor(xw.dpy, xw.win, xw.upointer);
@@ -944,17 +900,6 @@ xloadcolor(int i, const char *name, Color *ncolor)
 
 	return XftColorAllocName(xw.dpy, xw.vis, xw.cmap, name, ncolor);
 }
-
-#if VIM_BROWSE_PATCH
-void normalMode()
-{
-	#if OPENURLONCLICK_PATCH
-	clearurl();
-	restoremousecursor();
-	#endif // OPENURLONCLICK_PATCH
-	historyModeToggle((win.mode ^=MODE_NORMAL) & MODE_NORMAL);
-}
-#endif // VIM_BROWSE_PATCH
 
 #if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 void
@@ -1701,17 +1646,12 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	#endif // LIGATURES_PATCH | VERTCENTER_PATCH
 	{
 		/* Fetch rune and mode for current glyph. */
-		#if VIM_BROWSE_PATCH
-		Glyph g = glyphs[i];
-		historyOverlay(x+i, y, &g);
-		rune = g.u;
-		mode = g.mode;
-		#elif LIGATURES_PATCH
+		#if LIGATURES_PATCH
 		int idx = shaped.glyphs[code_idx].cluster;
 		#else
 		rune = glyphs[i].u;
 		mode = glyphs[i].mode;
-		#endif // VIM_BROWSE_PATCH | LIGATURES_PATCH
+		#endif // LIGATURES_PATCH
 
 		/* Skip dummy wide-character spacing. */
 		#if LIGATURES_PATCH
@@ -3020,9 +2960,6 @@ xdrawline(Line line, int x1, int y1, int x2)
 		i = ox = 0;
 		for (x = x1; x < x2 && i < numspecs; x++) {
 			new = line[x];
-			#if VIM_BROWSE_PATCH
-			historyOverlay(x, y1, &new);
-			#endif // VIM_BROWSE_PATCH
 			if (new.mode == ATTR_WDUMMY)
 				continue;
 			if (selected(x, y1))
@@ -3060,9 +2997,6 @@ xdrawline(Line line, int x1, int y1, int x2)
 	i = ox = 0;
 	for (x = x1; x < x2 && i < numspecs; x++) {
 		new = line[x];
-		#if VIM_BROWSE_PATCH
-		historyOverlay(x, y1, &new);
-		#endif // VIM_BROWSE_PATCH
 		if (new.mode == ATTR_WDUMMY)
 			continue;
 		if (selected(x, y1))
@@ -3489,13 +3423,6 @@ kpress(XEvent *ev)
 		return;
 	}
 	#endif // KEYBOARDSELECT_PATCH
-	#if VIM_BROWSE_PATCH
-	if (IS_SET(MODE_NORMAL)) {
-		if (kPressHist(buf, len, match(ControlMask, e->state), &ksym)
-		                                      == finish) normalMode();
-		return;
-	}
-	#endif // VIM_BROWSE_PATCH
 
 	screen = tisaltscr() ? S_ALT : S_PRI;
 
