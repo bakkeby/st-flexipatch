@@ -313,8 +313,8 @@ utf8decode(const char *c, Rune *u, size_t clen)
 	}
 	if (j < len)
 		return 0;
-	*u = udecoded;
-	utf8validate(u, len);
+	*u = (!BETWEEN(udecoded, utfmin[len], utfmax[len]) || BETWEEN(udecoded, 0xD800, 0xDFFF))
+	        ? UTF_INVALID : udecoded;
 
 	return len;
 }
