@@ -2568,6 +2568,7 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	XRenderColor colbg;
 	#endif // DYNAMIC_CURSOR_COLOR_PATCH
 
+	#if !DYNAMIC_CURSOR_COLOR_PATCH
 	/* remove the old cursor */
 	if (selected(ox, oy))
 		#if SELECTION_COLORS_PATCH
@@ -2575,6 +2576,7 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		#else
 		og.mode ^= ATTR_REVERSE;
 		#endif // SELECTION_COLORS_PATCH
+	#endif // DYNAMIC_CURSOR_COLOR_PATCH
 
 	#if LIGATURES_PATCH
 	/* Redraw the line where cursor was previously.
@@ -2595,11 +2597,14 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	/*
 	 * Select the right color for the right mode.
 	 */
+	g.mode &= ATTR_BOLD|ATTR_ITALIC|ATTR_UNDERLINE|ATTR_STRUCK|ATTR_WIDE
 	#if BOXDRAW_PATCH
-	g.mode &= ATTR_BOLD|ATTR_ITALIC|ATTR_UNDERLINE|ATTR_STRUCK|ATTR_WIDE|ATTR_BOXDRAW;
-	#else
-	g.mode &= ATTR_BOLD|ATTR_ITALIC|ATTR_UNDERLINE|ATTR_STRUCK|ATTR_WIDE;
+	|ATTR_BOXDRAW
 	#endif // BOXDRAW_PATCH
+	#if DYNAMIC_CURSOR_COLOR_PATCH
+	|ATTR_REVERSE
+	#endif // DYNAMIC_CURSOR_COLOR_PATCH
+	;
 
 	if (IS_SET(MODE_REVERSE)) {
 		g.mode |= ATTR_REVERSE;
@@ -2623,23 +2628,23 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		drawcol = dc.col[defaultcs];
 		#else
 		if (selected(cx, cy)) {
+			#if DYNAMIC_CURSOR_COLOR_PATCH
+			g.mode &= ~ATTR_REVERSE;
+			#endif // DYNAMIC_CURSOR_COLOR_PATCH
 			g.fg = defaultfg;
 			g.bg = defaultrcs;
-		}
-		#if !DYNAMIC_CURSOR_COLOR_PATCH
-		else {
-			g.fg = defaultbg;
-			g.bg = defaultcs;
-		}
-
-		drawcol = dc.col[g.bg];
-		#else
-		else if (!(og.mode & ATTR_REVERSE)) {
+		} else {
+			#if DYNAMIC_CURSOR_COLOR_PATCH
 			unsigned int tmpcol = g.bg;
 			g.bg = g.fg;
 			g.fg = tmpcol;
+			#else
+			g.fg = defaultbg;
+			g.bg = defaultcs;
+			#endif // DYNAMIC_CURSOR_COLOR_PATCH
 		}
 
+		#if DYNAMIC_CURSOR_COLOR_PATCH
 		if (IS_TRUECOL(g.bg)) {
 			colbg.alpha = 0xffff;
 			colbg.red = TRUERED(g.bg);
@@ -2648,6 +2653,8 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colbg, &drawcol);
 		} else
 			drawcol = dc.col[g.bg];
+		#else
+		drawcol = dc.col[g.bg];
 		#endif // DYNAMIC_CURSOR_COLOR_PATCH
 		#endif // SELECTION_COLORS_PATCH
 	}
