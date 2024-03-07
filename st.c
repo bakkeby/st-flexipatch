@@ -48,6 +48,8 @@
 #endif // UNDERCURL_PATCH
 #define STR_BUF_SIZ   ESC_BUF_SIZ
 #define STR_ARG_SIZ   ESC_ARG_SIZ
+#define STR_TERM_ST   "\033\\"
+#define STR_TERM_BEL  "\007"
 
 /* macros */
 #define IS_SET(flag)    ((term.mode & (flag)) != 0)
@@ -146,6 +148,7 @@ typedef struct {
 	size_t len;            /* raw string length */
 	char *args[STR_ARG_SIZ];
 	int narg;              /* nb of args */
+    char *term;            /* terminator: ST or BEL */
 } STREscape;
 
 static void execsh(char *, char **);
@@ -163,8 +166,7 @@ static void readcolonargs(char **, int, int[][CAR_PER_ARG]);
 #endif // UNDERCURL_PATCH
 static void csiparse(void);
 static void csireset(void);
-static void osc4_color_response(int num);
-static void osc_color_response(int index, int num);
+static void osc_color_response(int, int, int);
 static int eschandle(uchar);
 static void strdump(void);
 static void strhandle(void);
@@ -2363,39 +2365,28 @@ csireset(void)
 }
 
 void
-osc4_color_response(int num)
+osc_color_response(int num, int index, int is_osc4)
 {
 	int n;
 	char buf[32];
 	unsigned char r, g, b;
 
-	if (xgetcolor(num, &r, &g, &b)) {
-		fprintf(stderr, "erresc: failed to fetch osc4 color %d\n", num);
+	if (xgetcolor(is_osc4 ? num : index, &r, &g, &b)) {
+		fprintf(stderr, "erresc: failed to fetch %s color %d\n",
+		        is_osc4 ? "osc4" : "osc",
+		        is_osc4 ? num : index);
 		return;
 	}
 
-	n = snprintf(buf, sizeof buf, "\033]4;%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
-			num, r, r, g, g, b, b);
-
-	ttywrite(buf, n, 1);
-}
-
-void
-osc_color_response(int index, int num)
-{
-	int n;
-	char buf[32];
-	unsigned char r, g, b;
-
-	if (xgetcolor(index, &r, &g, &b)) {
-		fprintf(stderr, "erresc: failed to fetch osc color %d\n", index);
-		return;
+	n = snprintf(buf, sizeof buf, "\033]%s%d;rgb:%02x%02x/%02x%02x/%02x%02x%s",
+	             is_osc4 ? "4;" : "", num, r, r, g, g, b, b, strescseq.term);
+	if (n < 0 || n >= sizeof(buf)) {
+		fprintf(stderr, "error: %s while printing %s response\n",
+		        n < 0 ? "snprintf failed" : "truncation occurred",
+		        is_osc4 ? "osc4" : "osc");
+	} else {
+		ttywrite(buf, n, 1);
 	}
-
-	n = snprintf(buf, sizeof buf, "\033]%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
-			num, r, r, g, g, b, b);
-
-	ttywrite(buf, n, 1);
 }
 
 void
@@ -2408,6 +2399,11 @@ strhandle(void)
 	int i, x, y, x1, y1, x2, y2, numimages;
 	int cx, cy;
 	Line line;
+    const struct { int idx; char *str; } osc_table[] = {
+        { defaultfg, "foreground" },
+        { defaultbg, "background" },
+        { defaultcs, "cursor" }
+    };
 	#if SCROLLBACK_PATCH
 	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
 	#else
@@ -2458,62 +2454,34 @@ strhandle(void)
 		case 8: /* Clear Hyperlinks */
 			return;
 		case 10:
-			if (narg < 2)
-				break;
-
-			p = strescseq.args[1];
-
-			if (!strcmp(p, "?"))
-				osc_color_response(defaultfg, 10);
-			else if (xsetcolorname(defaultfg, p))
-				fprintf(stderr, "erresc: invalid foreground color: %s\n", p);
-			else
-				tfulldirt();
-			return;
 		case 11:
-			if (narg < 2)
-				break;
-
-			p = strescseq.args[1];
-
-			if (!strcmp(p, "?"))
-				osc_color_response(defaultbg, 11);
-			else if (xsetcolorname(defaultbg, p))
-				fprintf(stderr, "erresc: invalid background color: %s\n", p);
-			else
-				tfulldirt();
-			return;
 		case 12:
 			if (narg < 2)
 				break;
-
 			p = strescseq.args[1];
+			if ((j = par - 10) < 0 || j >= LEN(osc_table))
+				break; /* shouldn't be possible */
 
-			if (!strcmp(p, "?"))
-				osc_color_response(defaultcs, 12);
-			else if (xsetcolorname(defaultcs, p))
-				fprintf(stderr, "erresc: invalid cursor color: %s\n", p);
-			else
+			if (!strcmp(p, "?")) {
+				osc_color_response(par, osc_table[j].idx, 0);
+			} else if (xsetcolorname(osc_table[j].idx, p)) {
+				fprintf(stderr, "erresc: invalid %s color: %s\n",
+				        osc_table[j].str, p);
+			} else {
 				tfulldirt();
+			}
 			return;
 		case 4: /* color set */
-			if ((par == 4 && narg < 3) || narg < 2)
+			if (narg < 3)
 				break;
-			p = strescseq.args[((par == 4) ? 2 : 1)];
+			p = strescseq.args[2];
 			/* FALLTHROUGH */
 		case 104: /* color reset */
-			if (par == 10)
-				j = defaultfg;
-			else if (par == 11)
-				j = defaultbg;
-			else if (par == 12)
-				j = defaultcs;
-			else
-				j = (narg > 1) ? atoi(strescseq.args[1]) : -1;
+			j = (narg > 1) ? atoi(strescseq.args[1]) : -1;
 
-			if (p && !strcmp(p, "?"))
-				osc4_color_response(j);
-			else if (xsetcolorname(j, p)) {
+			if (p && !strcmp(p, "?")) {
+				osc_color_response(j, 0, 1);
+			} else if (xsetcolorname(j, p)) {
 				if (par == 104 && narg <= 1) {
 					xloadcols();
 					return; /* color reset without parameter */
@@ -2521,8 +2489,10 @@ strhandle(void)
 				fprintf(stderr, "erresc: invalid color j=%d, p=%s\n",
 				        j, p ? p : "(null)");
 			} else {
-				if (j == defaultbg)
-					xclearwin();
+				/*
+				 * TODO if defaultbg color is changed, borders
+				 * are dirty
+				 */
 				tfulldirt();
 			}
 			return;
@@ -2669,7 +2639,7 @@ strdump(void)
 			fprintf(stderr, "(%02x)", c);
 		}
 	}
-	fprintf(stderr, "ESC\\\n");
+	fprintf(stderr, (strescseq.term[0] == 0x1b) ? "ESC\\\n" : "BEL\n");
 }
 
 void
@@ -2861,6 +2831,7 @@ tcontrolcode(uchar ascii)
 	case '\a':   /* BEL */
 		if (term.esc & ESC_STR_END) {
 			/* backwards compatibility to xterm */
+			strescseq.term = STR_TERM_BEL;
 			strhandle();
 		} else {
 			xbell();
@@ -3074,8 +3045,10 @@ eschandle(uchar ascii)
 		tcursor(CURSOR_LOAD);
 		break;
 	case '\\': /* ST -- String Terminator */
-		if (term.esc & ESC_STR_END)
+		if (term.esc & ESC_STR_END) {
+			strescseq.term = STR_TERM_ST;
 			strhandle();
+		}
 		break;
 	default:
 		fprintf(stderr, "erresc: unknown sequence ESC 0x%02X '%c'\n",
