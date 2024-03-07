@@ -3447,7 +3447,7 @@ kpress(XEvent *ev)
 	Shortcut *bp;
 
 	#if HIDECURSOR_PATCH
-	if (xw.pointerisvisible) {
+	if (xw.pointerisvisible && hidecursor) {
 		#if OPENURLONCLICK_PATCH
 		#if ANYSIZE_PATCH
 		int x = e->x - win.hborderpx;
