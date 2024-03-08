@@ -152,8 +152,8 @@ typedef struct {
 
 typedef struct {
 	Glyph attr; /* current char attributes */
-	int x; /* terminal column */
-	int y; /* terminal row */
+	int x;
+	int y;
 	char state;
 } TCursor;
 
