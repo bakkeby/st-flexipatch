@@ -2397,16 +2397,16 @@ strhandle(void)
 {
 	char *p = NULL, *dec;
 	int j, narg, par;
+	const struct { int idx; char *str; } osc_table[] = {
+		{ defaultfg, "foreground" },
+		{ defaultbg, "background" },
+		{ defaultcs, "cursor" }
+	};
 	#if SIXEL_PATCH
 	ImageList *im, *newimages, *next, *tail;
 	int i, x, y, x1, y1, x2, y2, numimages;
 	int cx, cy;
 	Line line;
-    const struct { int idx; char *str; } osc_table[] = {
-        { defaultfg, "foreground" },
-        { defaultbg, "background" },
-        { defaultcs, "cursor" }
-    };
 	#if SCROLLBACK_PATCH
 	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
 	#else
