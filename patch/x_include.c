@@ -23,7 +23,9 @@
 #if INVERT_PATCH
 #include "invert.c"
 #endif
-#if KEYBOARDSELECT_PATCH
+#if REFLOW_PATCH && KEYBOARDSELECT_PATCH
+#include "keyboardselect_reflow_x.c"
+#elif KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.c"
 #endif
 #if OPENURLONCLICK_PATCH

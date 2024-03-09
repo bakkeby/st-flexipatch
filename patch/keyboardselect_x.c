@@ -1,5 +1,5 @@
 void toggle_winmode(int flag) {
-        win.mode ^= flag;
+    win.mode ^= flag;
 }
 
 void keyboard_select(const Arg *dummy) {

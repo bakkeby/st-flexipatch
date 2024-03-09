@@ -1,0 +1,29 @@
+Shortcuts in keyboard selection mode:
+
+h, j, k, l:              move cursor left/down/up/right (also with arrow keys)
+H, M, L:                 move cursor to the top/middle/bottom of the screen
+Home, End:               move cursor to the top/bottom of the screen
+Backspace or 0, $ or A:  move cursor to the beginning/end of the line
+^ or I:                  move cursor to the beginning of the indented line
+!:                       move cursor to the middle of the row
+_:                       move cursor to the right edge of the screen
+*:                       move cursor to the center of the screen
+w, W                     jump forward to the start of a word
+e, E                     jump forward to the end of a word
+b, B                     jump backward to the start of a word
+g, G:                    go to the first/last line
+z:                       center the screen on the cursor
+PgUp or K, PgDown or J:  scroll the page up/down
+/, ?:                    activate input mode and search up/down
+n, N:                    repeat last search and search forward/backward
+f, F:                    jump forward/backward to the given character
+t, T:                    jump forward/backward to before the given character
+; or r                   repeat previous f, t, F or T movement and move forward
+, or R                   repeat previous f, t, F or T movement and move backward
+v:                       toggle selection mode
+V:                       toggle line selection mode
+s:                       toggle regular/rectangular selection type
+y:                       yank (copy) selected text
+0 - 9:                   set the quantifier
+Return:                  quit keyboard_select, yank and keep the highlight of the selection
+Escape, q:               quit keyboard_select/exit input mode/exit selection mode/reset quantifier

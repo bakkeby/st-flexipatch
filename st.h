@@ -33,39 +33,43 @@
 
 #define TRUECOLOR(r,g,b)	(1 << 24 | (r) << 16 | (g) << 8 | (b))
 #define IS_TRUECOL(x)		(1 << 24 & (x))
-#if SCROLLBACK_PATCH
+#if SCROLLBACK_PATCH || REFLOW_PATCH
 #define HISTSIZE      2000
-#endif // SCROLLBACK_PATCH
+#endif // SCROLLBACK_PATCH | REFLOW_PATCH
 
 enum glyph_attribute {
-	ATTR_NULL       = 0,
-	ATTR_BOLD       = 1 << 0,
-	ATTR_FAINT      = 1 << 1,
-	ATTR_ITALIC     = 1 << 2,
-	ATTR_UNDERLINE  = 1 << 3,
-	ATTR_BLINK      = 1 << 4,
-	ATTR_REVERSE    = 1 << 5,
-	ATTR_INVISIBLE  = 1 << 6,
-	ATTR_STRUCK     = 1 << 7,
-	ATTR_WRAP       = 1 << 8,
-	ATTR_WIDE       = 1 << 9,
-	ATTR_WDUMMY     = 1 << 10,
+	ATTR_NULL           = 0,
+	ATTR_SET            = 1 << 0,
+	ATTR_BOLD           = 1 << 1,
+	ATTR_FAINT          = 1 << 2,
+	ATTR_ITALIC         = 1 << 3,
+	ATTR_UNDERLINE      = 1 << 4,
+	ATTR_BLINK          = 1 << 5,
+	ATTR_REVERSE        = 1 << 6,
+	ATTR_INVISIBLE      = 1 << 7,
+	ATTR_STRUCK         = 1 << 8,
+	ATTR_WRAP           = 1 << 9,
+	ATTR_WIDE           = 1 << 10,
+	ATTR_WDUMMY         = 1 << 11,
+	#if SELECTION_COLORS_PATCH || REFLOW_PATCH
+	ATTR_SELECTED       = 1 << 12,
+	#endif // SELECTION_COLORS_PATCH | REFLOW_PATCH
 	#if BOXDRAW_PATCH
-	ATTR_BOXDRAW    = 1 << 11,
+	ATTR_BOXDRAW        = 1 << 13,
 	#endif // BOXDRAW_PATCH
+	#if UNDERCURL_PATCH
+	ATTR_DIRTYUNDERLINE = 1 << 14,
+	#endif // UNDERCURL_PATCH
 	#if LIGATURES_PATCH
-	ATTR_LIGA       = 1 << 12,
+	ATTR_LIGA           = 1 << 15,
 	#endif // LIGATURES_PATCH
 	#if SIXEL_PATCH
-	ATTR_SIXEL      = 1 << 13,
+	ATTR_SIXEL          = 1 << 16,
 	#endif // SIXEL_PATCH
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	ATTR_HIGHLIGHT      = 1 << 17,
+	#endif // KEYBOARDSELECT_PATCH
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
-	#if SELECTION_COLORS_PATCH
-	ATTR_SELECTED   = 1 << 14,
-	#endif // SELECTION_COLORS_PATCH
-	#if UNDERCURL_PATCH
-	ATTR_DIRTYUNDERLINE = 1 << 15,
-	#endif // UNDERCURL_PATCH
 };
 
 #if SIXEL_PATCH
@@ -77,6 +81,9 @@ typedef struct _ImageList {
 	int height;
 	int x;
 	int y;
+	#if REFLOW_PATCH
+	int reflow_y;
+	#endif // REFLOW_PATCH
 	int cols;
 	int cw;
 	int ch;
@@ -128,7 +135,7 @@ typedef XftGlyphFontSpec GlyphFontSpec;
 #define Glyph Glyph_
 typedef struct {
 	Rune u;           /* character code */
-	ushort mode;      /* attribute flags */
+	uint32_t mode;    /* attribute flags */
 	uint32_t fg;      /* foreground  */
 	uint32_t bg;      /* background  */
 	#if UNDERCURL_PATCH
@@ -164,12 +171,18 @@ typedef struct {
 	#endif // COLUMNS_PATCH
 	Line *line;   /* screen */
 	Line *alt;    /* alternate screen */
-	#if SCROLLBACK_PATCH
+	#if REFLOW_PATCH
+	Line hist[HISTSIZE]; /* history buffer */
+	int histi;           /* history index */
+	int histf;           /* nb history available */
+	int scr;             /* scroll back */
+	int wrapcwidth[2];   /* used in updating WRAPNEXT when resizing */
+	#elif SCROLLBACK_PATCH
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
 	int histn;    /* number of history entries */
 	int scr;      /* scroll back */
-	#endif // SCROLLBACK_PATCH
+	#endif // SCROLLBACK_PATCH | REFLOW_PATCH
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
 	int ocx;      /* old cursor col */
@@ -347,6 +360,7 @@ void resettitle(void);
 
 void selclear(void);
 void selinit(void);
+void selremove(void);
 void selstart(int, int, int);
 void selextend(int, int, int, int);
 int selected(int, int);
@@ -376,6 +390,10 @@ extern char *scroll;
 extern char *stty_args;
 extern char *vtiden;
 extern wchar_t *worddelimiters;
+#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+extern wchar_t *kbds_sdelim;
+extern wchar_t *kbds_ldelim;
+#endif // KEYBOARDSELECT_PATCH
 extern int allowaltscreen;
 extern int allowwindowops;
 extern char *termname;

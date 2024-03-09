@@ -73,6 +73,12 @@ static float chscale = 1.0;
  */
 wchar_t *worddelimiters = L" ";
 
+#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+/* Word delimiters for short and long jumps in the keyboard select patch */
+wchar_t *kbds_sdelim = L"!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~ ";
+wchar_t *kbds_ldelim = L" ";
+#endif // KEYBOARDSELECT_PATCH
+
 /* selection timeouts (in milliseconds) */
 static unsigned int doubleclicktimeout = 300;
 static unsigned int tripleclicktimeout = 600;
@@ -431,6 +437,10 @@ static Shortcut shortcuts[] = {
 	#endif // EXTERNALPIPE_PATCH
 	#if KEYBOARDSELECT_PATCH
 	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
+	#endif // KEYBOARDSELECT_PATCH
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	{ TERMMOD,              XK_F,           searchforward,   { 0 } },
+	{ TERMMOD,              XK_B,           searchbackward,  { 0 } },
 	#endif // KEYBOARDSELECT_PATCH
 	#if ISO14755_PATCH
 	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },

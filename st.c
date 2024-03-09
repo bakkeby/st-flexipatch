@@ -73,6 +73,14 @@ enum term_mode {
 	#endif // SIXEL_PATCH
 };
 
+#if REFLOW_PATCH
+enum scroll_mode {
+	SCROLL_RESIZE = -1,
+	SCROLL_NOSAVEHIST = 0,
+	SCROLL_SAVEHIST = 1
+};
+#endif // REFLOW_PATCH
+
 enum cursor_movement {
 	CURSOR_SAVE,
 	CURSOR_LOAD
@@ -177,27 +185,36 @@ static void tprinter(char *, size_t);
 static void tdumpsel(void);
 static void tdumpline(int);
 static void tdump(void);
+#if !REFLOW_PATCH
 static void tclearregion(int, int, int, int);
+#endif // REFLOW_PATCH
 static void tcursor(int);
+static void tresetcursor(void);
+#if !REFLOW_PATCH
 static void tdeletechar(int);
+#endif // REFLOW_PATCH
 #if SIXEL_PATCH
 static void tdeleteimages(void);
 #endif // SIXEL_PATCH
 static void tdeleteline(int);
 static void tinsertblank(int);
 static void tinsertblankline(int);
+#if !REFLOW_PATCH
 static int tlinelen(int);
+#endif // REFLOW_PATCH
 static void tmoveto(int, int);
 static void tmoveato(int, int);
 static void tnewline(int);
 static void tputtab(int);
 static void tputc(Rune);
 static void treset(void);
+#if !REFLOW_PATCH
 #if SCROLLBACK_PATCH
 static void tscrollup(int, int, int);
 #else
 static void tscrollup(int, int);
 #endif // SCROLLBACK_PATCH
+#endif // REFLOW_PATCH
 static void tscrolldown(int, int);
 static void tsetattr(const int *, int);
 static void tsetchar(Rune, const Glyph *, int, int);
@@ -213,7 +230,9 @@ static int32_t tdefcolor(const int *, int *, int);
 static void tdeftran(char);
 static void tstrsequence(uchar);
 static void selnormalize(void);
+#if !REFLOW_PATCH
 static void selscroll(int, int);
+#endif // REFLOW_PATCH
 static void selsnap(int *, int *, int);
 
 static size_t utf8decode(const char *, Rune *, size_t);
@@ -421,6 +440,7 @@ selinit(void)
 	sel.ob.x = -1;
 }
 
+#if !REFLOW_PATCH
 int
 tlinelen(int y)
 {
@@ -442,6 +462,7 @@ tlinelen(int y)
 
 	return i;
 }
+#endif // REFLOW_PATCH
 
 void
 selstart(int col, int row, int snap)
@@ -455,9 +476,9 @@ selstart(int col, int row, int snap)
 	sel.oe.y = sel.ob.y = row;
 	selnormalize();
 
-    if (sel.snap != 0)
-        sel.mode = SEL_READY;
-    tsetdirt(sel.nb.y, sel.ne.y);
+	if (sel.snap != 0)
+		sel.mode = SEL_READY;
+	tsetdirt(sel.nb.y, sel.ne.y);
 }
 
 void
@@ -480,8 +501,8 @@ selextend(int col, int row, int type, int done)
 
 	sel.oe.x = col;
 	sel.oe.y = row;
-	selnormalize();
 	sel.type = type;
+	selnormalize();
 
 	if (oldey != sel.oe.y || oldex != sel.oe.x || oldtype != sel.type || sel.mode == SEL_EMPTY)
 		tsetdirt(MIN(sel.nb.y, oldsby), MAX(sel.ne.y, oldsey));
@@ -510,13 +531,23 @@ selnormalize(void)
 	/* expand selection over line breaks */
 	if (sel.type == SEL_RECTANGULAR)
 		return;
+
+	#if REFLOW_PATCH
+	i = tlinelen(TLINE(sel.nb.y));
+	if (sel.nb.x > i)
+		sel.nb.x = i;
+	if (sel.ne.x >= tlinelen(TLINE(sel.ne.y)))
+		sel.ne.x = term.col - 1;
+	#else
 	i = tlinelen(sel.nb.y);
 	if (i < sel.nb.x)
 		sel.nb.x = i;
 	if (tlinelen(sel.ne.y) <= sel.ne.x)
 		sel.ne.x = term.col - 1;
+	#endif // REFLOW_PATCH
 }
 
+#if !REFLOW_PATCH
 int
 selected(int x, int y)
 {
@@ -532,7 +563,9 @@ selected(int x, int y)
 	    && (y != sel.nb.y || x >= sel.nb.x)
 	    && (y != sel.ne.y || x <= sel.ne.x);
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 selsnap(int *x, int *y, int direction)
 {
@@ -625,7 +658,9 @@ selsnap(int *x, int *y, int direction)
 		break;
 	}
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 char *
 getsel(void)
 {
@@ -662,6 +697,7 @@ getsel(void)
 			#endif // SCROLLBACK_PATCH
 			lastx = (sel.ne.y == y) ? sel.ne.x : term.col-1;
 		}
+
 		#if SCROLLBACK_PATCH
 		last = &TLINE(y)[MIN(lastx, linelen-1)];
 		#else
@@ -693,15 +729,22 @@ getsel(void)
 	*ptr = 0;
 	return str;
 }
+#endif // REFLOW_PATCH
 
 void
 selclear(void)
 {
 	if (sel.ob.x == -1)
 		return;
+	selremove();
+	tsetdirt(sel.nb.y, sel.ne.y);
+}
+
+void
+selremove(void)
+{
 	sel.mode = SEL_IDLE;
 	sel.ob.x = -1;
-	tsetdirt(sel.nb.y, sel.ne.y);
 }
 
 void
@@ -950,10 +993,8 @@ void
 ttywrite(const char *s, size_t n, int may_echo)
 {
 	const char *next;
-	#if SCROLLBACK_PATCH
-	Arg arg = (Arg) { .i = term.scr };
-
-	kscrolldown(&arg);
+	#if REFLOW_PATCH || SCROLLBACK_PATCH
+	kscrolldown(&((Arg){ .i = term.scr }));
 	#endif // SCROLLBACK_PATCH
 
 	if (may_echo && IS_SET(MODE_ECHO))
@@ -1097,7 +1138,11 @@ tsetdirtattr(int attr)
 	for (i = 0; i < term.row-1; i++) {
 		for (j = 0; j < term.col-1; j++) {
 			if (term.line[i][j].mode & attr) {
+				#if REFLOW_PATCH
+				term.dirty[i] = 1;
+				#else
 				tsetdirt(i, i);
+				#endif // REFLOW_PATCH
 				break;
 			}
 		}
@@ -1110,7 +1155,12 @@ tfulldirt(void)
 	#if SYNC_PATCH
 	tsync_end();
 	#endif // SYNC_PATCH
+	#if REFLOW_PATCH
+	for (int i = 0; i < term.row; i++)
+		term.dirty[i] = 1;
+	#else
 	tsetdirt(0, term.row-1);
+	#endif // REFLOW_PATCH
 }
 
 void
@@ -1128,18 +1178,21 @@ tcursor(int mode)
 }
 
 void
+tresetcursor(void)
+{
+	term.c = (TCursor){ { .mode = ATTR_NULL, .fg = defaultfg, .bg = defaultbg },
+	                    .x = 0, .y = 0, .state = CURSOR_DEFAULT };
+}
+
+void
 treset(void)
 {
 	uint i;
-	#if SIXEL_PATCH
-	ImageList *im;
-	#endif // SIXEL_PATCH
+	#if REFLOW_PATCH
+	int x, y;
+	#endif // REFLOW_PATCH
 
-	term.c = (TCursor){{
-		.mode = ATTR_NULL,
-		.fg = defaultfg,
-		.bg = defaultbg
-	}, .x = 0, .y = 0, .state = CURSOR_DEFAULT};
+	tresetcursor();
 
 	memset(term.tabs, 0, term.col * sizeof(*term.tabs));
 	for (i = tabspaces; i < term.col; i += tabspaces)
@@ -1149,8 +1202,20 @@ treset(void)
 	term.mode = MODE_WRAP|MODE_UTF8;
 	memset(term.trantbl, CS_USA, sizeof(term.trantbl));
 	term.charset = 0;
+	#if REFLOW_PATCH
+	term.histf = 0;
+	term.histi = 0;
+	term.scr = 0;
+	selremove();
+	#endif // REFLOW_PATCH
 
 	for (i = 0; i < 2; i++) {
+		#if REFLOW_PATCH
+		tcursor(CURSOR_SAVE); /* reset saved cursor */
+		for (y = 0; y < term.row; y++)
+			for (x = 0; x < term.col; x++)
+				tclearglyph(&term.line[y][x], 0);
+		#else
 		tmoveto(0, 0);
 		tcursor(CURSOR_SAVE);
 		#if COLUMNS_PATCH
@@ -1158,13 +1223,18 @@ treset(void)
 		#else
 		tclearregion(0, 0, term.col-1, term.row-1);
 		#endif // COLUMNS_PATCH
+		#endif // REFLOW_PATCH
 		#if SIXEL_PATCH
 		tdeleteimages();
 		#endif // SIXEL_PATCH
 		tswapscreen();
 	}
+	#if REFLOW_PATCH
+	tfulldirt();
+	#endif // REFLOW_PATCH
 }
 
+#if !REFLOW_PATCH
 void
 tnew(int col, int row)
 {
@@ -1172,7 +1242,9 @@ tnew(int col, int row)
 	tresize(col, row);
 	treset();
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 tswapscreen(void)
 {
@@ -1190,7 +1262,9 @@ tswapscreen(void)
 	term.mode ^= MODE_ALTSCREEN;
 	tfulldirt();
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 tscrolldown(int orig, int n)
 {
@@ -1245,7 +1319,9 @@ tscrolldown(int orig, int n)
 	selscroll(orig, n);
 	#endif // SCROLLBACK_PATCH
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 #if SCROLLBACK_PATCH
 tscrollup(int orig, int n, int copyhist)
@@ -1350,7 +1426,9 @@ tscrollup(int orig, int n)
 	selscroll(orig, -n);
 	#endif // SCROLLBACK_PATCH
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 selscroll(int orig, int n)
 {
@@ -1370,6 +1448,7 @@ selscroll(int orig, int n)
 		}
 	}
 }
+#endif // REFLOW_PATCH
 
 void
 tnewline(int first_col)
@@ -1377,7 +1456,9 @@ tnewline(int first_col)
 	int y = term.c.y;
 
 	if (y == term.bot) {
-		#if SCROLLBACK_PATCH
+		#if REFLOW_PATCH
+		tscrollup(term.top, term.bot, 1, SCROLL_SAVEHIST);
+		#elif SCROLLBACK_PATCH
 		tscrollup(term.top, 1, 1);
 		#else
 		tscrollup(term.top, 1);
@@ -1503,6 +1584,9 @@ tsetchar(Rune u, const Glyph *attr, int x, int y)
 	term.dirty[y] = 1;
 	term.line[y][x] = *attr;
 	term.line[y][x].u = u;
+	#if REFLOW_PATCH
+	term.line[y][x].mode |= ATTR_SET;
+	#endif // REFLOW_PATCH
 
 	#if BOXDRAW_PATCH
 	if (isboxdraw(u))
@@ -1510,6 +1594,7 @@ tsetchar(Rune u, const Glyph *attr, int x, int y)
 	#endif // BOXDRAW_PATCH
 }
 
+#if !REFLOW_PATCH
 void
 tclearregion(int x1, int y1, int x2, int y2)
 {
@@ -1544,7 +1629,9 @@ tclearregion(int x1, int y1, int x2, int y2)
 		}
 	}
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 tdeletechar(int n)
 {
@@ -1561,7 +1648,9 @@ tdeletechar(int n)
 	memmove(&line[dst], &line[src], size * sizeof(Glyph));
 	tclearregion(term.col-n, term.c.y, term.col-1, term.c.y);
 }
+#endif // REFLOW_PATCH
 
+#if !REFLOW_PATCH
 void
 tinsertblank(int n)
 {
@@ -1578,6 +1667,7 @@ tinsertblank(int n)
 	memmove(&line[dst], &line[src], size * sizeof(Glyph));
 	tclearregion(src, term.c.y, dst - 1, term.c.y);
 }
+#endif // REFLOW_PATCH
 
 void
 tinsertblankline(int n)
@@ -1602,12 +1692,15 @@ tdeleteimages(void)
 void
 tdeleteline(int n)
 {
-	if (BETWEEN(term.c.y, term.top, term.bot))
-		#if SCROLLBACK_PATCH
+	if (BETWEEN(term.c.y, term.top, term.bot)) {
+		#if REFLOW_PATCH
+		tscrollup(term.c.y, term.bot, n, SCROLL_NOSAVEHIST);
+		#elif SCROLLBACK_PATCH
 		tscrollup(term.c.y, n, 0);
 		#else
 		tscrollup(term.c.y, n);
 		#endif // SCROLLBACK_PATCH
+	}
 }
 
 int32_t
@@ -1906,6 +1999,13 @@ tsetmode(int priv, int set, const int *args, int narg)
 			case 1047:
 				if (!allowaltscreen)
 					break;
+				#if REFLOW_PATCH
+				if (set)
+					tloadaltscreen(*args != 47, *args == 1049);
+				else
+					tloaddefscreen(*args != 47, *args == 1049);
+				break;
+				#else
 				alt = IS_SET(MODE_ALTSCREEN);
 				if (alt) {
 					#if COLUMNS_PATCH
@@ -1919,7 +2019,12 @@ tsetmode(int priv, int set, const int *args, int narg)
 				if (*args != 1049)
 					break;
 				/* FALLTHROUGH */
+				#endif // REFLOW_PATCH
 			case 1048:
+				#if REFLOW_PATCH
+				if (!allowaltscreen)
+					break;
+				#endif // REFLOW_PATCH
 				tcursor((set) ? CURSOR_SAVE : CURSOR_LOAD);
 				break;
 			case 2004: /* 2004: bracketed paste mode */
@@ -1979,11 +2084,14 @@ void
 csihandle(void)
 {
 	char buffer[40];
-	int len;
+	int n = 0, len;
 	#if SIXEL_PATCH
 	ImageList *im, *next;
-	int n, pi, pa;
+	int pi, pa;
 	#endif // SIXEL_PATCH
+	#if REFLOW_PATCH
+	int x;
+	#endif // REFLOW_PATCH
 	#if COLUMNS_PATCH
 	int maxcol = term.maxcol;
 	#else
@@ -2086,18 +2194,52 @@ csihandle(void)
 	case 'J': /* ED -- Clear screen */
 		switch (csiescseq.arg[0]) {
 		case 0: /* below */
+			#if REFLOW_PATCH
+			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y, 1);
+			if (term.c.y < term.row-1)
+				tclearregion(0, term.c.y+1, term.col-1, term.row-1, 1);
+			#else
 			tclearregion(term.c.x, term.c.y, maxcol-1, term.c.y);
-			if (term.c.y < term.row-1) {
-				tclearregion(0, term.c.y+1, maxcol-1,
-						term.row-1);
-			}
+			if (term.c.y < term.row-1)
+				tclearregion(0, term.c.y+1, maxcol-1, term.row-1);
+			#endif // REFLOW_PATCH
 			break;
 		case 1: /* above */
+			#if REFLOW_PATCH
+			if (term.c.y >= 1)
+				tclearregion(0, 0, term.col-1, term.c.y-1, 1);
+			tclearregion(0, term.c.y, term.c.x, term.c.y, 1);
+			#else
 			if (term.c.y > 1)
 				tclearregion(0, 0, maxcol-1, term.c.y-1);
 			tclearregion(0, term.c.y, term.c.x, term.c.y);
+			#endif // REFLOW_PATCH
 			break;
 		case 2: /* screen */
+			#if REFLOW_PATCH
+			if (IS_SET(MODE_ALTSCREEN)) {
+				tclearregion(0, 0, term.col-1, term.row-1, 1);
+				#if SIXEL_PATCH
+				tdeleteimages();
+				#endif // SIXEL_PATCH
+				break;
+			}
+			/* vte does this:
+			tscrollup(0, term.row-1, term.row, SCROLL_SAVEHIST); */
+			/* alacritty does this: */
+			#if KEYBOARDSELECT_PATCH
+			for (n = term.row-1; n >= 0 && tlinelen(term.line[n]) == 0; n--)
+				;
+			#endif // KEYBOARDSELECT_PATCH
+			#if SIXEL_PATCH
+			for (im = term.images; im; im = im->next)
+				n = MAX(im->y - term.scr, n);
+			#endif // SIXEL_PATCH
+			if (n >= 0)
+				tscrollup(0, term.row-1, n+1, SCROLL_SAVEHIST);
+			tscrollup(0, term.row-1, term.row-n-1, SCROLL_NOSAVEHIST);
+			break;
+			#else // !REFLOW_PATCH
 			#if SCROLLBACK_PATCH
 			if (!IS_SET(MODE_ALTSCREEN)) {
 				#if SCROLLBACK_PATCH
@@ -2127,8 +2269,25 @@ csihandle(void)
 			#if SIXEL_PATCH
 			tdeleteimages();
 			#endif // SIXEL_PATCH
+			#endif // REFLOW_PTCH
 			break;
 		case 3: /* scrollback */
+			#if REFLOW_PATCH
+			if (IS_SET(MODE_ALTSCREEN))
+				break;
+			kscrolldown(&((Arg){ .i = term.scr }));
+			term.scr = 0;
+			term.histi = 0;
+			term.histf = 0;
+			#if SIXEL_PATCH
+			for (im = term.images; im; im = next) {
+				next = im->next;
+				if (im->y < 0)
+					delete_image(im);
+			}
+			#endif // SIXEL_PATCH
+			break;
+			#else // !REFLOW_PATCH
 			#if SCROLLBACK_PATCH
 			if (!IS_SET(MODE_ALTSCREEN)) {
 				term.scr = 0;
@@ -2149,6 +2308,7 @@ csihandle(void)
 			}
 			#endif // SIXEL_PATCH
 			break;
+			#endif // REFLOW_PATCH
 		#if SIXEL_PATCH
 		case 6: /* sixels */
 			tdeleteimages();
@@ -2161,9 +2321,20 @@ csihandle(void)
 		break;
 	case 'K': /* EL -- Clear line */
 		switch (csiescseq.arg[0]) {
+		#if REFLOW_PATCH
 		case 0: /* right */
-			tclearregion(term.c.x, term.c.y, maxcol-1,
-					term.c.y);
+			tclearregion(term.c.x, term.c.y, term.col-1, term.c.y, 1);
+			break;
+		case 1: /* left */
+			tclearregion(0, term.c.y, term.c.x, term.c.y, 1);
+			break;
+		case 2: /* all */
+			tclearregion(0, term.c.y, term.col-1, term.c.y, 1);
+			break;
+		}
+		#else
+		case 0: /* right */
+			tclearregion(term.c.x, term.c.y, maxcol-1, term.c.y);
 			break;
 		case 1: /* left */
 			tclearregion(0, term.c.y, term.c.x, term.c.y);
@@ -2172,6 +2343,7 @@ csihandle(void)
 			tclearregion(0, term.c.y, maxcol-1, term.c.y);
 			break;
 		}
+		#endif // REFLOW_PATCH
 		break;
 	case 'S': /* SU -- Scroll <n> line up ; XTSMGRAPHICS */
 		if (csiescseq.priv) {
@@ -2203,7 +2375,10 @@ csihandle(void)
 			goto unknown;
 		}
 		DEFAULT(csiescseq.arg[0], 1);
-		#if SIXEL_PATCH && SCROLLBACK_PATCH
+		#if REFLOW_PATCH
+		/* xterm, urxvt, alacritty save this in history */
+		tscrollup(term.top, term.bot, csiescseq.arg[0], SCROLL_SAVEHIST);
+		#elif SIXEL_PATCH && SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 1);
 		#elif SCROLLBACK_PATCH
 		tscrollup(term.top, csiescseq.arg[0], 0);
@@ -2227,9 +2402,17 @@ csihandle(void)
 		tdeleteline(csiescseq.arg[0]);
 		break;
 	case 'X': /* ECH -- Erase <n> char */
+		#if REFLOW_PATCH
+		if (csiescseq.arg[0] < 0)
+			return;
+		DEFAULT(csiescseq.arg[0], 1);
+		x = MIN(term.c.x + csiescseq.arg[0], term.col) - 1;
+		tclearregion(term.c.x, term.c.y, x, term.c.y, 1);
+		#else
 		DEFAULT(csiescseq.arg[0], 1);
 		tclearregion(term.c.x, term.c.y,
 				term.c.x + csiescseq.arg[0] - 1, term.c.y);
+		#endif // REFLOW_PATCH
 		break;
 	case 'P': /* DCH -- Delete <n> char */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -2411,7 +2594,7 @@ strhandle(void)
 	int i, x, y, x1, y1, x2, y2, numimages;
 	int cx, cy;
 	Line line;
-	#if SCROLLBACK_PATCH
+	#if SCROLLBACK_PATCH || REFLOW_PATCH
 	int scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
 	#else
 	int scr = 0;
@@ -2551,7 +2734,7 @@ strhandle(void)
 			x2 = MIN(x2, term.col);
 			for (i = 0, im = newimages; im; im = next, i++) {
 				next = im->next;
-				#if SCROLLBACK_PATCH
+				#if SCROLLBACK_PATCH || REFLOW_PATCH
 				scr = IS_SET(MODE_ALTSCREEN) ? 0 : term.scr;
 				#endif // SCROLLBACK_PATCH
 				if (IS_SET(MODE_SIXEL_SDM)) {
@@ -2704,6 +2887,7 @@ tdumpsel(void)
 	}
 }
 
+#if !REFLOW_PATCH
 void
 tdumpline(int n)
 {
@@ -2718,6 +2902,7 @@ tdumpline(int n)
 	}
 	tprinter("\n", 1);
 }
+#endif // REFLOW_PATCH
 
 void
 tdump(void)
@@ -2994,7 +3179,9 @@ eschandle(uchar ascii)
 		return 0;
 	case 'D': /* IND -- Linefeed */
 		if (term.c.y == term.bot) {
-			#if SCROLLBACK_PATCH
+			#if REFLOW_PATCH
+			tscrollup(term.top, term.bot, 1, SCROLL_SAVEHIST);
+			#elif SCROLLBACK_PATCH
 			tscrollup(term.top, 1, 1);
 			#else
 			tscrollup(term.top, 1);
@@ -3027,7 +3214,7 @@ eschandle(uchar ascii)
 		resettitle();
 		xloadcols();
 		xsetmode(0, MODE_HIDE);
-		#if SCROLLBACK_PATCH
+		#if SCROLLBACK_PATCH && !REFLOW_PATCH
 		if (!IS_SET(MODE_ALTSCREEN)) {
 			term.scr = 0;
 			term.histi = 0;
@@ -3189,8 +3376,14 @@ check_control_code:
 		return;
 	}
 
+	#if REFLOW_PATCH
+	/* selected() takes relative coordinates */
+	if (selected(term.c.x + term.scr, term.c.y + term.scr))
+		selclear();
+	#else
 	if (selected(term.c.x, term.c.y))
 		selclear();
+	#endif // REFLOW_PATCH
 
 	gp = &term.line[term.c.y][term.c.x];
 	if (IS_SET(MODE_WRAP) && (term.c.state & CURSOR_WRAPNEXT)) {
@@ -3229,6 +3422,9 @@ check_control_code:
 	if (term.c.x+width < term.col) {
 		tmoveto(term.c.x+width, term.c.y);
 	} else {
+		#if REFLOW_PATCH
+		term.wrapcwidth[IS_SET(MODE_ALTSCREEN)] = width;
+		#endif // REFLOW_PATCH
 		term.c.state |= CURSOR_WRAPNEXT;
 	}
 }
@@ -3284,6 +3480,7 @@ twrite(const char *buf, int buflen, int show_ctrl)
 	return n;
 }
 
+#if !REFLOW_PATCH
 void
 tresize(int col, int row)
 {
@@ -3446,6 +3643,7 @@ tresize(int col, int row)
 	}
 	#endif // SIXEL_PATCH
 }
+#endif // REFLOW_PATCH
 
 void
 resettitle(void)
@@ -3467,7 +3665,7 @@ drawregion(int x1, int y1, int x2, int y2)
 			continue;
 
 		term.dirty[y] = 0;
-		#if SCROLLBACK_PATCH
+		#if SCROLLBACK_PATCH || REFLOW_PATCH
 		xdrawline(TLINE(y), x1, y, x2);
 		#else
 		xdrawline(term.line[y], x1, y, x2);
@@ -3495,6 +3693,10 @@ draw(void)
 
 	drawregion(0, 0, term.col, term.row);
 
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (!kbds_drawcursor()) {
+	#endif // KEYBOARDSELECT_PATCH
+
 	#if SCROLLBACK_PATCH
 	if (term.scr == 0)
 	#endif // SCROLLBACK_PATCH
@@ -3506,6 +3708,9 @@ draw(void)
 	xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 			term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
 	#endif // LIGATURES_PATCH
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	}
+	#endif // KEYBOARDSELECT_PATCH
 	term.ocx = cx;
 	term.ocy = term.c.y;
 	xfinishdraw();

@@ -90,7 +90,7 @@ static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int);
 #if LIGATURES_PATCH
 static inline void xresetfontsettings(uint32_t mode, Font **font, int *frcflags);
 #endif // LIGATURES_PATCH
-static void xdrawglyph(Glyph, int, int);
+void xdrawglyph(Glyph, int, int);
 static void xclear(int, int, int, int);
 static int xgeommasktogravity(int);
 static int ximopen(Display *);
@@ -259,6 +259,11 @@ clippaste(const Arg *dummy)
 {
 	Atom clipboard;
 
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (IS_SET(MODE_KBDSELECT) && !kbds_issearchmode())
+		return;
+	#endif // KEYBOARDSELECT_PATCH
+
 	clipboard = XInternAtom(xw.dpy, "CLIPBOARD", 0);
 	XConvertSelection(xw.dpy, clipboard, xsel.xtarget, clipboard,
 			xw.win, CurrentTime);
@@ -273,6 +278,11 @@ numlock(const Arg *dummy)
 void
 selpaste(const Arg *dummy)
 {
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (IS_SET(MODE_KBDSELECT) && !kbds_issearchmode())
+		return;
+	#endif // KEYBOARDSELECT_PATCH
+
 	XConvertSelection(xw.dpy, XA_PRIMARY, xsel.xtarget, XA_PRIMARY,
 			xw.win, CurrentTime);
 }
@@ -399,6 +409,11 @@ mousesel(XEvent *e, int done)
 	int type, seltype = SEL_REGULAR;
 	uint state = e->xbutton.state & ~(Button1Mask | forcemousemod);
 
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (kbds_isselectmode())
+		return;
+	#endif // KEYBOARDSELECT_PATCH
+
 	for (type = 1; type < LEN(selmasks); ++type) {
 		if (match(selmasks[type], state)) {
 			seltype = type;
@@ -517,6 +532,11 @@ bpress(XEvent *e)
 		xsel.tclick2 = xsel.tclick1;
 		xsel.tclick1 = now;
 
+		#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+		if (kbds_isselectmode())
+			return;
+		#endif // KEYBOARDSELECT_PATCH
+
 		selstart(evcol(e), evrow(e), snap);
 
 		#if OPENURLONCLICK_PATCH
@@ -555,6 +575,9 @@ selnotify(XEvent *e)
 	int format;
 	uchar *data, *last, *repl;
 	Atom type, incratom, property = None;
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	int append = 0;
+	#endif // KEYBOARDSELECT_PATCH
 
 	incratom = XInternAtom(xw.dpy, "INCR", 0);
 
@@ -616,6 +639,30 @@ selnotify(XEvent *e)
 			continue;
 		}
 
+		#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+		if (IS_SET(MODE_KBDSELECT) && kbds_issearchmode()) {
+			kbds_pasteintosearch(data, nitems * format / 8, append++);
+		} else {
+			/*
+			 * As seen in getsel:
+			 * Line endings are inconsistent in the terminal and GUI world
+			 * copy and pasting. When receiving some selection data,
+			 * replace all '\n' with '\r'.
+			 * FIXME: Fix the computer world.
+			 */
+			repl = data;
+			last = data + nitems * format / 8;
+			while ((repl = memchr(repl, '\n', last - repl))) {
+				*repl++ = '\r';
+			}
+
+			if (IS_SET(MODE_BRCKTPASTE) && ofs == 0)
+				ttywrite("\033[200~", 6, 0);
+			ttywrite((char *)data, nitems * format / 8, 1);
+			if (IS_SET(MODE_BRCKTPASTE) && rem == 0)
+				ttywrite("\033[201~", 6, 0);
+		}
+		#else
 		/*
 		 * As seen in getsel:
 		 * Line endings are inconsistent in the terminal and GUI world
@@ -634,6 +681,7 @@ selnotify(XEvent *e)
 		ttywrite((char *)data, nitems * format / 8, 1);
 		if (IS_SET(MODE_BRCKTPASTE) && rem == 0)
 			ttywrite("\033[201~", 6, 0);
+		#endif // KEYBOARDSELECT_PATCH
 		XFree(data);
 		/* number of 32-bit chunks returned */
 		ofs += nitems * format / 32;
@@ -854,11 +902,11 @@ xresize(int col, int row)
 	#if !SINGLE_DRAWABLE_BUFFER_PATCH
 	XFreePixmap(xw.dpy, xw.buf);
 	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h,
-			#if ALPHA_PATCH
-			xw.depth
-			#else
-			DefaultDepth(xw.dpy, xw.scr)
-			#endif // ALPHA_PATCH
+		#if ALPHA_PATCH
+		xw.depth
+		#else
+		DefaultDepth(xw.dpy, xw.scr)
+		#endif // ALPHA_PATCH
 	);
 	XftDrawChange(xw.draw, xw.buf);
 	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
@@ -2064,6 +2112,13 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	}
 	#endif // INVERT_PATCH
 
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (base.mode & ATTR_HIGHLIGHT) {
+		fg = &dc.col[(base.mode & ATTR_REVERSE) ? highlightbg : highlightfg];
+		bg = &dc.col[(base.mode & ATTR_REVERSE) ? highlightfg : highlightbg];
+	}
+	#endif // KEYBOARDSELECT_PATCH
+
 	#if ALPHA_PATCH && ALPHA_GRADIENT_PATCH
 	// gradient
 	bg->color.alpha = grad_alpha * 0xffff * (win.h - y*win.ch) / win.h + stat_alpha * 0xffff;
@@ -2614,6 +2669,9 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	#if DYNAMIC_CURSOR_COLOR_PATCH
 	|ATTR_REVERSE
 	#endif // DYNAMIC_CURSOR_COLOR_PATCH
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	|ATTR_HIGHLIGHT
+	#endif // KEYBOARDSELECT_PATCH
 	;
 
 	if (IS_SET(MODE_REVERSE)) {
@@ -2638,7 +2696,9 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		drawcol = dc.col[defaultcs];
 		#else
 		if (selected(cx, cy)) {
-			#if DYNAMIC_CURSOR_COLOR_PATCH
+			#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+			g.mode &= ~(ATTR_REVERSE | ATTR_HIGHLIGHT);
+			#elif DYNAMIC_CURSOR_COLOR_PATCH
 			g.mode &= ~ATTR_REVERSE;
 			#endif // DYNAMIC_CURSOR_COLOR_PATCH
 			g.fg = defaultfg;
@@ -2668,6 +2728,11 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		#endif // DYNAMIC_CURSOR_COLOR_PATCH
 		#endif // SELECTION_COLORS_PATCH
 	}
+
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (g.mode & ATTR_HIGHLIGHT)
+		g.mode ^= ATTR_REVERSE;
+	#endif // KEYBOARDSELECT_PATCH
 
 	/* draw the new one */
 	if (IS_SET(MODE_FOCUSED)) {
@@ -2921,6 +2986,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 		xdrawglyphfontspecs(specs, seq[i].base, seq[i].numspecs, seq[i].ox, y1, DRAW_FG, seq[i].charlen);
 		specs += seq[i].numspecs;
 	}
+
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	kbds_drawstatusbar(y1);
+	#endif // KEYBOARDSELECT_PATCH
 }
 #elif LIGATURES_PATCH
 void
@@ -2957,6 +3026,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 		numspecs = xmakeglyphfontspecs(specs, &line[ox], x2 - ox, ox, y1);
 		xdrawglyphfontspecs(specs, base, numspecs, ox, y1, x2 - ox);
 	}
+
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	kbds_drawstatusbar(y1);
+	#endif // KEYBOARDSELECT_PATCH
 }
 #elif WIDE_GLYPHS_PATCH
 void
@@ -2999,6 +3072,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 		if (i > 0)
 			xdrawglyphfontspecs(specs, base, i, ox, y1, dmode);
 	}
+
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	kbds_drawstatusbar(y1);
+	#endif // KEYBOARDSELECT_PATCH
 }
 #else // !WIDE_GLYPHS_PATCH and !LIGATURES_PATCH
 void
@@ -3035,6 +3112,10 @@ xdrawline(Line line, int x1, int y1, int x2)
 	}
 	if (i > 0)
 		xdrawglyphfontspecs(specs, base, i, ox, y1);
+
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	kbds_drawstatusbar(y1);
+	#endif // KEYBOARDSELECT_PATCH
 }
 #endif // WIDE_GLYPHS_PATCH | LIGATURES_PATCH
 
@@ -3130,11 +3211,11 @@ xfinishdraw(void)
 		width = MIN(width, (x2 - im->x) * win.cw);
 
 		/* delete the image if the text cells behind it have been changed */
-		#if SCROLLBACK_PATCH
+		#if SCROLLBACK_PATCH || REFLOW_PATCH
 		line = TLINE(im->y);
 		#else
 		line = term.line[im->y];
-		#endif // SCROLLBACK_PATCH
+		#endif // SCROLLBACK_PATCH | REFLOW_PATCH
 		for (del = 0, x = im->x; x < x2; x++) {
 			if ((del = !(line[x].mode & ATTR_SIXEL)))
 				break;
@@ -3431,7 +3512,25 @@ kpress(XEvent *ev)
 	} else {
 		len = XLookupString(e, buf, sizeof buf, &ksym, NULL);
 	}
-	#if KEYBOARDSELECT_PATCH
+
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	if (IS_SET(MODE_KBDSELECT) ) {
+		if (kbds_issearchmode()) {
+			for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
+				if (ksym == bp->keysym && match(bp->mod, e->state) &&
+						(!bp->screen || bp->screen == screen) &&
+						(bp->func == clippaste || bp->func == selpaste)) {
+					bp->func(&(bp->arg));
+					return;
+				}
+			}
+		}
+		if (match(XK_NO_MOD, e->state) ||
+			(XK_Shift_L | XK_Shift_R) & e->state )
+			win.mode ^= kbds_keyboardhandler(ksym, buf, len, 0);
+		return;
+	}
+	#elif KEYBOARDSELECT_PATCH
 	if ( IS_SET(MODE_KBDSELECT) ) {
 		if ( match(XK_NO_MOD, e->state) ||
 			(XK_Shift_L | XK_Shift_R) & e->state )

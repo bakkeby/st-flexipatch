@@ -20,7 +20,10 @@
 #if INVERT_PATCH
 #include "invert.h"
 #endif
-#if KEYBOARDSELECT_PATCH
+#if REFLOW_PATCH && KEYBOARDSELECT_PATCH
+#include "keyboardselect_reflow_st.h"
+#include "keyboardselect_reflow_x.h"
+#elif KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.h"
 #endif
 #if NETWMICON_PATCH
