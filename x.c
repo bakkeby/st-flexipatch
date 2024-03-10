@@ -3782,12 +3782,12 @@ run:
 	if (!(xw.dpy = XOpenDisplay(NULL)))
 		die("Can't open display\n");
 
+	config_init(xw.dpy);
+	#endif // XRESOURCES_PATCH
 	#if LIGATURES_PATCH
 	hbcreatebuffer();
 	#endif // LIGATURES_PATCH
 
-	config_init(xw.dpy);
-	#endif // XRESOURCES_PATCH
 	cols = MAX(cols, 1);
 	rows = MAX(rows, 1);
 	#if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
