@@ -2976,7 +2976,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 				new.mode ^= ATTR_REVERSE;
 				#endif // SELECTION_COLORS_PATCH
 			if (i > 0 && ATTRCMP(base, new)) {
-				xdrawglyphfontspecs(specs, base, i, ox, y1, dmode);
+				xdrawglyphfontspecs(specs, base, i, ox, y1, dmode, x - ox);
 				specs += i;
 				numspecs -= i;
 				i = 0;
@@ -2988,7 +2988,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 			i++;
 		}
 		if (i > 0)
-			xdrawglyphfontspecs(specs, base, i, ox, y1, dmode);
+			xdrawglyphfontspecs(specs, base, i, ox, y1, dmode, x2 - ox);
 	}
 }
 #else // !WIDE_GLYPHS_PATCH and !LIGATURES_PATCH
