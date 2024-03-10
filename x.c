@@ -80,11 +80,13 @@ static void zoomreset(const Arg *);
 
 static inline ushort sixd_to_16bit(int);
 static int xmakeglyphfontspecs(XftGlyphFontSpec *, const Glyph *, int, int, int);
-#if WIDE_GLYPHS_PATCH
+#if LIGATURES_PATCH && WIDE_GLYPHS_PATCH
 static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int, int, int);
+#elif LIGATURES_PATCH || WIDE_GLYPHS_PATCH
+static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int, int);
 #else
 static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int);
-#endif // WIDE_GLYPHS_PATCH
+#endif // WIDE_GLYPHS_PATCH | LIGATURES_PATCH
 #if LIGATURES_PATCH
 static inline void xresetfontsettings(uint32_t mode, Font **font, int *frcflags);
 #endif // LIGATURES_PATCH
@@ -1623,15 +1625,18 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 	FcPattern *fcpattern, *fontpattern;
 	FcFontSet *fcsets[] = { NULL };
 	FcCharSet *fccharset;
-	int f, numspecs = 0;
-	int i;
+	int i, f, numspecs = 0;
 	#if LIGATURES_PATCH
 	float cluster_xp, cluster_yp;
 	HbTransformData shaped;
 
 	/* Initial values. */
 	xresetfontsettings(glyphs[0].mode, &font, &frcflags);
+	#if VERTCENTER_PATCH
 	xp = winx, yp = winy + font->ascent + win.cyo;
+	#else
+	xp = winx, yp = winy + font->ascent;
+	#endif // VERTCENTER_PATCH
 	cluster_xp = xp; cluster_yp = yp;
 	/* Shape the segment. */
 	hbtransform(&shaped, font->match, glyphs, 0, len);
@@ -1924,13 +1929,15 @@ static int getSlope (int x, int iPoint, int waveWidth)
 #endif // UNDERCURL_PATCH
 
 void
-#if WIDE_GLYPHS_PATCH
-xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, int y, int dmode, int charlen)
-#else
-xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
-#endif // WIDE_GLYPHS_PATCH
-{
+xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, int y
 	#if WIDE_GLYPHS_PATCH
+	,int dmode
+	#endif // WIDE_GLYPHS_PATCH
+	#if LIGATURES_PATCH
+	, int charlen
+	#endif // LIGATURES_PATCH
+) {
+	#if LIGATURES_PATCH
 	int width = charlen * win.cw;
 	#else
 	int charlen = len * ((base.mode & ATTR_WIDE) ? 2 : 1);
@@ -2549,11 +2556,14 @@ xdrawglyph(Glyph g, int x, int y)
 	XftGlyphFontSpec spec;
 
 	numspecs = xmakeglyphfontspecs(&spec, &g, 1, x, y);
-	#if WIDE_GLYPHS_PATCH
-	xdrawglyphfontspecs(&spec, g, numspecs, x, y, DRAW_BG | DRAW_FG, (g.mode & ATTR_WIDE) ? 2 : 1);
-	#else
-	xdrawglyphfontspecs(&spec, g, numspecs, x, y);
-	#endif // WIDE_GLYPHS_PATCH
+	xdrawglyphfontspecs(&spec, g, numspecs, x, y
+		#if WIDE_GLYPHS_PATCH
+		,DRAW_BG | DRAW_FG
+		#endif // WIDE_GLYPHS_PATCH
+		#if LIGATURES_PATCH
+		,(g.mode & ATTR_WIDE) ? 2 : 1
+		#endif // LIGATURES_PATCH
+	);
 }
 
 void
@@ -2859,7 +2869,7 @@ xstartdraw(void)
 	return IS_SET(MODE_VISIBLE);
 }
 
-#if WIDE_GLYPHS_PATCH && LIGATURES_PATCH
+#if LIGATURES_PATCH && WIDE_GLYPHS_PATCH
 void
 xdrawline(Line line, int x1, int y1, int x2)
 {
@@ -2920,7 +2930,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 	Glyph base, new;
 
 	XftGlyphFontSpec *specs = xw.specbuf;
-	numspecs = xmakeglyphfontspecs(specs, &line[x1], x2 - x1, x1, y1);
+
 	i = ox = 0;
 	for (x = x1; x < x2; x++) {
 		new = line[x];
@@ -2934,7 +2944,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 			#endif // SELECTION_COLORS_PATCH
 		if ((i > 0) && ATTRCMP(base, new)) {
 			numspecs = xmakeglyphfontspecs(specs, &line[ox], x - ox, ox, y1);
-			xdrawglyphfontspecs(specs, base, numspecs, ox, y1);
+			xdrawglyphfontspecs(specs, base, numspecs, ox, y1, x - ox);
 			i = 0;
 		}
 		if (i == 0) {
@@ -2943,10 +2953,9 @@ xdrawline(Line line, int x1, int y1, int x2)
 		}
 		i++;
 	}
-
 	if (i > 0) {
 		numspecs = xmakeglyphfontspecs(specs, &line[ox], x2 - ox, ox, y1);
-		xdrawglyphfontspecs(specs, base, numspecs, ox, y1);
+		xdrawglyphfontspecs(specs, base, numspecs, ox, y1, x2 - ox);
 	}
 }
 #elif WIDE_GLYPHS_PATCH
@@ -2976,7 +2985,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 				new.mode ^= ATTR_REVERSE;
 				#endif // SELECTION_COLORS_PATCH
 			if (i > 0 && ATTRCMP(base, new)) {
-				xdrawglyphfontspecs(specs, base, i, ox, y1, dmode, x - ox);
+				xdrawglyphfontspecs(specs, base, i, ox, y1, dmode);
 				specs += i;
 				numspecs -= i;
 				i = 0;
@@ -2988,7 +2997,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 			i++;
 		}
 		if (i > 0)
-			xdrawglyphfontspecs(specs, base, i, ox, y1, dmode, x2 - ox);
+			xdrawglyphfontspecs(specs, base, i, ox, y1, dmode);
 	}
 }
 #else // !WIDE_GLYPHS_PATCH and !LIGATURES_PATCH

@@ -142,9 +142,7 @@ typedef Glyph *Line;
 #if LIGATURES_PATCH
 typedef struct {
 	int ox;
-	#if WIDE_GLYPHS_PATCH
 	int charlen;
-	#endif // WIDE_GLYPHS_PATCH
 	int numspecs;
 	Glyph base;
 } GlyphFontSeq;
