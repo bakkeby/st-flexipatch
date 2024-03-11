@@ -2553,10 +2553,10 @@ void
 xdrawglyph(Glyph g, int x, int y)
 {
 	int numspecs;
-	XftGlyphFontSpec spec;
+	XftGlyphFontSpec *specs = xw.specbuf;
 
-	numspecs = xmakeglyphfontspecs(&spec, &g, 1, x, y);
-	xdrawglyphfontspecs(&spec, g, numspecs, x, y
+	numspecs = xmakeglyphfontspecs(specs, &g, 1, x, y);
+	xdrawglyphfontspecs(specs, g, numspecs, x, y
 		#if WIDE_GLYPHS_PATCH
 		,DRAW_BG | DRAW_FG
 		#endif // WIDE_GLYPHS_PATCH
