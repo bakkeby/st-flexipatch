@@ -367,7 +367,7 @@ static MouseShortcut mshortcuts[] = {
 	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
 	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
 	#endif // SCROLLBACK_MOUSE_PATCH
-	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH || REFLOW_PATCH
 	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1},      0, S_PRI },
 	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1},      0, S_PRI },
 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"}, 0, S_ALT },
