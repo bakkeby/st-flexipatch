@@ -23,7 +23,10 @@
 #if KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.h"
 #endif
-#if NETWMICON_PATCH
+#if NETWMICON_LEGACY_PATCH
+#include "netwmicon_icon.h"
+#endif
+#if NETWMICON_PATCH || NETWMICON_FF_PATCH || NETWMICON_LEGACY_PATCH
 #include "netwmicon.h"
 #endif
 #if RIGHTCLICKTOPLUMB_PATCH

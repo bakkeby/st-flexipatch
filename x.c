@@ -1548,11 +1548,9 @@ xinit(int cols, int rows)
 	xw.netwmiconname = XInternAtom(xw.dpy, "_NET_WM_ICON_NAME", False);
 	XSetWMProtocols(xw.dpy, xw.win, &xw.wmdeletewin, 1);
 
-	#if NETWMICON_PATCH
-	xw.netwmicon = XInternAtom(xw.dpy, "_NET_WM_ICON", False);
-	XChangeProperty(xw.dpy, xw.win, xw.netwmicon, XA_CARDINAL, 32,
-			PropModeReplace, (uchar *)&icon, LEN(icon));
-	#endif //NETWMICON_PATCH
+	#if NETWMICON_PATCH || NETWMICON_FF_PATCH || NETWMICON_LEGACY_PATCH
+	setnetwmicon();
+	#endif // NETWMICON_PATCH
 
 	#if NO_WINDOW_DECORATIONS_PATCH
 	Atom motifwmhints = XInternAtom(xw.dpy, "_MOTIF_WM_HINTS", False);
