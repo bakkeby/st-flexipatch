@@ -193,6 +193,10 @@ kbds_copytoclipboard(void)
 		selextend(kbds_c.x, kbds_c.y, kbds_seltype, 1);
 	}
 	xsetsel(getsel());
+
+	#if !CLIPBOARD_PATCH
+	xclipcopy();
+	#endif // CLIPBOARD_PATCH
 }
 
 void
@@ -435,9 +439,14 @@ int
 kbds_drawcursor(void)
 {
 	if (kbds_in_use && (!kbds_issearchmode() || kbds_c.y != term.row-1)) {
+		#if LIGATURES_PATCH
 		xdrawcursor(kbds_c.x, kbds_c.y, TLINE(kbds_c.y)[kbds_c.x],
 					kbds_oc.x, kbds_oc.y, TLINE(kbds_oc.y)[kbds_oc.x],
 					TLINE(kbds_oc.y), term.col);
+		#else
+		xdrawcursor(kbds_c.x, kbds_c.y, TLINE(kbds_c.y)[kbds_c.x],
+					kbds_oc.x, kbds_oc.y, TLINE(kbds_oc.y)[kbds_oc.x]);
+		#endif // LIGATURES_PATCH
 		kbds_moveto(kbds_c.x, kbds_c.y);
 		kbds_oc = kbds_c;
 	}

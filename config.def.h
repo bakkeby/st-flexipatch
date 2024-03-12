@@ -227,6 +227,11 @@ unsigned int selectionbg = 259;
 /* Else if 1 keep original foreground-color of each cell => more colors :) */
 static int ignoreselfg = 1;
 #endif // SELECTION_COLORS_PATCH
+#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+/* Foreground and background color of search results */
+unsigned int highlightfg = 15;
+unsigned int highlightbg = 160;
+#endif // KEYBOARDSELECT_PATCH
 
 #if BLINKING_CURSOR_PATCH
 /*
@@ -327,6 +332,10 @@ ResourcePref resources[] = {
 		#if ALPHA_FOCUS_HIGHLIGHT_PATCH
 		{ "alphaUnfocused",FLOAT,  &alphaUnfocused },
 		#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
+		#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+		{ "highlightfg",  INTEGER, &highlightfg },
+		{ "highlightbg",  INTEGER, &highlightbg },
+		#endif // KEYBOARDSELECT_PATCH
 };
 #endif // XRESOURCES_PATCH
 
