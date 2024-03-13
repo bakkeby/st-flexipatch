@@ -77,9 +77,8 @@
 #define CLIPBOARD_PATCH 0
 
 /* This patch allows st to be resized without cutting off text when the terminal window is
- * made larger again. Text does not wrap when the terminal window is made smaller.
- *
- * The vim browse patch takes precedence over this patch.
+ * made larger again. Text does not wrap when the terminal window is made smaller, you may
+ * also want to have a look at the reflow patch.
  *
  * https://github.com/bakkeby/st-flexipatch/issues/34
  */
@@ -213,6 +212,8 @@
 #define ISO14755_PATCH 0
 
 /* This patch allows you to select text on the terminal using keyboard shortcuts.
+ * NB: An improved variant of this patch is enabled if combined with the reflow patch.
+ *
  * https://st.suckless.org/patches/keyboard_select/
  */
 #define KEYBOARDSELECT_PATCH 0

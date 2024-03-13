@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2024-03-09 - Added the reflow patch
+2024-03-13 - Added the reflow patch and upgraded the netwmicon patch
 
 2024-03-07 - Improved sixel support, removed VIM browse patch
 
