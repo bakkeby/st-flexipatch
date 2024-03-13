@@ -233,10 +233,39 @@
  */
 #define MONOCHROME_PATCH 0
 
-/* This patch sets the _NET_WM_ICON X property with a hardcoded icon for st.
+/* This patch sets the _NET_WM_ICON X property with an icon that is read from a .png file.
+ * This patch depends on the GD Graphics Library and headers to compile.
+ * You need to uncomment the corresponding lines in config.mk to use the gd library.
+ *
+ * The default location for the .png file is:
+ *    - /usr/local/share/pixmaps/st.png
+ *
  * https://st.suckless.org/patches/netwmicon/
  */
 #define NETWMICON_PATCH 0
+
+/* This patch sets the _NET_WM_ICON X property with an icon that is read from a farbfeld image.
+ * The benefit of this patch is that you do not need an additional dependency on an external
+ * library to read and convert the farbfeld image.
+ *
+ * The default location for the farbfeld image is:
+ *    - /usr/local/share/pixmaps/st.ff
+ *
+ * Remember to change the ICONNAME in config.mk from st.png to st.ff when using this patch.
+ *
+ * Example command to convert a .png to farbfeld:
+ *    $ png2ff < st.png > st.ff
+ *
+ * https://tools.suckless.org/farbfeld/
+ * https://github.com/bakkeby/patches/wiki/netwmicon/
+ */
+#define NETWMICON_FF_PATCH 0
+
+/* This patch sets the _NET_WM_ICON X property with a hardcoded icon for st. This is the
+ * original version that predates the version that reads the image from a .png file.
+ * https://st.suckless.org/patches/netwmicon/
+ */
+#define NETWMICON_LEGACY_PATCH 0
 
 /* This patch allows you to spawn a new st terminal using Ctrl-Shift-Return. It will have the
  * same CWD (current working directory) as the original st instance.

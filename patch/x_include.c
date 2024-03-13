@@ -28,6 +28,13 @@
 #elif KEYBOARDSELECT_PATCH
 #include "keyboardselect_x.c"
 #endif
+#if NETWMICON_PATCH
+#include "netwmicon.c"
+#elif NETWMICON_FF_PATCH
+#include "netwmicon_ff.c"
+#elif NETWMICON_LEGACY_PATCH
+#include "netwmicon_legacy.c"
+#endif
 #if OPENURLONCLICK_PATCH
 #include "openurlonclick.c"
 #endif

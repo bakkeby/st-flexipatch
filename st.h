@@ -242,7 +242,7 @@ typedef struct {
 	#if FULLSCREEN_PATCH
 	Atom netwmstate, netwmfullscreen;
 	#endif // FULLSCREEN_PATCH
-	#if NETWMICON_PATCH
+	#if NETWMICON_PATCH || NETWMICON_LEGACY_PATCH || NETWMICON_FF_PATCH
 	Atom netwmicon;
 	#endif // NETWMICON_PATCH
 	struct {

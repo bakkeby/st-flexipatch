@@ -210,7 +210,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
       - makes st ignore terminal color attributes to make for a monochrome look
 
    - [netwmicon](https://st.suckless.org/patches/netwmicon/)
-      - this patch sets the \_NET\_WM\_ICON X property with a hardcoded icon for st
+      - sets the \_NET\_WM\_ICON X property with a .png file
+      - or alternatively sets the \_NET\_WM\_ICON X property with a farbfeld (.ff) file
+      - or alternatively sets the \_NET\_WM\_ICON X property with a hardcoded icon
 
    - [newterm](https://st.suckless.org/patches/newterm/)
       - allows you to spawn a new st terminal using Ctrl-Shift-Return
