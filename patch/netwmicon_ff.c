@@ -4,7 +4,7 @@ setnetwmicon(void)
 	/* use a farbfeld image to set _NET_WM_ICON */
 	FILE* file = fopen(ICON, "r");
 	if (file) {
-		unsigned char buf[8] = {0};
+		unsigned char buf[16] = {0};
 
 		int hasdata = fread(buf,1,16,file);
 		if (memcmp(buf,"farbfeld",8)) {
