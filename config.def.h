@@ -73,6 +73,12 @@ static float chscale = 1.0;
  */
 wchar_t *worddelimiters = L" ";
 
+#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+/* Word delimiters for short and long jumps in the keyboard select patch */
+wchar_t *kbds_sdelim = L"!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~ ";
+wchar_t *kbds_ldelim = L" ";
+#endif // KEYBOARDSELECT_PATCH
+
 /* selection timeouts (in milliseconds) */
 static unsigned int doubleclicktimeout = 300;
 static unsigned int tripleclicktimeout = 600;
@@ -221,6 +227,11 @@ unsigned int selectionbg = 259;
 /* Else if 1 keep original foreground-color of each cell => more colors :) */
 static int ignoreselfg = 1;
 #endif // SELECTION_COLORS_PATCH
+#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+/* Foreground and background color of search results */
+unsigned int highlightfg = 15;
+unsigned int highlightbg = 160;
+#endif // KEYBOARDSELECT_PATCH
 
 #if BLINKING_CURSOR_PATCH
 /*
@@ -321,6 +332,10 @@ ResourcePref resources[] = {
 		#if ALPHA_FOCUS_HIGHLIGHT_PATCH
 		{ "alphaUnfocused",FLOAT,  &alphaUnfocused },
 		#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
+		#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+		{ "highlightfg",  INTEGER, &highlightfg },
+		{ "highlightbg",  INTEGER, &highlightbg },
+		#endif // KEYBOARDSELECT_PATCH
 };
 #endif // XRESOURCES_PATCH
 
@@ -352,7 +367,7 @@ static MouseShortcut mshortcuts[] = {
 	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
 	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
 	#endif // SCROLLBACK_MOUSE_PATCH
-	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+	#if SCROLLBACK_MOUSE_ALTSCREEN_PATCH || REFLOW_PATCH
 	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1},      0, S_PRI },
 	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1},      0, S_PRI },
 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"}, 0, S_ALT },
@@ -431,6 +446,10 @@ static Shortcut shortcuts[] = {
 	#endif // EXTERNALPIPE_PATCH
 	#if KEYBOARDSELECT_PATCH
 	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
+	#endif // KEYBOARDSELECT_PATCH
+	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
+	{ TERMMOD,              XK_F,           searchforward,   { 0 } },
+	{ TERMMOD,              XK_B,           searchbackward,  { 0 } },
 	#endif // KEYBOARDSELECT_PATCH
 	#if ISO14755_PATCH
 	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },

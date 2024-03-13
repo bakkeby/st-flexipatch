@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2024-03-09 - Added the reflow patch
+
 2024-03-07 - Improved sixel support, removed VIM browse patch
 
 2022-10-24 - Added the fullscreen patch
@@ -230,6 +232,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
         ~in that it treats the background and foreground colors as distinct from palette colours 01~
         ~and 07 in order to facilitate the use of theme setting scripts like~
         [~theme.sh~](https://github.com/lemnos/theme.sh) ~which expect these colours to be distinct~
+
+   - reflow
+      - allows st to be resized without cutting off text when the terminal window is made larger again
+      - text wraps when the terminal window is made smaller
 
    - [relativeborder](https://st.suckless.org/patches/relativeborder/)
       - allows you to specify a border that is relative in size to the width of a cell in the

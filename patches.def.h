@@ -264,6 +264,13 @@
  */
 #define OPENURLONCLICK_PATCH 0
 
+/* Reflow.
+ * Allows st to be resized without cutting off text when the terminal window is made larger again.
+ * Text wraps when the terminal window is made smaller.
+ * Comes with scrollback.
+ */
+#define REFLOW_PATCH 0
+
 /* This patch allows you to specify a border that is relative in size to the width of a cell
  * in the terminal.
  * https://st.suckless.org/patches/relativeborder/

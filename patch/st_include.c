@@ -8,7 +8,9 @@
 #if ISO14755_PATCH
 #include "iso14755.c"
 #endif
-#if KEYBOARDSELECT_PATCH
+#if REFLOW_PATCH && KEYBOARDSELECT_PATCH
+#include "keyboardselect_reflow_st.c"
+#elif KEYBOARDSELECT_PATCH
 #include "keyboardselect_st.c"
 #endif
 #if RIGHTCLICKTOPLUMB_PATCH
@@ -17,7 +19,9 @@
 #if NEWTERM_PATCH
 #include "newterm.c"
 #endif
-#if SCROLLBACK_PATCH || SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
+#if REFLOW_PATCH
+#include "reflow.c"
+#elif SCROLLBACK_PATCH || SCROLLBACK_MOUSE_PATCH || SCROLLBACK_MOUSE_ALTSCREEN_PATCH
 #include "scrollback.c"
 #endif
 #if SYNC_PATCH
