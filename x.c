@@ -1018,6 +1018,9 @@ xloadcols(void)
 	dc.col[defaultbg].color.alpha = (unsigned short)(0xffff * alpha);
 	dc.col[defaultbg].pixel &= 0x00FFFFFF;
 	dc.col[defaultbg].pixel |= (unsigned char)(0xff * alpha) << 24;
+	dc.col[defaultbg].color.red   *= alpha;
+	dc.col[defaultbg].color.green *= alpha;
+	dc.col[defaultbg].color.blue  *= alpha;
 	#endif // ALPHA_PATCH
 	loaded = 1;
 }
@@ -1058,6 +1061,9 @@ xsetcolorname(int x, const char *name)
 		dc.col[defaultbg].color.alpha = (unsigned short)(0xffff * alpha);
 		dc.col[defaultbg].pixel &= 0x00FFFFFF;
 		dc.col[defaultbg].pixel |= (unsigned char)(0xff * alpha) << 24;
+		dc.col[defaultbg].color.red   *= alpha;
+		dc.col[defaultbg].color.green *= alpha;
+		dc.col[defaultbg].color.blue  *= alpha;
 	}
 	#endif // ALPHA_PATCH
 	return 0;
