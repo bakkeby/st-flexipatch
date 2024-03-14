@@ -7,7 +7,7 @@ VERSION = 0.9
 PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/share/man
 ICONPREFIX = $(PREFIX)/share/pixmaps
-ICONNAME = st.ff
+ICONNAME = st.png
 
 X11INC = /usr/X11R6/include
 X11LIB = /usr/X11R6/lib
@@ -42,7 +42,7 @@ LIBS = -L$(X11LIB) -lm -lrt -lX11 -lutil -lXft ${SIXEL_LIBS} ${XRENDER} ${XCURSO
        `$(PKG_CONFIG) --libs fontconfig` \
        `$(PKG_CONFIG) --libs freetype2` \
        $(LIGATURES_LIBS) \
-       ${NETWMICON_LIBS}
+       $(NETWMICON_LIBS)
 
 # flags
 STCPPFLAGS = -DVERSION=\"$(VERSION)\" -DICON=\"$(ICONPREFIX)/$(ICONNAME)\" -D_XOPEN_SOURCE=600
