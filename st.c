@@ -2227,10 +2227,8 @@ csihandle(void)
 			/* vte does this:
 			tscrollup(0, term.row-1, term.row, SCROLL_SAVEHIST); */
 			/* alacritty does this: */
-			#if KEYBOARDSELECT_PATCH
 			for (n = term.row-1; n >= 0 && tlinelen(term.line[n]) == 0; n--)
 				;
-			#endif // KEYBOARDSELECT_PATCH
 			#if SIXEL_PATCH
 			for (im = term.images; im; im = im->next)
 				n = MAX(im->y - term.scr, n);
@@ -3694,12 +3692,10 @@ draw(void)
 	drawregion(0, 0, term.col, term.row);
 
 	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
-	if (!kbds_drawcursor()) {
-	#endif // KEYBOARDSELECT_PATCH
-
-	#if SCROLLBACK_PATCH
+	if (!kbds_drawcursor())
+	#elif REFLOW_PATCH || SCROLLBACK_PATCH
 	if (term.scr == 0)
-	#endif // SCROLLBACK_PATCH
+	#endif // SCROLLBACK_PATCH | REFLOW_PATCH | KEYBOARDSELECT_PATCH
 	#if LIGATURES_PATCH
 	xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 			term.ocx, term.ocy, term.line[term.ocy][term.ocx],
@@ -3708,9 +3704,6 @@ draw(void)
 	xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 			term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
 	#endif // LIGATURES_PATCH
-	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
-	}
-	#endif // KEYBOARDSELECT_PATCH
 	term.ocx = cx;
 	term.ocy = term.c.y;
 	xfinishdraw();
