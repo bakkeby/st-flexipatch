@@ -43,7 +43,7 @@ externalpipe(const Arg *arg)
 	for (n = 0; n < term.row; n++) {
 		bp = term.line[n];
 		#if REFLOW_PATCH
-		lastpos = MIN(tlinelen(TLINE(n)), term.col) - 1;
+		lastpos = MIN(tlinelen(TLINE(n)) + 1, term.col) - 1;
 		#else
 		lastpos = MIN(tlinelen(n) + 1, term.col) - 1;
 		#endif // REFLOW_PATCH
