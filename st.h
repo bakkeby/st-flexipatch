@@ -70,6 +70,9 @@ enum glyph_attribute {
 	ATTR_HIGHLIGHT      = 1 << 17,
 	#endif // KEYBOARDSELECT_PATCH
 	ATTR_BOLD_FAINT = ATTR_BOLD | ATTR_FAINT,
+	#if OSC133_PATCH
+	ATTR_FTCS_PROMPT    = 1 << 18,  /* OSC 133 ; A ST */
+	#endif // OSC133_PATCH
 };
 
 #if SIXEL_PATCH
