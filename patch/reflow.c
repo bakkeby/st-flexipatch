@@ -81,7 +81,7 @@ treflow(int col, int row)
 	int oce, nce, bot, scr;
 	int ox = 0, oy = -term.histf, nx = 0, ny = -1, len;
 	int cy = -1; /* proxy for new y coordinate of cursor */
-	int buflen, nlines, del;
+	int buflen, nlines;
 	Line *buf, bufline, line;
 	#if SIXEL_PATCH
 	ImageList *im, *next;
@@ -219,21 +219,14 @@ treflow(int col, int row)
 		}
 	}
 
-	/* expand images into new text cells or
-	 * delete images if there is text behind them */
+	/* expand images into new text cells */
 	for (im = term.images; im; im = next) {
 		next = im->next;
 		if (im->x < col) {
 			line = TLINE(im->y);
 			x2 = MIN(im->x + im->cols, col);
-			for (del = 0, x = im->x; x < x2; x++) {
-				if ((del = line[x].mode & ATTR_SET))
-					break;
-				line[x].u = ' ';
-				line[x].mode = ATTR_SIXEL;
-			}
-			if (del)
-				delete_image(im);
+			for (x = im->x; x < x2; x++)
+				line[x].mode |= ATTR_SIXEL;
 		}
 	}
 	#endif // SIXEL_PATCH

@@ -325,7 +325,10 @@ zoomabs(const Arg *arg)
 	for (im = term.images; im; im = im->next) {
 		if (im->pixmap)
 			XFreePixmap(xw.dpy, (Drawable)im->pixmap);
+		if (im->clipmask)
+			XFreePixmap(xw.dpy, (Drawable)im->clipmask);
 		im->pixmap = NULL;
+		im->clipmask = NULL;
 	}
 	#endif // SIXEL_PATCH
 
@@ -3138,7 +3141,7 @@ xfinishdraw(void)
 	XGCValues gcvalues;
 	GC gc;
 	int width, height;
-	int x, x2, del;
+	int x, x2, del, destx, desty;
 	Line line;
 	#endif // SIXEL_PATCH
 
@@ -3161,6 +3164,8 @@ xfinishdraw(void)
 				DefaultDepth(xw.dpy, xw.scr)
 				#endif // ALPHA_PATCH
 			);
+			if (!im->pixmap)
+				continue;
 			if (win.cw == im->cw && win.ch == im->ch) {
 				XImage ximage = {
 					.format = ZPixmap,
@@ -3181,12 +3186,15 @@ xfinishdraw(void)
 					#endif // ALPHA_PATCH
 				};
 				XPutImage(xw.dpy, (Drawable)im->pixmap, dc.gc, &ximage, 0, 0, 0, 0, width, height);
+				if (im->transparent)
+					im->clipmask = (void *)sixel_create_clipmask((char *)im->pixels, width, height);
 			} else {
 				origin = imlib_create_image_using_data(im->width, im->height, (DATA32 *)im->pixels);
 				if (!origin)
 					continue;
 				imlib_context_set_image(origin);
 				imlib_image_set_has_alpha(1);
+				imlib_context_set_anti_alias(im->transparent ? 0 : 1); /* anti-aliasing messes up the clip mask */
 				scaled = imlib_create_cropped_scaled_image(0, 0, im->width, im->height, width, height);
 				imlib_free_image_and_decache();
 				if (!scaled)
@@ -3212,6 +3220,8 @@ xfinishdraw(void)
 					#endif // ALPHA_PATCH
 				};
 				XPutImage(xw.dpy, (Drawable)im->pixmap, dc.gc, &ximage, 0, 0, 0, 0, width, height);
+				if (im->transparent)
+					im->clipmask = (void *)sixel_create_clipmask((char *)imlib_image_get_data_for_reading_only(), width, height);
 				imlib_free_image_and_decache();
 			}
 		}
@@ -3240,12 +3250,17 @@ xfinishdraw(void)
 		gcvalues.graphics_exposures = False;
 		gc = XCreateGC(xw.dpy, xw.win, GCGraphicsExposures, &gcvalues);
 		#if ANYSIZE_PATCH
-		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0,
-			width, height, win.hborderpx + im->x * win.cw, win.vborderpx + im->y * win.ch);
+		destx = win.hborderpx + im->x * win.cw;
+		desty = win.vborderpx + im->y * win.ch;
 		#else
-		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0,
-			width, height, borderpx + im->x * win.cw, borderpx + im->y * win.ch);
+		destx = borderpx + im->x * win.cw;
+		desty = borderpx + im->y * win.ch;
 		#endif // ANYSIZE_PATCH
+		if (im->clipmask) {
+			XSetClipMask(xw.dpy, gc, (Drawable)im->clipmask);
+			XSetClipOrigin(xw.dpy, gc, destx, desty);
+		}
+		XCopyArea(xw.dpy, (Drawable)im->pixmap, xw.buf, gc, 0, 0, width, height, destx, desty);
 		XFreeGC(xw.dpy, gc);
 	}
 	#endif // SIXEL_PATCH
