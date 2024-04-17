@@ -66,6 +66,8 @@ delete_image(ImageList *im)
 		im->next->prev = im->prev;
 	if (im->pixmap)
 		XFreePixmap(xw.dpy, (Drawable)im->pixmap);
+	if (im->clipmask)
+		XFreePixmap(xw.dpy, (Drawable)im->clipmask);
 	free(im->pixels);
 	free(im);
 }
@@ -217,6 +219,7 @@ sixel_image_deinit(sixel_image_t *image)
 
 int
 sixel_parser_init(sixel_state_t *st,
+                  int transparent,
                   sixel_color_t fgcolor, sixel_color_t bgcolor,
                   unsigned char use_private_register,
                   int cell_width, int cell_height)
@@ -232,6 +235,7 @@ sixel_parser_init(sixel_state_t *st,
 	st->attributed_pad = 1;
 	st->attributed_ph = 0;
 	st->attributed_pv = 0;
+	st->transparent = transparent;
 	st->repeat_count = 1;
 	st->color_index = 16;
 	st->grid_width = cell_width;
@@ -240,7 +244,7 @@ sixel_parser_init(sixel_state_t *st,
 	st->param = 0;
 
 	/* buffer initialization */
-	status = sixel_image_init(&st->image, 1, 1, fgcolor, bgcolor, use_private_register);
+	status = sixel_image_init(&st->image, 1, 1, fgcolor, transparent ? 0 : bgcolor, use_private_register);
 
 	return status;
 }
@@ -304,8 +308,10 @@ sixel_parser_finalize(sixel_state_t *st, ImageList **newimages, int cx, int cy, 
 			im->height = MIN(h - ch * i, ch);
 			im->pixels = malloc(im->width * im->height * 4);
 			im->pixmap = NULL;
+			im->clipmask = NULL;
 			im->cw = cw;
 			im->ch = ch;
+			im->transparent = st->transparent;
 		}
 		if (!im || !im->pixels) {
 			for (im = *newimages; im; im = next) {
@@ -651,4 +657,36 @@ sixel_parser_deinit(sixel_state_t *st)
 {
 	if (st)
 		sixel_image_deinit(&st->image);
+}
+
+Pixmap
+sixel_create_clipmask(char *pixels, int width, int height)
+{
+	char c, *clipdata, *dst;
+	int b, i, n, y, w;
+	int msb = (XBitmapBitOrder(xw.dpy) == MSBFirst);
+	sixel_color_t *src = (sixel_color_t *)pixels;
+	Pixmap clipmask;
+
+	clipdata = dst = malloc((width+7)/8 * height);
+	if (!clipdata)
+		return (Pixmap)None;
+
+	for (y = 0; y < height; y++) {
+		for (w = width; w > 0; w -= n) {
+			n = MIN(w, 8);
+			if (msb) {
+				for (b = 0x80, c = 0, i = 0; i < n; i++, b >>= 1)
+					c |= (*src++) ? b : 0;
+			} else {
+				for (b = 0x01, c = 0, i = 0; i < n; i++, b <<= 1)
+					c |= (*src++) ? b : 0;
+			}
+			*dst++ = c;
+		}
+	}
+
+	clipmask = XCreateBitmapFromData(xw.dpy, xw.win, clipdata, width, height);
+	free(clipdata);
+	return clipmask;
 }

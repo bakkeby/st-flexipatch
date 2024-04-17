@@ -77,6 +77,7 @@ typedef struct _ImageList {
 	struct _ImageList *next, *prev;
 	unsigned char *pixels;
 	void *pixmap;
+	void *clipmask;
 	int width;
 	int height;
 	int x;
@@ -87,6 +88,7 @@ typedef struct _ImageList {
 	int cols;
 	int cw;
 	int ch;
+	int transparent;
 } ImageList;
 #endif // SIXEL_PATCH
 
