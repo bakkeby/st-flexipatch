@@ -1498,6 +1498,7 @@ csiparse(void)
 {
 	char *p = csiescseq.buf, *np;
 	long int v;
+	int sep = ';'; /* colon or semi-colon, but not both */
 
 	csiescseq.narg = 0;
 	if (*p == '?') {
@@ -1518,7 +1519,9 @@ csiparse(void)
 		#if UNDERCURL_PATCH
 		readcolonargs(&p, csiescseq.narg-1, csiescseq.carg);
 		#endif // UNDERCURL_PATCH
-		if (*p != ';' || csiescseq.narg == ESC_ARG_SIZ)
+		if (sep == ';' && *p == ':')
+			sep = ':'; /* allow override to colon once */
+		if (*p != sep || csiescseq.narg == ESC_ARG_SIZ)
 			break;
 		p++;
 	}
