@@ -29,6 +29,13 @@
  */
 #define ALPHA_GRADIENT_PATCH 0
 
+/* Allows for the initial size of the terminal to be specified as pixel width and height
+ * using the -G command line option. Can be combined with the anysize patch to also allow
+ * the window to be resized to any pixel size.
+ * https://st.suckless.org/patches/anygeometry/
+ */
+#define ANYGEOMETRY_PATCH 0
+
 /* This patch allows st to resize to any pixel size rather than snapping to character width/height.
  * https://st.suckless.org/patches/anysize/
  */

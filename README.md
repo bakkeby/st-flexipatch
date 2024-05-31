@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2024-05-31 - Added the anygeometry patch
+
 2024-03-13 - Added the reflow patch and upgraded the netwmicon patch
 
 2024-03-07 - Improved sixel support, removed VIM browse patch
@@ -101,6 +103,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [alpha-focus-highlight](https://st.suckless.org/patches/alpha_focus_highlight/)
       - allows the user to specify two distinct opacity values or background colors in order to
         easily differentiate between focused and unfocused terminal windows
+
+   - [anygeometry](https://st.suckless.org/patches/anygeometry/)
+      - allows st to start at any pixel size using the \-G command line option (if floating)
+      - can be combined with the anysize patch to resize to any pixel size
 
    - [anysize](https://st.suckless.org/patches/anysize/)
       - allows st to reize to any pixel size rather than snapping to character width / height

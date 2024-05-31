@@ -42,6 +42,13 @@ enum undercurl_slope_type {
 };
 #endif // UNDERCURL_PATCH
 
+#if ANYGEOMETRY_PATCH
+typedef enum {
+	PixelGeometry,
+	CellGeometry
+} Geometry;
+#endif // ANYGEOMETRY_PATCH
+
 /* X modifiers */
 #define XK_ANY_MOD    UINT_MAX
 #define XK_NO_MOD     0
@@ -1468,13 +1475,31 @@ xinit(int cols, int rows)
 	xloadcols();
 
 	/* adjust fixed window geometry */
-	#if ANYSIZE_PATCH
+	#if ANYGEOMETRY_PATCH
+	switch (geometry) {
+	case CellGeometry:
+		#if ANYSIZE_PATCH
+		win.w = 2 * win.hborderpx + cols * win.cw;
+		win.h = 2 * win.vborderpx + rows * win.ch;
+		#else
+		win.w = 2 * borderpx + cols * win.cw;
+		win.h = 2 * borderpx + rows * win.ch;
+		#endif // ANYGEOMETRY_PATCH | ANYSIZE_PATCH
+		break;
+	case PixelGeometry:
+		win.w = cols;
+		win.h = rows;
+		cols = (win.w - 2 * borderpx) / win.cw;
+		rows = (win.h - 2 * borderpx) / win.ch;
+		break;
+	}
+	#elif ANYSIZE_PATCH
 	win.w = 2 * win.hborderpx + cols * win.cw;
 	win.h = 2 * win.vborderpx + rows * win.ch;
 	#else
 	win.w = 2 * borderpx + cols * win.cw;
 	win.h = 2 * borderpx + rows * win.ch;
-	#endif // ANYSIZE_PATCH
+	#endif // ANYGEOMETRY_PATCH | ANYSIZE_PATCH
 	if (xw.gm & XNegative)
 		xw.l += DisplayWidth(xw.dpy, xw.scr) - win.w - 2;
 	if (xw.gm & YNegative)
@@ -3863,7 +3888,17 @@ main(int argc, char *argv[])
 	case 'g':
 		xw.gm = XParseGeometry(EARGF(usage()),
 				&xw.l, &xw.t, &cols, &rows);
+		#if ANYGEOMETRY_PATCH
+		geometry = CellGeometry;
+		#endif // ANYGEOMETRY_PATCH
 		break;
+	#if ANYGEOMETRY_PATCH
+	case 'G':
+		xw.gm = XParseGeometry(EARGF(usage()),
+		        &xw.l, &xw.t, &width, &height);
+		geometry = PixelGeometry;
+		break;
+	#endif // ANYGEOMETRY_PATCH
 	case 'i':
 		xw.isfixed = 1;
 		break;
@@ -3912,13 +3947,28 @@ run:
 	hbcreatebuffer();
 	#endif // LIGATURES_PATCH
 
+	#if ANYGEOMETRY_PATCH
+	switch (geometry) {
+	case CellGeometry:
+		xinit(cols, rows);
+		break;
+	case PixelGeometry:
+		xinit(width, height);
+		cols = (win.w - 2 * borderpx) / win.cw;
+		rows = (win.h - 2 * borderpx) / win.ch;
+		break;
+	}
+	#endif // ANYGEOMETRY_PATCH
+
 	cols = MAX(cols, 1);
 	rows = MAX(rows, 1);
 	#if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 	defaultbg = MAX(LEN(colorname), 256);
 	#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 	tnew(cols, rows);
+	#if !ANYGEOMETRY_PATCH
 	xinit(cols, rows);
+	#endif // ANYGEOMETRY_PATCH
 	#if BACKGROUND_IMAGE_PATCH
 	bginit();
 	#endif // BACKGROUND_IMAGE_PATCH
