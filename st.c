@@ -2748,7 +2748,11 @@ strhandle(void)
 			} else {
 				term.images = newimages;
 			}
+			#if COLUMNS_PATCH && !REFLOW
+			x2 = MIN(x2, term.maxcol) - 1;
+			#else
 			x2 = MIN(x2, term.col) - 1;
+			#endif // COLUMNS_PATCH
 			if (IS_SET(MODE_SIXEL_SDM)) {
 				/* Sixel display mode: put the sixel in the upper left corner of
 				 * the screen, disable scrolling (the sixel will be truncated if
@@ -3521,7 +3525,7 @@ tresize(int col, int row)
 	#endif // COLUMNS_PATCH
 	int *bp;
 	#if SIXEL_PATCH
-	int x, x2;
+	int x2;
 	Line line;
 	ImageList *im, *next;
 	#endif // SIXEL_PATCH
@@ -3628,8 +3632,7 @@ tresize(int col, int row)
 	}
 
 	#if SIXEL_PATCH
-	/* expand images into new text cells to prevent them from being deleted in
-	 * xfinishdraw() that draws the images */
+	/* expand images into new text cells */
 	for (i = 0; i < 2; i++) {
 		for (im = term.images; im; im = next) {
 			next = im->next;
@@ -3654,9 +3657,9 @@ tresize(int col, int row)
 			}
 			line = term.line[im->y];
 			#endif // SCROLLBACK_PATCH
-			x2 = MIN(im->x + im->cols, term.col);
-			for (x = im->x; x < x2; x++)
-				line[x].mode |= ATTR_SIXEL;
+			x2 = MIN(im->x + im->cols, col) - 1;
+			if (mincol < col && x2 >= mincol && im->x < col)
+				tsetsixelattr(line, MAX(im->x, mincol), x2);
 		}
 		tswapscreen();
 	}
