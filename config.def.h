@@ -467,6 +467,10 @@ static Shortcut shortcuts[] = {
 	#if INVERT_PATCH
 	{ TERMMOD,              XK_X,           invert,          { 0 } },
 	#endif // INVERT_PATCH
+	#if OSC133_PATCH
+	{ TERMMOD,              XK_Z,           scrolltoprompt,  {.i = -1}, S_PRI },
+	{ TERMMOD,              XK_X,           scrolltoprompt,  {.i =  1}, S_PRI },
+	#endif // OSC133_PATCH
 };
 
 /*
