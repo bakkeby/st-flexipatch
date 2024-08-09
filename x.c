@@ -1426,7 +1426,7 @@ xinit(int cols, int rows)
 	#elif !SWAPMOUSE_PATCH
 	Cursor cursor;
 	#endif // HIDECURSOR_PATCH
-	Window parent;
+	Window parent, root;
 	pid_t thispid = getpid();
 	#if !SWAPMOUSE_PATCH
 	XColor xmousefg, xmousebg;
@@ -1524,11 +1524,12 @@ xinit(int cols, int rows)
 	xw.attrs.event_mask |= PointerMotionMask;
 	#endif // OPENURLONCLICK_PATCH
 
+	root = XRootWindow(xw.dpy, xw.scr);
 	#if !ALPHA_PATCH
 	if (!(opt_embed && (parent = strtol(opt_embed, NULL, 0))))
-		parent = XRootWindow(xw.dpy, xw.scr);
+		parent = root;
 	#endif // ALPHA_PATCH
-	xw.win = XCreateWindow(xw.dpy, parent, xw.l, xw.t,
+	xw.win = XCreateWindow(xw.dpy, root, xw.l, xw.t,
 			#if ALPHA_PATCH
 			win.w, win.h, 0, xw.depth, InputOutput,
 			#else
@@ -1536,6 +1537,8 @@ xinit(int cols, int rows)
 			#endif // ALPHA_PATCH
 			xw.vis, CWBackPixel | CWBorderPixel | CWBitGravity
 			| CWEventMask | CWColormap, &xw.attrs);
+	if (parent != root)
+		XReparentWindow(xw.dpy, xw.win, parent, xw.l, xw.t);
 
 	memset(&gcvalues, 0, sizeof(gcvalues));
 	gcvalues.graphics_exposures = False;
@@ -1548,7 +1551,7 @@ xinit(int cols, int rows)
 	#endif // SINGLE_DRAWABLE_BUFFER_PATCH
 	dc.gc = XCreateGC(xw.dpy, xw.buf, GCGraphicsExposures, &gcvalues);
 	#else
-	dc.gc = XCreateGC(xw.dpy, parent, GCGraphicsExposures,
+	dc.gc = XCreateGC(xw.dpy, xw.win, GCGraphicsExposures,
 			&gcvalues);
 	#if SINGLE_DRAWABLE_BUFFER_PATCH
 	xw.buf = xw.win;
