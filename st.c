@@ -2748,7 +2748,7 @@ strhandle(void)
 			} else {
 				term.images = newimages;
 			}
-			#if COLUMNS_PATCH && !REFLOW
+			#if COLUMNS_PATCH && !REFLOW_PATCH
 			x2 = MIN(x2, term.maxcol) - 1;
 			#else
 			x2 = MIN(x2, term.col) - 1;
