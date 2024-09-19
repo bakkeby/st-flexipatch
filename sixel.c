@@ -261,10 +261,10 @@ sixel_parser_finalize(sixel_state_t *st, ImageList **newimages, int cx, int cy, 
 	sixel_image_t *image = &st->image;
 	int x, y;
 	sixel_color_no_t *src;
-	sixel_color_t *dst;
-	int color;
+	sixel_color_t *dst, color;
 	int w, h;
 	int i, j, cols, numimages;
+	char trans;
 	ImageList *im, *next, *tail;
 
 	if (!image->data)
@@ -311,7 +311,6 @@ sixel_parser_finalize(sixel_state_t *st, ImageList **newimages, int cx, int cy, 
 			im->clipmask = NULL;
 			im->cw = cw;
 			im->ch = ch;
-			im->transparent = st->transparent;
 		}
 		if (!im || !im->pixels) {
 			for (im = *newimages; im; im = next) {
@@ -324,11 +323,15 @@ sixel_parser_finalize(sixel_state_t *st, ImageList **newimages, int cx, int cy, 
 			return -1;
 		}
 		dst = (sixel_color_t *)im->pixels;
-		for (j = 0; j < im->height && y < h; j++, y++) {
+		for (trans = 0, j = 0; j < im->height && y < h; j++, y++) {
 			src = st->image.data + image->width * y;
-			for (x = 0; x < w; x++)
-				*dst++ = st->image.palette[*src++];
+			for (x = 0; x < w; x++) {
+				color = st->image.palette[*src++];
+				trans |= (color == 0);
+				*dst++ = color;
+			}
 		}
+		im->transparent = (st->transparent && trans);
 	}
 
 	return numimages;
