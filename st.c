@@ -2603,8 +2603,8 @@ strhandle(void)
 		{ defaultcs, "cursor" }
 	};
 	#if SIXEL_PATCH
-	ImageList *im, *newimages, *next, *tail;
-	int i, x1, y1, x2, y2, numimages;
+	ImageList *im, *newimages, *next, *tail = NULL;
+	int i, x1, y1, x2, y2, y, numimages;
 	int cx, cy;
 	Line line;
 	#if SCROLLBACK_PATCH || REFLOW_PATCH
@@ -2729,15 +2729,33 @@ strhandle(void)
 			y1 = newimages->y;
 			x2 = x1 + newimages->cols;
 			y2 = y1 + numimages;
-			if (newimages->transparent) {
-				for (tail = term.images; tail && tail->next; tail = tail->next);
-			} else {
-				for (tail = NULL, im = term.images; im; im = next) {
+			/* Delete the old images that are covered by the new image(s). We also need
+			 * to check if they have already been deleted before adding the new ones. */
+			if (term.images) {
+				char transparent[numimages];
+				for (i = 0, im = newimages; im; im = im->next, i++) {
+					transparent[i] = im->transparent;
+				}
+				for (im = term.images; im; im = next) {
 					next = im->next;
-					if (im->x >= x1 && im->x + im->cols <= x2 &&
-					    im->y >= y1 && im->y <= y2) {
-						delete_image(im);
-						continue;
+					if (im->y >= y1 && im->y < y2) {
+						y = im->y - scr;
+						if (y >= 0 && y < term.row && term.dirty[y]) {
+							line = term.line[y];
+							j = MIN(im->x + im->cols, term.col);
+							for (i = im->x; i < j; i++) {
+								if (line[i].mode & ATTR_SIXEL)
+									break;
+							}
+							if (i == j) {
+								delete_image(im);
+								continue;
+							}
+						}
+						if (im->x >= x1 && im->x + im->cols <= x2 && !transparent[im->y - y1]) {
+							delete_image(im);
+							continue;
+						}
 					}
 					tail = im;
 				}
