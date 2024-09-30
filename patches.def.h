@@ -302,7 +302,7 @@
 #define OPENURLONCLICK_PATCH 0
 
 /* This patch allows jumping between prompts by utilizing the OSC 133 escape sequence
- * emitted by shells.
+ * emitted by shells. Must be used with either reflow or scrollback patch.
  *
  * https://codeberg.org/dnkl/foot#jumping-between-prompts
  */

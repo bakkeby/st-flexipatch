@@ -1,6 +1,10 @@
 void scrolltoprompt(const Arg *arg) {
 	int x, y;
+	#if REFLOW_PATCH
 	int top = term.scr - term.histf;
+	#else
+	int top = term.scr - term.histn;
+	#endif // REFLOW_PATCH
 	int bot = term.scr + term.row-1;
 	int dy = arg->i;
 	Line line;
