@@ -170,7 +170,7 @@ static void csihandle(void);
 static void dcshandle(void);
 #endif // SIXEL_PATCH
 #if UNDERCURL_PATCH
-static void readcolonargs(char **, int, int[][CAR_PER_ARG], int sep);
+static void readcolonargs(char **, int, int[][CAR_PER_ARG]);
 #endif // UNDERCURL_PATCH
 static void csiparse(void);
 static void csireset(void);
@@ -1483,21 +1483,20 @@ tnewline(int first_col)
 
 #if UNDERCURL_PATCH
 void
-readcolonargs(char **p, int cursor, int params[][CAR_PER_ARG], int sep)
+readcolonargs(char **p, int cursor, int params[][CAR_PER_ARG])
 {
 	int i = 0;
-
 	for (; i < CAR_PER_ARG; i++)
 		params[cursor][i] = -1;
 
-	if (**p != sep)
+	if (**p != ':')
 		return;
 
 	char *np = NULL;
 	i = 0;
 
-	while (**p == sep && i < CAR_PER_ARG) {
-		while (**p == sep)
+	while (**p == ':' && i < CAR_PER_ARG) {
+		while (**p == ':')
 			(*p)++;
 		params[cursor][i] = strtol(*p, &np, 10);
 		*p = np;
@@ -1529,13 +1528,11 @@ csiparse(void)
 			v = -1;
 		csiescseq.arg[csiescseq.narg++] = v;
 		p = np;
+		#if UNDERCURL_PATCH
+		readcolonargs(&p, csiescseq.narg-1, csiescseq.carg);
+		#endif // UNDERCURL_PATCH
 		if (sep == ';' && *p == ':')
 			sep = ':'; /* allow override to colon once */
-		#if UNDERCURL_PATCH
-		if (v == 4 || v == 58)
-			readcolonargs(&p, csiescseq.narg-1, csiescseq.carg, sep);
-		#endif // UNDERCURL_PATCH
-
 		if (*p != sep || csiescseq.narg == ESC_ARG_SIZ)
 			break;
 		p++;
