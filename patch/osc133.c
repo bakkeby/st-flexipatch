@@ -1,4 +1,6 @@
-void scrolltoprompt(const Arg *arg) {
+void
+scrolltoprompt(const Arg *arg)
+{
 	int x, y;
 	#if REFLOW_PATCH
 	int top = term.scr - term.histf;
