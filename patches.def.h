@@ -301,6 +301,13 @@
  */
 #define OPENURLONCLICK_PATCH 0
 
+/* This patch allows jumping between prompts by utilizing the OSC 133 escape sequence
+ * emitted by shells. Must be used with either reflow or scrollback patch.
+ *
+ * https://codeberg.org/dnkl/foot#jumping-between-prompts
+ */
+#define OSC133_PATCH 0
+
 /* Reflow.
  * Allows st to be resized without cutting off text when the terminal window is made larger again.
  * Text wraps when the terminal window is made smaller.
