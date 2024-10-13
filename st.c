@@ -2654,6 +2654,11 @@ strhandle(void)
 				}
 			}
 			return;
+		#if OSC7_PATCH
+		case 7:
+			osc7parsecwd((const char *)strescseq.args[1]);
+			return;
+		#endif // OSC7_PATCH
 		case 8: /* Clear Hyperlinks */
 			return;
 		case 10:
@@ -2855,6 +2860,19 @@ strparse(void)
 
 	if (*p == '\0')
 		return;
+
+	/* preserve semicolons in window titles, icon names and OSC 7 sequences */
+	if (strescseq.type == ']' && (
+		p[0] <= '2'
+	#if OSC7_PATCH
+		|| p[0] == '7'
+	#endif // OSC7_PATCH
+	) && p[1] == ';') {
+		strescseq.args[strescseq.narg++] = p;
+		strescseq.args[strescseq.narg++] = p + 2;
+		p[1] = '\0';
+		return;
+	}
 
 	while (strescseq.narg < STR_ARG_SIZ) {
 		strescseq.args[strescseq.narg++] = p;
