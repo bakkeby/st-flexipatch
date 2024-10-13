@@ -2,9 +2,9 @@ extern char* argv0;
 
 static char*
 getcwd_by_pid(pid_t pid) {
-	char buf[32];
-	snprintf(buf, sizeof buf, "/proc/%d/cwd", pid);
-	return realpath(buf, NULL);
+	static char cwd[32];
+	snprintf(cwd, sizeof cwd, "/proc/%d/cwd", pid);
+	return cwd;
 }
 
 void
