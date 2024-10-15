@@ -27,3 +27,6 @@
 #if SYNC_PATCH
 #include "sync.c"
 #endif
+#if OSC7_PATCH
+#include "osc7.c"
+#endif

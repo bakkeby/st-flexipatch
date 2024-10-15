@@ -30,3 +30,6 @@
 #if SYNC_PATCH
 #include "sync.h"
 #endif
+#if OSC7_PATCH
+#include "osc7.h"
+#endif

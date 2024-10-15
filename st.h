@@ -205,6 +205,9 @@ typedef struct {
 	ImageList *images_alt; /* sixel images for alternate screen */
 	#endif // SIXEL_PATCH
 	Rune lastc;   /* last printed char outside of sequence, 0 if control */
+	#if OSC7_PATCH
+	char* cwd;    /* current working directory */
+	#endif // OSC7_PATCH
 } Term;
 
 typedef union {
