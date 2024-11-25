@@ -820,40 +820,19 @@ sigchld(int a)
 	int stat;
 	pid_t p;
 
-	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
-	if ((p = waitpid((extpipeactive ? -1 : pid), &stat, WNOHANG)) < 0)
-	#else
-	if ((p = waitpid(pid, &stat, WNOHANG)) < 0)
-	#endif // EXTERNALPIPEIN_PATCH
-		die("waiting for pid %hd failed: %s\n", pid, strerror(errno));
+	while ((p = waitpid(-1, &stat, WNOHANG)) > 0) {
+		if (p == pid) {
+			#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
+			close(csdfd);
+			#endif // EXTERNALPIPEIN_PATCH
 
-	#if EXTERNALPIPE_PATCH
-	if (pid != p) {
-		if (!extpipeactive)
-			return;
-
-		if (p == 0 && wait(&stat) < 0)
-			die("wait: %s\n", strerror(errno));
-
-		/* reinstall sigchld handler */
-		signal(SIGCHLD, sigchld);
-		extpipeactive = 0;
-		return;
+			if (WIFEXITED(stat) && WEXITSTATUS(stat))
+				die("child exited with status %d\n", WEXITSTATUS(stat));
+			else if (WIFSIGNALED(stat))
+				die("child terminated due to signal %d\n", WTERMSIG(stat));
+			_exit(0);
+		}
 	}
-	#else
-	if (pid != p)
-		return;
-	#endif // EXTERNALPIPE_PATCH
-
-	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
-	close(csdfd);
-	#endif // EXTERNALPIPEIN_PATCH
-
-	if (WIFEXITED(stat) && WEXITSTATUS(stat))
-		die("child exited with status %d\n", WEXITSTATUS(stat));
-	else if (WIFSIGNALED(stat))
-		die("child terminated due to signal %d\n", WTERMSIG(stat));
-	_exit(0);
 }
 
 void
@@ -884,9 +863,7 @@ int
 ttynew(const char *line, char *cmd, const char *out, char **args)
 {
 	int m, s;
-	#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
 	struct sigaction sa;
-	#endif // EXTERNALPIPEIN_PATCH
 
 	if (out) {
 		term.mode |= MODE_PRINT;
@@ -944,15 +921,14 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 		#if EXTERNALPIPEIN_PATCH && EXTERNALPIPE_PATCH
 		csdfd = s;
 		cmdfd = m;
+		#else
+		close(s);
+		cmdfd = m;
+		#endif // EXTERNALPIPEIN_PATCH
 		memset(&sa, 0, sizeof(sa));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_handler = sigchld;
 		sigaction(SIGCHLD, &sa, NULL);
-		#else
-		close(s);
-		cmdfd = m;
-		signal(SIGCHLD, sigchld);
-		#endif // EXTERNALPIPEIN_PATCH
 		break;
 	}
 	return cmdfd;

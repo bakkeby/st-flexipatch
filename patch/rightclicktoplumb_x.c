@@ -1,15 +1,18 @@
 #include <sys/wait.h>
 
 void
-plumb(char *sel) {
+plumb(char *sel)
+{
 	if (sel == NULL)
 		return;
+
 	char cwd[PATH_MAX];
 	pid_t child;
+
 	if (subprocwd(cwd) != 0)
 		return;
 
-	switch(child = fork()) {
+	switch (child = fork()) {
 		case -1:
 			return;
 		case 0:
@@ -18,7 +21,5 @@ plumb(char *sel) {
 			if (execvp(plumb_cmd, (char *const []){plumb_cmd, sel, 0}) == -1)
 				exit(1);
 			exit(0);
-		default:
-			waitpid(child, NULL, 0);
 	}
 }
