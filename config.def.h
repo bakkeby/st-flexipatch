@@ -176,6 +176,50 @@ float alphaUnfocused = 0.6;
 #endif // ALPHA_PATCH
 
 /* Terminal colors (16 first used in escape sequence) */
+#if SOLARIZED_PATCH
+static const char *colorname[] = {
+	/* solarized dark */
+	"#073642",  /*  0: black    */
+	"#dc322f",  /*  1: red      */
+	"#859900",  /*  2: green    */
+	"#b58900",  /*  3: yellow   */
+	"#268bd2",  /*  4: blue     */
+	"#d33682",  /*  5: magenta  */
+	"#2aa198",  /*  6: cyan     */
+	"#eee8d5",  /*  7: white    */
+	// accent colors
+	"#002b36",  /*  8: brblack  */
+	"#cb4b16",  /*  9: brred    */
+	"#586e75",  /* 10: brgreen  */
+	"#657b83",  /* 11: bryellow */
+	"#839496",  /* 12: brblue   */
+	"#6c71c4",  /* 13: brmagenta*/
+	"#93a1a1",  /* 14: brcyan   */
+	"#fdf6e3",  /* 15: brwhite  */
+};
+
+/* Terminal colors for alternate (light) palette */
+static const char *altcolorname[] = {
+	/* solarized light */
+	"#eee8d5",  /*  0: black    */
+	"#dc322f",  /*  1: red      */
+	"#859900",  /*  2: green    */
+	"#b58900",  /*  3: yellow   */
+	"#268bd2",  /*  4: blue     */
+	"#d33682",  /*  5: magenta  */
+	"#2aa198",  /*  6: cyan     */
+	"#073642",  /*  7: white    */
+	// accent colors
+	"#fdf6e3",  /*  8: brblack  */
+	"#cb4b16",  /*  9: brred    */
+	"#93a1a1",  /* 10: brgreen  */
+	"#839496",  /* 11: bryellow */
+	"#657b83",  /* 12: brblue   */
+	"#6c71c4",  /* 13: brmagenta*/
+	"#586e75",  /* 14: brcyan   */
+	"#002b36",  /* 15: brwhite  */
+};
+#else
 static const char *colorname[] = {
 	/* 8 normal colors */
 	"black",
@@ -205,6 +249,7 @@ static const char *colorname[] = {
 	"#000000", /* 258 -> bg */
 	"#e5e5e5", /* 259 -> fg */
 };
+#endif // SOLARIZED_PATCH
 
 
 /*
@@ -214,12 +259,20 @@ static const char *colorname[] = {
 #if ALPHA_PATCH && ALPHA_FOCUS_HIGHLIGHT_PATCH
 unsigned int defaultbg = 0;
 unsigned int bg = 17, bgUnfocused = 16;
+#elif SOLARIZED_PATCH
+unsigned int defaultbg =  8;
 #else
 unsigned int defaultbg = 258;
-#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
-unsigned int defaultfg = 259;
-unsigned int defaultcs = 256;
+#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH, SOLARIZED
+#if SOLARIZED_PATCH
+unsigned int defaultfg  = 12;
+unsigned int defaultcs  = 14;
+unsigned int defaultrcs = 15;
+#else
+unsigned int defaultfg  = 259;
+unsigned int defaultcs  = 256;
 unsigned int defaultrcs = 257;
+#endif // SOLARIZED_PATCH
 #if SELECTION_COLORS_PATCH
 unsigned int selectionfg = 258;
 unsigned int selectionbg = 259;
@@ -423,6 +476,9 @@ static Shortcut shortcuts[] = {
 	//{ TERMMOD,              XK_,           changealphaunfocused, {.f = -0.05} },
 	#endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 	#endif // ALPHA_PATCH
+	#if SOLARIZED_PATCH
+	{ XK_ANY_MOD,           XK_F6,          swapcolors,     {.i =  0} },
+	#endif // SOLARIZED_PATCH
 	#if FULLSCREEN_PATCH
 	{ XK_NO_MOD,            XK_F11,         fullscreen,      {.i =  0} },
 	{ MODKEY,               XK_Return,      fullscreen,      {.i =  0} },
