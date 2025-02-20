@@ -38,6 +38,9 @@
 #elif NETWMICON_LEGACY_PATCH
 #include "netwmicon_legacy.c"
 #endif
+#if OPEN_SELECTED_TEXT_PATCH
+#include "openselectedtext.c"
+#endif
 #if OPENURLONCLICK_PATCH
 #include "openurlonclick.c"
 #endif

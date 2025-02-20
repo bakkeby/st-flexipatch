@@ -15,7 +15,7 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
-2025-02-20 - Added the drag-n-drop patch
+2025-02-20 - Added the drag-n-drop and open-selected-text patches
 
 2024-05-31 - Added the anygeometry patch
 
@@ -234,6 +234,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [open-copied-url](https://st.suckless.org/patches/open_copied_url/)
       - open contents of the clipboard in a user-defined browser
+
+   - [open-selected-text](https://st.suckless.org/patches/open_selected_text)
+      - open the selected text using `xdg-open`
 
    - [openurlonclick](https://www.reddit.com/r/suckless/comments/cc83om/st_open_url/)
       - allows for URLs to be opened directly when you click on them

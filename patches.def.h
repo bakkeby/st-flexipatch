@@ -299,6 +299,11 @@
  */
 #define OPENCOPIED_PATCH 0
 
+/* Open the selected text using xdg-open.
+ * https://st.suckless.org/patches/open_selected_text/
+ */
+#define OPEN_SELECTED_TEXT_PATCH 0
+
 /* This patch allows for URLs to be opened directly when you click on them. This may not work with
  * all terminal applications.
  *
