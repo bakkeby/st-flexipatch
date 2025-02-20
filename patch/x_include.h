@@ -8,6 +8,9 @@
 #if BOXDRAW_PATCH
 #include "boxdraw.h"
 #endif
+#if DRAG_AND_DROP_PATCH
+#include "drag-n-drop.h"
+#endif
 #if OPENCOPIED_PATCH
 #include "opencopied.h"
 #endif

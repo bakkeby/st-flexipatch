@@ -144,6 +144,11 @@
  */
 #define DISABLE_ROMAN_FONTS_PATCH 0
 
+/* Allows dragging a file into the terminal and have the path printed.
+ * https://st.suckless.org/patches/drag-n-drop
+ */
+#define DRAG_AND_DROP_PATCH 0
+
 /* This patch makes the cursor color the inverse of the current cell color.
  * https://st.suckless.org/patches/dynamic-cursor-color/
  */

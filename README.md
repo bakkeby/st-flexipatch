@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2025-02-20 - Added the drag-n-drop patch
+
 2024-05-31 - Added the anygeometry patch
 
 2024-03-13 - Added the reflow patch and upgraded the netwmicon patch
@@ -161,6 +163,9 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [disable-fonts](https://st.suckless.org/patches/disable_bold_italic_fonts/)
       - this patch adds the option of disabling bold/italic/roman fonts globally
+
+   - [drag-n-drop](https://st.suckless.org/patches/drag-n-drop)
+      - allows dragging a file into the terminal and have the path printed
 
    - [dynamic-cursor-color](https://st.suckless.org/patches/dynamic-cursor-color/)
       - this patch makes the cursor color the inverse of the current cell color
