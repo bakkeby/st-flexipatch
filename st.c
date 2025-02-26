@@ -3434,7 +3434,7 @@ check_control_code:
 
 	#if REFLOW_PATCH
 	/* selected() takes relative coordinates */
-	if (selected(term.c.x + term.scr, term.c.y + term.scr))
+	if (selected(term.c.x, term.c.y + term.scr))
 		selclear();
 	#else
 	if (selected(term.c.x, term.c.y))

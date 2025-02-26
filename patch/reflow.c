@@ -619,8 +619,8 @@ tclearregion(int x1, int y1, int x2, int y2, int usecurattr)
 	int x, y;
 
 	/* regionselected() takes relative coordinates */
-	if (regionselected(x1+term.scr, y1+term.scr, x2+term.scr, y2+term.scr))
-		selremove();
+	if (regionselected(x1, y1+term.scr, x2, y2+term.scr))
+		selclear();
 
 	for (y = y1; y <= y2; y++) {
 		term.dirty[y] = 1;
