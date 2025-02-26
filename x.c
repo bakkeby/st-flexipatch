@@ -2700,7 +2700,7 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	XRenderColor colbg;
 	#endif // DYNAMIC_CURSOR_COLOR_PATCH
 
-	#if !DYNAMIC_CURSOR_COLOR_PATCH
+	#if !DYNAMIC_CURSOR_COLOR_PATCH || SELECTION_COLORS_PATCH
 	/* remove the old cursor */
 	if (selected(ox, oy))
 		#if SELECTION_COLORS_PATCH
@@ -2757,7 +2757,7 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		}
 		#endif // SELECTION_COLORS_PATCH
 	} else {
-		#if SELECTION_COLORS_PATCH
+		#if SELECTION_COLORS_PATCH && !DYNAMIC_CURSOR_COLOR_PATCH
 		g.fg = defaultbg;
 		g.bg = defaultcs;
 		drawcol = dc.col[defaultcs];
