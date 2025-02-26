@@ -1137,7 +1137,7 @@ xhints(void)
 	sizeh->flags = PSize | PResizeInc | PBaseSize | PMinSize;
 	sizeh->height = win.h;
 	sizeh->width = win.w;
-	#if ANYSIZE_PATCH || ANYSIZE_SIMPLE_PATCH
+	#if ANYSIZE_PATCH && !DYNAMIC_PADDING_PATCH || ANYSIZE_SIMPLE_PATCH
 	sizeh->height_inc = 1;
 	sizeh->width_inc = 1;
 	#else
