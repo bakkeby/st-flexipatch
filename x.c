@@ -2700,21 +2700,19 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	XRenderColor colbg;
 	#endif // DYNAMIC_CURSOR_COLOR_PATCH
 
-	#if !DYNAMIC_CURSOR_COLOR_PATCH || SELECTION_COLORS_PATCH
-	/* remove the old cursor */
+	#if LIGATURES_PATCH
+	/* Redraw the line where cursor was previously.
+	 * It will restore the ligatures broken by the cursor. */
+	xdrawline(line, 0, oy, len);
+	#else
+	/* Remove the old cursor */
 	if (selected(ox, oy))
 		#if SELECTION_COLORS_PATCH
 		og.mode |= ATTR_SELECTED;
 		#else
 		og.mode ^= ATTR_REVERSE;
 		#endif // SELECTION_COLORS_PATCH
-	#endif // DYNAMIC_CURSOR_COLOR_PATCH
 
-	#if LIGATURES_PATCH
-	/* Redraw the line where cursor was previously.
-	 * It will restore the ligatures broken by the cursor. */
-	xdrawline(line, 0, oy, len);
-	#else
 	xdrawglyph(og, ox, oy);
 	#endif // LIGATURES_PATCH
 
