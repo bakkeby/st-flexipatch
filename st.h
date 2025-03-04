@@ -11,11 +11,6 @@
 #include <X11/XKBlib.h>
 #include "patches.h"
 
-#if DYNAMIC_PADDING_PATCH
-#undef ANYSIZE_PATCH
-#define ANYSIZE_PATCH 1
-#endif // DYNAMIC_PADDING_PATCH
-
 /* macros */
 #define MIN(a, b)		((a) < (b) ? (a) : (b))
 #define MAX(a, b)		((a) < (b) ? (b) : (a))

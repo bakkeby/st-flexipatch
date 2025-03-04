@@ -160,6 +160,8 @@
  * effect when the size hints are intentionally ignored.
  * An example of this would be dwm respecting the size hints of floating windows, but disrespecting
  * the size hints when the window is tiled (provided that resizehints config is set to 0).
+ *
+ * Note that this patch depends on ANYSIZE_PATCH being enabled to have an effect.
  */
 #define DYNAMIC_PADDING_PATCH 0
 
