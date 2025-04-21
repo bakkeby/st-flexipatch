@@ -3804,8 +3804,12 @@ run(void)
 
 		xev = 0;
 		while (XPending(xw.dpy)) {
-			xev = 1;
 			XNextEvent(xw.dpy, &ev);
+			#if BLINKING_CURSOR_PATCH
+			xev = (!xev || xev == SelectionRequest) ? ev.type : xev;
+			#else
+			xev = 1;
+			#endif // BLINKING_CURSOR_PATCH
 			if (XFilterEvent(&ev, None))
 				continue;
 			if (handler[ev.type])
@@ -3832,10 +3836,10 @@ run(void)
 			if (!drawing) {
 				trigger = now;
 				#if BLINKING_CURSOR_PATCH
-				if (IS_SET(MODE_BLINK)) {
-					win.mode ^= MODE_BLINK;
+				if (xev != SelectionRequest) {
+					win.mode &= ~MODE_BLINK;
+					lastblink = now;
 				}
-				lastblink = now;
 				#endif // BLINKING_CURSOR_PATCH
 				drawing = 1;
 			}
