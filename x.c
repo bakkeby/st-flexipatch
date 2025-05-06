@@ -2234,20 +2234,9 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	else
 	#endif // BACKGROUND_IMAGE_PATCH
 
-	#if !WIDE_GLYPHS_PATCH
-	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
-	#endif // WIDE_GLYPHS_PATCH
-
-	/* Set the clip region because Xft is sometimes dirty. */
-	r.x = 0;
-	r.y = 0;
-	r.height = win.ch;
-	r.width = width;
-	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
-
-	#if WIDE_GLYPHS_PATCH
 	/* Fill the background */
 	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
+	#if WIDE_GLYPHS_PATCH
 	}
 	#endif // WIDE_GLYPHS_PATCH
 
@@ -2258,13 +2247,27 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	if (base.mode & ATTR_BOXDRAW) {
 		drawboxes(winx, winy, width / len, win.ch, fg, bg, specs, len);
 	} else {
-		/* Render the glyphs. */
-		XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
-	}
+	#endif // BOXDRAW_PATCH
+	/* Set the clip region because Xft is sometimes dirty. */
+	#if WIDE_GLYPHS_PATCH
+	r.x = 0;
+	r.y = 0;
+	r.height = win.ch;
+	r.width = win.w;
+	XftDrawSetClipRectangles(xw.draw, 0, winy, &r, 1);
 	#else
+	r.x = 0;
+	r.y = 0;
+	r.height = win.ch;
+	r.width = width;
+	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
+	#endif // WIDE_GLYPHS_PATCH
+	#if BOXDRAW_PATCH
+	}
+	#endif // BOXDRAW_PATCH
+
 	/* Render the glyphs. */
 	XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
-	#endif // BOXDRAW_PATCH
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
