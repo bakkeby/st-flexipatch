@@ -2039,6 +2039,15 @@ tsetmode(int priv, int set, const int *args, int narg)
 				MODBIT(term.mode, set, MODE_SIXEL_CUR_RT);
 				break;
 			#endif // SIXEL_PATCH
+			#if SYNC_PATCH
+			case 2026:
+				if (set == 1) {
+					tsync_begin();
+				} else if (set == 2) {
+					tsync_end();
+				}
+				break;
+			#endif // SYNC_PATCH
 			default:
 				fprintf(stderr,
 					"erresc: unknown private set/reset mode %d\n",
