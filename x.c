@@ -2262,12 +2262,13 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	r.width = width;
 	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
 	#endif // WIDE_GLYPHS_PATCH
-	#if BOXDRAW_PATCH
-	}
-	#endif // BOXDRAW_PATCH
 
 	/* Render the glyphs. */
 	XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
+
+	#if BOXDRAW_PATCH
+	}
+	#endif // BOXDRAW_PATCH
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
