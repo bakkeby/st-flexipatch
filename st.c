@@ -2041,9 +2041,9 @@ tsetmode(int priv, int set, const int *args, int narg)
 			#endif // SIXEL_PATCH
 			#if SYNC_PATCH
 			case 2026:
-				if (set == 1) {
+				if (set) {
 					tsync_begin();
-				} else if (set == 2) {
+				} else {
 					tsync_end();
 				}
 				break;
