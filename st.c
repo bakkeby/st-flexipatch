@@ -1864,6 +1864,13 @@ tsetattr(const int *attr, int l)
 			term.c.attr.ucolor[2] = -1;
 			term.c.attr.mode ^= ATTR_DIRTYUNDERLINE;
 			break;
+		#else
+		case 58:
+			/* This starts a sequence to change the color of
+			 * "underline" pixels. We don't support that and
+			 * instead eat up a following "5;n" or "2;r;g;b". */
+			tdefcolor(attr, &i, l);
+			break;
 		#endif // UNDERCURL_PATCH
 		default:
 			if (BETWEEN(attr[i], 30, 37)) {
