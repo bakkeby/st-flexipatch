@@ -440,11 +440,11 @@ static Shortcut shortcuts[] = {
 	{ MODKEY,               XK_Return,      fullscreen,      {.i =  0} },
 	#endif // FULLSCREEN_PATCH
 	#if SCROLLBACK_PATCH
-	{ ShiftMask,            XK_Page_Up,     kscrollup,       {.i = -1}, S_PRI },
-	{ ShiftMask,            XK_Page_Down,   kscrolldown,     {.i = -1}, S_PRI },
+	{ MODKEY,            XK_k,     kscrollup,       {.i = -1}, S_PRI },
+	{ MODKEY,            XK_j,     kscrolldown,     {.i = -1}, S_PRI },
 	#endif // SCROLLBACK_PATCH
 	#if CLIPBOARD_PATCH
-	{ TERMMOD,              XK_Y,           clippaste,       {.i =  0} },
+	{ MODKEY,           XK_p,           clippaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      clippaste,       {.i =  0} },
 	#else
 	{ TERMMOD,              XK_Y,           selpaste,        {.i =  0} },
@@ -452,7 +452,7 @@ static Shortcut shortcuts[] = {
 	#endif // CLIPBOARD_PATCH
 	{ TERMMOD,              XK_Num_Lock,    numlock,         {.i =  0} },
 	#if COPYURL_PATCH || COPYURL_HIGHLIGHT_SELECTED_URLS_PATCH
-	{ MODKEY,               XK_l,           copyurl,         {.i =  0} },
+    { MODKEY,               XK_u,           copyurl,         {.i =  0} },
 	#endif // COPYURL_PATCH
 	#if OPENCOPIED_PATCH
 	{ MODKEY,               XK_o,           opencopied,      {.v = "xdg-open"} },
@@ -461,17 +461,17 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Return,      newterm,         {.i =  0} },
 	#endif // NEWTERM_PATCH
 	#if EXTERNALPIPE_PATCH
-	{ TERMMOD,              XK_U,           externalpipe,    { .v = openurlcmd } },
+	{ MODKEY,              XK_u,           externalpipe,    { .v = openurlcmd } },
 	#if EXTERNALPIPEIN_PATCH
 	{ TERMMOD,              XK_M,           externalpipein,  { .v = setbgcolorcmd } },
 	#endif // EXTERNALPIPEIN_PATCH
 	#endif // EXTERNALPIPE_PATCH
 	#if KEYBOARDSELECT_PATCH
-	{ TERMMOD,              XK_Escape,      keyboard_select, { 0 } },
+	{ MODKEY,              XK_e,      keyboard_select, { 0 } },
 	#endif // KEYBOARDSELECT_PATCH
 	#if KEYBOARDSELECT_PATCH && REFLOW_PATCH
-	{ TERMMOD,              XK_F,           searchforward,   { 0 } },
-	{ TERMMOD,              XK_B,           searchbackward,  { 0 } },
+	{ MODKEY,              XK_f,           searchforward,   { 0 } },
+	{ MODKEY,              XK_b,           searchbackward,  { 0 } },
 	#endif // KEYBOARDSELECT_PATCH
 	#if ISO14755_PATCH
 	{ TERMMOD,              XK_I,           iso14755,        {.i =  0} },

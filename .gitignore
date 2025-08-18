@@ -1,4 +1,10 @@
+.env*
+!.env.example
+tags*
 *.o
 config.h
 patches.h
 st
+.DS_Store/
+.idea/
+.vscode/
