@@ -412,6 +412,9 @@ extern char *scroll;
 extern char *stty_args;
 extern char *vtiden;
 extern wchar_t *worddelimiters;
+#if LINESNAP_PATCH
+extern wchar_t *snap_line_delimiters;
+#endif // LINESNAP_PATCH
 #if KEYBOARDSELECT_PATCH && REFLOW_PATCH
 extern wchar_t *kbds_sdelim;
 extern wchar_t *kbds_ldelim;

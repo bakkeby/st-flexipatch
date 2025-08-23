@@ -57,6 +57,9 @@
 #define ISCONTROLC1(c)  (BETWEEN(c, 0x80, 0x9f))
 #define ISCONTROL(c)    (ISCONTROLC0(c) || ISCONTROLC1(c))
 #define ISDELIM(u)      (u && wcschr(worddelimiters, u))
+#if LINESNAP_PATCH
+#define IS_SNAP_LINE_DELIM(u) (u && wcschr(snap_line_delimiters, u))
+#endif // LINESNAP_PATCH
 
 enum term_mode {
 	MODE_WRAP         = 1 << 0,
@@ -629,12 +632,36 @@ selsnap(int *x, int *y, int direction)
 		}
 		break;
 	case SNAP_LINE:
+		#if LINESNAP_PATCH
+		/*
+		 * Don't snap past a line snap delimiter
+		 * (see 'snap_line_delimiters' in config.h)
+		 */
+		for(;;) {
+			newx = *x + direction;
+
+			if (!BETWEEN(newx, 0, term.col - 1)) {
+				break;
+			}
+
+			gp = &term.line[*y][newx];
+
+			if(IS_SNAP_LINE_DELIM(gp->u)) {
+				break;
+			}
+
+			*x = newx;
+		}
+		#endif // LINESNAP_PATCH
+
 		/*
 		 * Snap around if the the previous line or the current one
 		 * has set ATTR_WRAP at its end. Then the whole next or
 		 * previous line will be selected.
 		 */
+		#if !LINESNAP_PATCH
 		*x = (direction < 0) ? 0 : term.col - 1;
+		#endif // LINESNAP_PATCH
 		if (direction < 0) {
 			for (; *y > 0; *y += direction) {
 				#if SCROLLBACK_PATCH
