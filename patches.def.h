@@ -251,6 +251,17 @@
  */
 #define LIGATURES_PATCH 0
 
+/* This patch adds support for snapping line selection to stop at specific
+ * delimiter characters. This is primarily useful in terminal multiplexers like
+ * tmux, where a triple-click (line snap) would otherwise select across all
+ * panes, which is usually not desired.
+ *
+ * This patch is incompatible with the REFLOW patch
+ *
+ * https://st.suckless.org/patches/line_snap_delimiter/
+ */
+#define LINESNAP_PATCH 0
+
 /* This patch makes st ignore terminal color attributes by forcing display of the default
  * foreground and background colors only - making for a monochrome look. Idea ref.
  * https://www.reddit.com/r/suckless/comments/ixbx6z/how_to_use_black_and_white_only_for_st/
