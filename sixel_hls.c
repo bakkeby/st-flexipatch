@@ -30,20 +30,18 @@
 // sale, use or other dealings in this Software without prior written
 // authorization.
 
-#define SIXEL_RGB(r, g, b) ((r) + ((g) << 8) + ((b) << 16) + (255 << 24))
+#define SIXEL_RGB(r, g, b) ((255 << 24) + ((r) << 16) + ((g) << 8) +  (b))
 
 int
 hls_to_rgb(int hue, int lum, int sat)
 {
-  double hs = (hue + 240) % 360;
-  double hv = hs / 360.0;
   double lv = lum / 100.0;
   double sv = sat / 100.0;
   double c, x, m, c2;
   double r1, g1, b1;
-  int r, g, b;
-  int hpi;
+  int r, g, b, hs;
 
+  hue = (hue + 240) % 360;
   if (sat == 0) {
     r = g = b = lum * 255 / 100;
     return SIXEL_RGB(r, g, b);
@@ -52,12 +50,14 @@ hls_to_rgb(int hue, int lum, int sat)
   if ((c2 = ((2.0 * lv) - 1.0)) < 0.0) {
     c2 = -c2;
   }
+  if ((hs = (hue % 120) - 60) < 0) {
+    hs = -hs;
+  }
   c = (1.0 - c2) * sv;
-  hpi = (int) (hv * 6.0);
-  x = (hpi & 1) ? c : 0.0;
+  x = ((60 - hs) / 60.0) * c;
   m = lv - 0.5 * c;
 
-  switch (hpi) {
+  switch (hue / 60) {
   case 0:
     r1 = c;
     g1 = x;
@@ -92,24 +92,24 @@ hls_to_rgb(int hue, int lum, int sat)
     return SIXEL_RGB(255, 255, 255);
   }
 
-  r = (int) ((r1 + m) * 100.0 + 0.5);
-  g = (int) ((g1 + m) * 100.0 + 0.5);
-  b = (int) ((b1 + m) * 100.0 + 0.5);
+  r = (int) ((r1 + m) * 255.0 + 0.5);
+  g = (int) ((g1 + m) * 255.0 + 0.5);
+  b = (int) ((b1 + m) * 255.0 + 0.5);
 
   if (r < 0) {
     r = 0;
-  } else if (r > 100) {
-    r = 100;
+  } else if (r > 255) {
+    r = 255;
   }
   if (g < 0) {
     g = 0;
-  } else if (g > 100) {
-    g = 100;
+  } else if (g > 255) {
+    g = 255;
   }
   if (b < 0) {
     b = 0;
-  } else if (b > 100) {
-    b = 100;
+  } else if (b > 255) {
+    b = 255;
   }
-  return SIXEL_RGB(r * 255 / 100, g * 255 / 100, b * 255 / 100);
+  return SIXEL_RGB(r, g, b);
 }
