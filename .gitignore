@@ -1,10 +1,29 @@
-.env*
-!.env.example
-tags*
+# Builds
+*.db
+*.dll
+*.exe
 *.o
+*.out
+*.so
+*.test
+/build
+/dist
+st
+
+# Source
 config.h
 patches.h
-st
-.DS_Store/
-.idea/
+
+# Logs
+*.log
+
+# Environment
+.env*
+!.env.example
+
+# Tools
 .vscode/
+.idea/
+.DS_Store
+*.swp
+tags*
