@@ -2455,12 +2455,10 @@ csihandle(void)
 	case '$': /* DECRQM -- DEC Request Mode (private) */
 		if (csiescseq.mode[1] == 'p' && csiescseq.priv) {
 			switch (csiescseq.arg[0]) {
-			#if SYNC_PATCH
 			case 2026:
 				/* https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036 */
 				ttywrite(su ? "\033[?2026;1$y" : "\033[?2026;2$y", 11, 0);
 				break;
-			#endif // SYNC_PATCH
 			default:
 				goto unknown;
 			}
