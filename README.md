@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2025-10-28 - Added the selectionbg-alpha patch
+
 2025-02-20 - Added the drag-n-drop and open-selected-text patches
 
 2024-05-31 - Added the anygeometry patch
@@ -259,6 +261,10 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
    - [right-click-to-plumb](https://st.suckless.org/patches/right_click_to_plumb/)
       - allows you to right-click on some selected text to send it to the plumbing program of choice
+
+   - [selectionbg-alpha](https://st.suckless.org/patches/selectionbg-alpha/)
+      - allows for the selection to have a transparent background when combined with the alpha
+        and selection colors patches
 
    - [scrollback](https://st.suckless.org/patches/scrollback/)
       - allows you scroll back through terminal output using keyboard shortcuts or mousewheel
