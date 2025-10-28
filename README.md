@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2025-10-28 - Added the slectionbg-alpha patch
+
 2025-02-20 - Added the drag-n-drop and open-selected-text patches
 
 2024-05-31 - Added the anygeometry patch

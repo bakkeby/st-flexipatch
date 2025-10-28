@@ -980,6 +980,11 @@ xloadalpha(void)
 	dc.col[defaultbg].color.alpha = (unsigned short)(0xffff * usedAlpha);
 	dc.col[defaultbg].pixel &= 0x00FFFFFF;
 	dc.col[defaultbg].pixel |= (unsigned char)(0xff * usedAlpha) << 24;
+	#if SELECTION_COLORS_PATCH && SELECTIONBG_ALPHA_PATCH
+	dc.col[selectionbg].color.alpha = (unsigned short)(0xffff * usedAlpha);
+	dc.col[selectionbg].pixel &= 0x00FFFFFF;
+	dc.col[selectionbg].pixel |= (unsigned char)(0xff * usedAlpha) << 24;
+	#endif // SELECTION_COLORS_PATCH && SELECTIONBG_ALPHA_PATCH
 }
 #endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 
@@ -1041,6 +1046,18 @@ xloadcols(void)
 	dc.col[defaultbg].color.red   *= alpha;
 	dc.col[defaultbg].color.green *= alpha;
 	dc.col[defaultbg].color.blue  *= alpha;
+	#if SELECTION_COLORS_PATCH && SELECTIONBG_ALPHA_PATCH
+	/* set alpha value of selbg color */
+	dc.col[selectionbg].color.alpha = (unsigned short)(0xffff * alpha);
+	dc.col[selectionbg].pixel &= 0x00FFFFFF;
+	dc.col[selectionbg].pixel |= (unsigned char)(0xff * alpha) << 24;
+	dc.col[selectionbg].color.red =
+		((unsigned short)(dc.col[selectionbg].color.red * alpha)) & 0xff00;
+	dc.col[selectionbg].color.green =
+		((unsigned short)(dc.col[selectionbg].color.green * alpha)) & 0xff00;
+	dc.col[selectionbg].color.blue =
+		((unsigned short)(dc.col[selectionbg].color.blue * alpha)) & 0xff00;
+	#endif // SELECTION_COLORS_PATCH && SELECTIONBG_ALPHA_PATCH
 	#endif // ALPHA_PATCH
 	loaded = 1;
 }

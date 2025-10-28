@@ -380,6 +380,12 @@
  */
 #define SELECTION_COLORS_PATCH 0
 
+/* This patch works with selectioncolors and alpha patches to make selection
+ * background color transparent.
+ * https://st.suckless.org/patches/selectionbg-alpha/
+ */
+#define SELECTIONBG_ALPHA_PATCH 0
+
 /* This is the single drawable buffer patch as outlined in the FAQ to get images
  * in w3m to display. While this patch does not break the alpha patch it images
  * are not shown in w3m if the alpha patch is applied.
