@@ -14,7 +14,7 @@ typedef struct sixel_image_buffer {
 	sixel_color_no_t *data;
 	int width;
 	int height;
-	sixel_color_t palette[DECSIXEL_PALETTE_MAX];
+	sixel_color_t palette[DECSIXEL_PALETTE_MAX + 1];
 	sixel_color_no_t ncolors;
 	int palette_modified;
 	int use_private_register;
