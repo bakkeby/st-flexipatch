@@ -36,6 +36,7 @@ resource_load(XrmDatabase db, char *name, enum resource_type rtype, void *dst)
 }
 
 #if XRESOURCES_XDEFAULTS_PATCH
+/* Returns an XrmDatabase that needs to be freed by the caller. */
 static XrmDatabase
 get_resources(Display *dpy)
 {
@@ -47,12 +48,7 @@ get_resources(Display *dpy)
 
 	char *displayResource, *xe;
 	XrmDatabase rdb1;
-	static XrmDatabase database = 0;
-
-	if (database)
-		XrmDestroyDatabase(database);
-
-	database = XrmGetStringDatabase("");
+	XrmDatabase database = XrmGetStringDatabase("");
 
 	/* For ordering, see for example http://www.faqs.org/faqs/Xt-FAQ/ Subject: 20 */
 
@@ -78,51 +74,6 @@ get_resources(Display *dpy)
 			XrmMergeDatabases(rdb1, &database);
 	}
 
-#if 0 /* This code would be needed if reload_config did not reopen the display each time. */
-
-	/* Get any Xserver Resources (xrdb). */
-	static int reloading = -1;
-	if (++reloading)
-	{
-		/* Urxvt's work-around for Xlib keeping a copy of the XResourceManagerString. */
-
-		Atom actual_type;
-		int actual_format;
-		unsigned long nitems, nremaining;
-		char *val = 0;
-
-		if (XGetWindowProperty(dpy, RootWindow(dpy, 0), XA_RESOURCE_MANAGER,
-					0L, 100000000L, False,
-					XA_STRING, &actual_type, &actual_format,
-					&nitems, &nremaining,
-					(unsigned char **)&val) == Success
-				&& actual_type == XA_STRING
-				&& actual_format == 8)
-			displayResource = val;
-		else
-		{
-			displayResource = 0;
-
-			if (val)
-				XFree(val);
-		}
-	}
-	else
-		displayResource = XResourceManagerString(dpy);
-
-	if (displayResource)
-	{
-		if ((rdb1 = XrmGetStringDatabase(displayResource)))
-			XrmMergeDatabases(rdb1, &database);
-	}
-
-	if (reloading && displayResource)
-		XFree(displayResource);
-
-#else  /* This block assumes reload_config reopens the display each time.
-	* Code is free from memory leaks (valgrind).
-	*/
-
 	/* Get any Xserver Resources (xrdb). */
 	displayResource = XResourceManagerString(dpy);
 
@@ -131,7 +82,6 @@ get_resources(Display *dpy)
 		if ((rdb1 = XrmGetStringDatabase(displayResource)))
 			XrmMergeDatabases(rdb1, &database);
 	}
-#endif
 
 	/* Get screen specific resources. */
 	displayResource = XScreenResourceString(ScreenOfDisplay(dpy, DefaultScreen(dpy)));
@@ -146,8 +96,7 @@ get_resources(Display *dpy)
 
 	/* 3. User's per host defaults file. */
 	/* Add in XENVIRONMENT file */
-	if ((xe = getenv("XENVIRONMENT"))
-			&& (rdb1 = XrmGetFileDatabase(xe)))
+	if ((xe = getenv("XENVIRONMENT")) && (rdb1 = XrmGetFileDatabase(xe)))
 		XrmMergeDatabases(rdb1, &database);
 	else if (homedir)
 	{
@@ -164,20 +113,33 @@ get_resources(Display *dpy)
 
 	return database;
 }
-#endif //XRESOURCES_XDEFAULTS_PATCH
 
 void
 config_init(Display *dpy)
 {
-	#if !XRESOURCES_XDEFAULTS_PATCH
+	XrmDatabase db;
+	ResourcePref *p;
+
+	XrmInitialize();
+	db = get_resources(dpy);
+
+	for (p = resources; p < resources + LEN(resources); p++)
+		resource_load(db, p->name, p->type, p->dst);
+
+	XrmDestroyDatabase(db);
+}
+
+#else // !XRESOURCES_XDEFAULTS_PATCH
+
+void
+config_init(Display *dpy)
+{
 	char *resm;
-	#endif // XRESOURCES_XDEFAULTS_PATCH
 	XrmDatabase db;
 	ResourcePref *p;
 
 	XrmInitialize();
 
-	#if !XRESOURCES_XDEFAULTS_PATCH
 	resm = XResourceManagerString(dpy);
 	if (!resm)
 		return;
@@ -185,15 +147,13 @@ config_init(Display *dpy)
 	db = XrmGetStringDatabase(resm);
 	if (!db)
 		return;
-	#else
-	db = get_resources(dpy);
-	#endif // XRESOURCES_XDEFAULTS_PATCH
 
 	for (p = resources; p < resources + LEN(resources); p++)
 		resource_load(db, p->name, p->type, p->dst);
 
 	XrmDestroyDatabase(db);
 }
+#endif // XRESOURCES_XDEFAULTS_PATCH
 
 #if XRESOURCES_RELOAD_PATCH
 void
