@@ -15,6 +15,8 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
 
 ### Changelog:
 
+2026-01-08 - Added the xresources-xdefaults patch
+
 2025-10-28 - Added the selectionbg-alpha patch
 
 2025-02-20 - Added the drag-n-drop and open-selected-text patches
@@ -340,3 +342,6 @@ Refer to [https://st.suckless.org/](https://st.suckless.org/) for details on the
    - [xresources](https://st.suckless.org/patches/xresources/)
       - adds the ability to configure st via Xresources
       - during startup, st will read and apply the resources named in the resources[] array in config.h
+
+   - xresources-xdefaults
+      - allows .Xdefaults to be read as well in addition to the RESOURCE_MANAGER property on the root window

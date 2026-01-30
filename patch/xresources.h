@@ -1,4 +1,7 @@
 #include <X11/Xresource.h>
+#if XRESOURCES_XDEFAULTS_PATCH
+#include <sys/utsname.h>
+#endif // XRESOURCES_XDEFAULTS_PATCH
 
 /* Xresources preferences */
 enum resource_type {
