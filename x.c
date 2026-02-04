@@ -58,6 +58,9 @@ typedef enum {
 static void clipcopy(const Arg *);
 static void clippaste(const Arg *);
 static void numlock(const Arg *);
+#if SOLARIZED_PATCH
+static void swapcolors(const Arg *);
+#endif // SOLARIZED_PATCH
 static void selpaste(const Arg *);
 static void ttysend(const Arg *);
 static void zoom(const Arg *);
@@ -230,6 +233,9 @@ static int focused = 0;
 #endif // ALPHA_FOCUS_HIGHLIGHT_PATCH
 
 static uint buttons; /* bit field of pressed buttons */
+#if SOLARIZED_PATCH
+int usealtcolors = 0; /* 1 to use alternate palette */
+#endif // SOLARIZED_PATCH
 #if BLINKING_CURSOR_PATCH
 static int cursorblinks = 0;
 #endif // BLINKING_CURSOR_PATCH
@@ -281,6 +287,16 @@ numlock(const Arg *dummy)
 {
 	win.mode ^= MODE_NUMLOCK;
 }
+
+#if SOLARIZED_PATCH
+void
+swapcolors(const Arg *dummy)
+{
+	usealtcolors = !usealtcolors;
+	xloadcols();
+	redraw();
+}
+#endif // SOLARIZED_PATCH
 
 void
 selpaste(const Arg *dummy)
@@ -947,6 +963,13 @@ sixd_to_16bit(int x)
 	return x == 0 ? 0 : 0x3737 + 0x2828 * x;
 }
 
+#if SOLARIZED_PATCH
+const char* getcolorname(int i)
+{
+	return (usealtcolors) ?  altcolorname[i] : colorname[i];
+}
+#endif // SOLARIZED_PATCH
+
 int
 xloadcolor(int i, const char *name, Color *ncolor)
 {
@@ -965,7 +988,11 @@ xloadcolor(int i, const char *name, Color *ncolor)
 			return XftColorAllocValue(xw.dpy, xw.vis,
 			                          xw.cmap, &color, ncolor);
 		} else
+#if SOLARIZED_PATCH
+			name = getcolorname(i);
+#else
 			name = colorname[i];
+#endif // SOLARIZED_PATCH
 	}
 
 	return XftColorAllocName(xw.dpy, xw.vis, xw.cmap, name, ncolor);
@@ -1002,8 +1029,13 @@ xloadcols(void)
 
 	for (int i = 0; i+1 < dc.collen; ++i)
 		if (!xloadcolor(i, NULL, &dc.col[i])) {
+#if SOLARIZED_PATCH
+			if (getcolorname(i))
+				die("could not allocate color '%s'\n", getcolorname(i));
+#else
 			if (colorname[i])
 				die("could not allocate color '%s'\n", colorname[i]);
+#endif // SOLARIZED_PATCH
 			else
 				die("could not allocate color %d\n", i);
 		}
@@ -1031,8 +1063,13 @@ xloadcols(void)
 
 	for (i = 0; i < dc.collen; i++)
 		if (!xloadcolor(i, NULL, &dc.col[i])) {
+#if SOLARIZED_PATCH
+			if (getcolorname(i))
+				die("could not allocate color '%s'\n", getcolorname(i));
+#else
 			if (colorname[i])
 				die("could not allocate color '%s'\n", colorname[i]);
+#endif // SOLARIZED_PATCH
 			else
 				die("could not allocate color %d\n", i);
 		}
@@ -1622,13 +1659,21 @@ xinit(int cols, int rows)
 	#endif // HIDECURSOR_PATCH
 
 	#if !THEMED_CURSOR_PATCH
+	#if SOLARIZED_PATCH
+	if (XParseColor(xw.dpy, xw.cmap, getcolorname(mousefg), &xmousefg) == 0) {
+	#else
 	if (XParseColor(xw.dpy, xw.cmap, colorname[mousefg], &xmousefg) == 0) {
+	#endif // SOLARIZED_PATCH
 		xmousefg.red   = 0xffff;
 		xmousefg.green = 0xffff;
 		xmousefg.blue  = 0xffff;
 	}
 
+	#if SOLARIZED_PATCH
+	if (XParseColor(xw.dpy, xw.cmap, getcolorname(mousebg), &xmousebg) == 0) {
+	#else
 	if (XParseColor(xw.dpy, xw.cmap, colorname[mousebg], &xmousebg) == 0) {
+	#endif // SOLARIZED_PATCH
 		xmousebg.red   = 0x0000;
 		xmousebg.green = 0x0000;
 		xmousebg.blue  = 0x0000;
@@ -2118,7 +2163,11 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	#if !BOLD_IS_NOT_BRIGHT_PATCH
 	/* Change basic system colors [0-7] to bright system colors [8-15] */
 	if ((base.mode & ATTR_BOLD_FAINT) == ATTR_BOLD && BETWEEN(base.fg, 0, 7))
+		#if SOLARIZED_PATCH
+		fg = &dc.col[base.fg];
+		#else
 		fg = &dc.col[base.fg + 8];
+		#endif // SOLARIZED_PATCH
 	#endif // BOLD_IS_NOT_BRIGHT_PATCH
 
 	if (IS_SET(MODE_REVERSE)) {
