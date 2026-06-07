@@ -329,7 +329,11 @@ static Key key[] = {
 	{ XK_KP_Insert,    Mod1Mask|ControlMask,           "\033[158;7u", 0,  0},
 	{ XK_KP_Insert,    Mod1Mask|ControlMask|ShiftMask, "\033[158;8u", 0,  0},
 	{ XK_KP_Insert,    Mod1Mask|ShiftMask,             "\033[158;4u", 0,  0},
+	#if DELKEY_PATCH
+	{ XK_KP_Delete,    XK_NO_MOD,                      "\033[3~",    -1,  0},
+	#else
 	{ XK_KP_Delete,    XK_NO_MOD,                      "\033[P",     -1,  0},
+	#endif // DELKEY_PATCH
 	{ XK_KP_Delete,    XK_NO_MOD,                      "\033[3~",    +1,  0},
 	{ XK_KP_Delete,    ControlMask|ShiftMask,          "\033[159;6u", 0,  0},
 	{ XK_KP_Delete,    Mod1Mask,                       "\033[159;3u", 0,  0},
@@ -553,7 +557,11 @@ static Key key[] = {
 	{ XK_Menu,         Mod1Mask|ControlMask|ShiftMask, "\033[103;8u", 0,  0},
 	{ XK_Menu,         Mod1Mask|ShiftMask,             "\033[103;4u", 0,  0},
 	{ XK_Menu,         ShiftMask,                      "\033[103;2u", 0,  0},
+	#if DELKEY_PATCH
+	{ XK_Delete,       XK_NO_MOD,                      "\033[3~",    -1,  0},
+	#else
 	{ XK_Delete,       XK_NO_MOD,                      "\033[P",     -1,  0},
+	#endif // DELKEY_PATCH
 	{ XK_Delete,       XK_NO_MOD,                      "\033[3~",    +1,  0},
 	{ XK_Delete,       ControlMask|ShiftMask,          "\033[255;6u", 0,  0},
 	{ XK_Delete,       Mod1Mask,                       "\033[255;3u", 0,  0},
