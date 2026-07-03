@@ -913,6 +913,8 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 #ifdef __OpenBSD__
 		#if RIGHTCLICKTOPLUMB_PATCH || OPENCOPIED_PATCH
 		if (pledge("stdio rpath tty proc ps exec", NULL) == -1)
+		#elif EXTERNALPIPE_PATCH
+		if (pledge("stdio rpath tty proc exec", NULL) == -1)
 		#else
 		if (pledge("stdio rpath tty proc", NULL) == -1)
 		#endif // RIGHTCLICKTOPLUMB_PATCH
