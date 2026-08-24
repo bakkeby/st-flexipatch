@@ -1,0 +1,21 @@
+#!/bin/sh
+
+fail () { printf "\e[31mERROR: %s\e[0m\n" "$1" >&2; exit 1; }
+
+readonly st_base_version="${1}"
+[ -n "${st_base_version}" ] || fail "st base version must be provided"
+[ -f patches.h ]            || fail "patches.h must exist"
+
+if ! git_version=$(git describe --always --dirty); then
+    fail "'git describe' failed"
+fi
+
+patches_enabled=$(
+    grep "#define .* 1" patches.h | cut --delimiter=' ' --fields=2
+)
+
+printf "%s-flexipatch-%s" "${st_base_version}" "${git_version}"
+if [ -n "${patches_enabled}" ]; then
+    printf "\\\\n\\\\nWith patches:\\\\n\\\\n"
+    for patch in ${patches_enabled}; do printf "  * %s\\\\n" "${patch}"; done
+fi
