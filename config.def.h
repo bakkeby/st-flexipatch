@@ -161,7 +161,7 @@ char *termname = "st-256color";
  *
  *	stty tabs
  */
-unsigned int tabspaces = 8;
+unsigned int tabspaces = 8; /* must be > 0 */
 
 #if ALPHA_PATCH
 /* bg opacity */
