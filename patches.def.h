@@ -407,6 +407,17 @@
  */
 #define SIXEL_PATCH 0
 
+/* This patch makes the two solarized colorschemes [1] available and provides
+ * a shortcut to switch between them. Please refer to the original patch
+ * documentation for detail on how to adjust the colors of applications, e.g.
+ * tmux, (n)vim, if needed. This patch seems compatible with the ALPHA_PATCHEs
+ * but the config.h may need tweaking.
+ * https://st.suckless.org/patches/solarized/
+ *
+ * [1] http://ethanschoonover.com/solarized
+ */
+#define SOLARIZED_PATCH 0
+
 /* This patch allows clients to embed into the st window and is useful if you tend to
  * start X applications from the terminal. For example:
  *
